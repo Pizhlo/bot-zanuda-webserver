@@ -22,7 +22,7 @@ func (s *server) Serve() error {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/health", nil)
+	e.GET("/health", s.health)
 
 	s.e = e
 

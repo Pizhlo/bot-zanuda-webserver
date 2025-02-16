@@ -13,6 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// @title           Веб-сервер для Бота Зануды
+// @description     Веб-сервер, обрабатывающий запросы от Бота Зануды: управление заметками, а также перенаправление запросов к другим сервисам (напоминяний, пользователей)
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -24,10 +24,7 @@ func (s *server) Serve() error {
 	e := echo.New()
 
 	skipper := func(c echo.Context) bool {
-		if strings.Contains(c.Request().URL.Path, "swagger") {
-			return true
-		}
-		return false
+		return strings.Contains(c.Request().URL.Path, "swagger")
 	}
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{

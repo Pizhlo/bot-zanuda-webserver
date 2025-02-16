@@ -1,0 +1,11 @@
+info:
+  contact: {}
+paths:
+  /health:
+    get:
+      description: Проверить состояние сервера и соединения
+      responses:
+        "200":
+          description: OK
+      summary: Проверить состояние сервера и соединения
+swagger: "2.0"

@@ -36,7 +36,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 func runTestServer() (*echo.Echo, error) {
 	router := echo.New()
 
-	s := New("")
+	s := New("", nil)
 
 	router.GET("/health", s.health)
 

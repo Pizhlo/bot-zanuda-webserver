@@ -8,7 +8,6 @@ import (
 	"webserver/internal/model"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 
 	"github.com/sirupsen/logrus"
 )

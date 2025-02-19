@@ -31,11 +31,11 @@ func (s *server) createNote(c echo.Context) error {
 	err = s.note.Create(c.Request().Context(), req)
 	if err != nil {
 		if errors.Is(err, note.ErrUnknownUser) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
 		if errors.Is(err, note.ErrSpaceNotExists) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

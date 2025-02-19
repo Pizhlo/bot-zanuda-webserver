@@ -29,6 +29,7 @@ require (
 )
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/lib/pq v1.10.9

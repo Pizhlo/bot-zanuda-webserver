@@ -10,6 +10,7 @@ type Note struct {
 	repo repo
 }
 
+//go:generate mockgen -source ./service.go -destination=../../../mocks/note_srv.go -package=mocks
 type repo interface {
 	Create(ctx context.Context, note model.CreateNoteRequest) error
 }

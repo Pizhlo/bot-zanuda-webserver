@@ -20,24 +20,12 @@ func (s *server) createNote(c echo.Context) error {
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
 	// проверяем поля на валидность
-	if req.UserID == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "field `user_id` not filled"})
-	}
-
-	if req.Text == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "field `text` not filled"})
-	}
-
-	if req.Created == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "field `created` not filled"})
-	}
-
-	if req.SpaceID == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "field `space_id` not filled"})
+	if err := req.Validate(); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
 	err = s.note.Create(c.Request().Context(), req)

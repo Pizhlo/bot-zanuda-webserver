@@ -41,11 +41,6 @@ func (s *server) Serve() error {
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	notes := e.Group("notes")
-	notes.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Skipper: skipper,
-	}))
-
-	notes.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{Skipper: skipper}))
 
 	notes.GET("/:id", s.notesByUserID)
 	notes.POST("/create", s.createNote)

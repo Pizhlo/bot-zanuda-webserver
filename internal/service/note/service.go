@@ -13,6 +13,7 @@ type Note struct {
 //go:generate mockgen -source ./service.go -destination=../../../mocks/note_srv.go -package=mocks
 type repo interface {
 	Create(ctx context.Context, note model.CreateNoteRequest) error
+	GetAllbyUserID(ctx context.Context, userID int64) ([]model.GetNoteResponse, error)
 }
 
 func New(repo repo) *Note {
@@ -22,4 +23,8 @@ func New(repo repo) *Note {
 // Create создает заметку пользователя в БД
 func (s *Note) Create(ctx context.Context, note model.CreateNoteRequest) error {
 	return s.repo.Create(ctx, note)
+}
+
+func (s *Note) GetAllbyUserID(ctx context.Context, userID int64) ([]model.GetNoteResponse, error) {
+	return s.repo.GetAllbyUserID(ctx, userID)
 }

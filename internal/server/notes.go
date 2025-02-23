@@ -10,10 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (s *server) notesByUserID(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
-}
-
 //	@Summary		Запрос на создание заметки
 //	@Description	Запрос на создание заметки с текстом для определенного пользователя
 //	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix"
@@ -57,4 +53,8 @@ func (s *server) createNote(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusCreated)
+}
+
+func (s *server) notesByUserID(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }

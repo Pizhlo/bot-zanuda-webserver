@@ -10,7 +10,9 @@ import (
 	"time"
 	"webserver/internal/server"
 	"webserver/internal/service/note"
+	"webserver/internal/service/space"
 	note_db "webserver/internal/service/storage/postgres/note"
+	space_db "webserver/internal/service/storage/postgres/space"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -85,13 +87,20 @@ func main() {
 
 	noteSrv := note.New(noteRepo)
 
+	spaceRepo, err := space_db.New(addr)
+	if err != nil {
+		logrus.Fatalf("error connecting db: %+v", err)
+	}
+
+	spaceSrv := space.New(spaceRepo)
+
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
 		logrus.Fatalf("SERVER_ADDR not set")
 	}
 
 	logrus.Infof("starting server on %s", serverAddr)
-	s := server.New(serverAddr, noteSrv)
+	s := server.New(serverAddr, noteSrv, spaceSrv)
 
 	err = s.Serve()
 	if err != nil {

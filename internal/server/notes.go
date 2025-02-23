@@ -36,25 +36,20 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
-	// пространство личное - проверяем, принадлежит ли оно тому же пользователю, что и отправил запрос
-	if req.Space.Personal {
-		space, err := s.space.GetSpaceByID(c.Request().Context(), req.Space.ID)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		if space.Creator != req.UserID {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "space is personal and belongs to another user"})
-		}
-	}
-
 	err = s.note.Create(c.Request().Context(), req)
 	if err != nil {
+		// неизвестный пользователь
 		if errors.Is(err, note.ErrUnknownUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
+		// пространства не существует
 		if errors.Is(err, note.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		// пространство личное и принадлежит другому пользователю
+		if errors.Is(err, note.ErrSpaceNotBelongsUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 

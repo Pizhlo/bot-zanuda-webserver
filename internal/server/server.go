@@ -22,8 +22,8 @@ type server struct {
 	space *space.Space
 }
 
-func New(addr string, note *note.Note) *server {
-	return &server{addr: addr, note: note}
+func New(addr string, note *note.Note, space *space.Space) *server {
+	return &server{addr: addr, note: note, space: space}
 }
 
 func (s *server) Serve() error {

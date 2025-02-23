@@ -119,6 +119,18 @@ func TestCreateNote(t *testing.T) {
 			expectedCode:     http.StatusInternalServerError,
 			expectedResponse: map[string]string{"error": "unknown error"},
 		},
+		{
+			name:  "db err: space belongs another user",
+			dbErr: note_db.ErrSpaceNotBelongsUser,
+			req: model.CreateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: 1,
+				Created: time.Now().Unix(),
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "space not belongs to user"},
+		},
 	}
 
 	ctrl := gomock.NewController(t)
@@ -126,7 +138,7 @@ func TestCreateNote(t *testing.T) {
 
 	noteSrv := note.New(repo)
 
-	server := New("", noteSrv)
+	server := New("", noteSrv, nil)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)

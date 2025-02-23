@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 	"webserver/internal/server"
+	"webserver/internal/service/note"
+	"webserver/internal/service/space"
+	"webserver/internal/service/storage/elasticsearch"
+	note_db "webserver/internal/service/storage/postgres/note"
+	space_db "webserver/internal/service/storage/postgres/space"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -47,13 +53,65 @@ func main() {
 
 	logrus.Infof("log level: %+v", logrus.GetLevel())
 
+	dbUser := os.Getenv("POSTGRES_USER")
+	if len(dbUser) == 0 {
+		logrus.Fatal("POSTGRES_USER is not set")
+	}
+
+	dbPass := os.Getenv("POSTGRES_PASSWORD")
+	if len(dbPass) == 0 {
+		logrus.Fatal("POSTGRES_PASSWORD is not set")
+	}
+
+	dbName := os.Getenv("POSTGRES_DB")
+	if len(dbName) == 0 {
+		logrus.Fatal("POSTGRES_DB is not set")
+	}
+
+	dbHost := os.Getenv("POSTGRES_HOST")
+	if len(dbHost) == 0 {
+		logrus.Fatal("POSTGRES_HOST is not set")
+	}
+
+	dbPort := os.Getenv("POSTGRES_PORT")
+	if len(dbPort) == 0 {
+		logrus.Fatal("POSTGRES_PORT is not set")
+	}
+
+	elasticAddr := os.Getenv("ELASTIC_ADDR")
+	if len(elasticAddr) == 0 {
+		logrus.Fatal("ELASTIC_ADDR is not set")
+	}
+
+	elasticClient, err := elasticsearch.New([]string{elasticAddr})
+	if err != nil {
+		logrus.Fatalf("unable to connect elastic search: %+v", err)
+	}
+
+	addr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
+
+	logrus.Infof("connecting db on %s", addr)
+	noteRepo, err := note_db.New(addr, elasticClient)
+	if err != nil {
+		logrus.Fatalf("error connecting db: %+v", err)
+	}
+
+	noteSrv := note.New(noteRepo)
+
+	spaceRepo, err := space_db.New(addr)
+	if err != nil {
+		logrus.Fatalf("error connecting db: %+v", err)
+	}
+
+	spaceSrv := space.New(spaceRepo)
+
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
 		logrus.Fatalf("SERVER_ADDR not set")
 	}
 
 	logrus.Infof("starting server on %s", serverAddr)
-	s := server.New(serverAddr)
+	s := server.New(serverAddr, noteSrv, spaceSrv)
 
 	err = s.Serve()
 	if err != nil {
@@ -81,6 +139,10 @@ func main() {
 		if err != nil {
 			logrus.Errorf("error shutdown server: %+v", err)
 		}
+
+		noteRepo.Close()
+
+		spaceRepo.Close()
 	}(&wg)
 
 	wg.Wait()

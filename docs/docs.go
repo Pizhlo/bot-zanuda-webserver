@@ -25,6 +25,69 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/notes/create": {
+            "post": {
+                "description": "Запрос на создание заметки с текстом для определенного пользователя",
+                "summary": "Запрос на создание заметки",
+                "parameters": [
+                    {
+                        "description": "создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.CreateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "дата создания заметки в часовом поясе пользователя в unix",
+                    "type": "integer"
+                },
+                "space_id": {
+                    "description": "айди пространства (личного или совместного), куда сохранить заметку",
+                    "type": "integer"
+                },
+                "text": {
+                    "description": "текст заметки",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "кто создал заметку",
+                    "type": "integer"
+                }
+            }
         }
     }
 }`

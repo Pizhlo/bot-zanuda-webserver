@@ -33,12 +33,16 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp
 }
 
-func runTestServer() (*echo.Echo, error) {
-	router := echo.New()
+func runTestServer(server *server) (*echo.Echo, error) {
+	e := echo.New()
 
-	s := New("")
+	server.e = e
 
-	router.GET("/health", s.health)
+	e.GET("/health", server.health)
+	notes := e.Group("notes")
 
-	return router, nil
+	notes.GET("/:id", server.notesByUserID)
+	notes.POST("/create", server.createNote)
+
+	return e, nil
 }

@@ -10,7 +10,8 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	r, err := runTestServer()
+	server := New("", nil, nil)
+	r, err := runTestServer(server)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)

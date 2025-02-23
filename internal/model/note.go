@@ -11,10 +11,10 @@ import "fmt"
 //
 // Запрос на создание заметки
 type CreateNoteRequest struct {
-	UserID  int64  `json:"user_id"`  // кто создал заметку
-	Text    string `json:"text"`     // текст заметки
-	SpaceID int64  `json:"space_id"` // айди пространства (личного или совместного), куда сохранить заметку
-	Created int64  `json:"created"`  // дата создания заметки в часовом поясе пользователя в unix
+	UserID  int64  `json:"user_id"` // кто создал заметку
+	Text    string `json:"text"`    // текст заметки
+	Space   *Space `json:"space"`   // пространство, куда сохранить заметку
+	Created int64  `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -30,7 +30,11 @@ func (s *CreateNoteRequest) Validate() error {
 		return fmt.Errorf("field `created` not filled")
 	}
 
-	if s.SpaceID == 0 {
+	if s.Space == nil {
+		return fmt.Errorf("field `space` not filled")
+	}
+
+	if s.Space.ID == 0 {
 		return fmt.Errorf("field `space_id` not filled")
 	}
 

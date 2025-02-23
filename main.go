@@ -11,6 +11,7 @@ import (
 	"webserver/internal/server"
 	"webserver/internal/service/note"
 	"webserver/internal/service/space"
+	"webserver/internal/service/storage/elasticsearch"
 	note_db "webserver/internal/service/storage/postgres/note"
 	space_db "webserver/internal/service/storage/postgres/space"
 
@@ -77,10 +78,20 @@ func main() {
 		logrus.Fatal("POSTGRES_PORT is not set")
 	}
 
+	elasticAddr := os.Getenv("ELASTIC_ADDR")
+	if len(elasticAddr) == 0 {
+		logrus.Fatal("ELASTIC_ADDR is not set")
+	}
+
+	elasticClient, err := elasticsearch.New([]string{elasticAddr})
+	if err != nil {
+		logrus.Fatalf("unable to connect elastic search: %+v", err)
+	}
+
 	addr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	logrus.Infof("connecting db on %s", addr)
-	noteRepo, err := note_db.New(addr)
+	noteRepo, err := note_db.New(addr, elasticClient)
 	if err != nil {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}

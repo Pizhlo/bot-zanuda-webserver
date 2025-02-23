@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"webserver/internal/model"
+	"webserver/internal/model/elastic"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -24,8 +26,10 @@ func (db *noteRepo) Create(ctx context.Context, note model.CreateNoteRequest) er
 		return fmt.Errorf("error while creating transaction: %w", err)
 	}
 
-	_, err = tx.ExecContext(ctx, `insert into notes.notes (user_id, text, space_id, created) values((select id from users.users where tg_id=$1), $2, $3, to_timestamp($4)) returning ID`,
-		note.UserID, note.Text, note.SpaceID, note.Created)
+	// id новой заметки после создания; нужен для сохранения в elastic
+	var noteID uuid.UUID
+	err = tx.QueryRowContext(ctx, `insert into notes.notes (user_id, text, space_id, created) values((select id from users.users where tg_id=$1), $2, $3, to_timestamp($4)) returning ID`,
+		note.UserID, note.Text, note.SpaceID, note.Created).Scan(&noteID)
 	if err != nil {
 		db.currentTx = nil
 
@@ -45,6 +49,23 @@ func (db *noteRepo) Create(ctx context.Context, note model.CreateNoteRequest) er
 		}
 
 		return err
+	}
+
+	// создаем структуру для сохранения в elastic
+	elasticData := elastic.Data{
+		Index: elastic.NoteIndex,
+		Model: &elastic.Note{
+			ID:   noteID,
+			Text: note.Text,
+			TgID: note.UserID,
+		}}
+
+	// сохраняем в elastic
+	err = db.elasticClient.Save(ctx, elasticData)
+	if err != nil {
+		// отменяем транзакцию в случае ошибки (для консистентности данных)
+		_ = tx.Rollback()
+		return fmt.Errorf("error saving note to Elastic: %+v", err)
 	}
 
 	return db.commit()

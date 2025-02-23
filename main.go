@@ -128,6 +128,10 @@ func main() {
 		if err != nil {
 			logrus.Errorf("error shutdown server: %+v", err)
 		}
+
+		noteRepo.Close()
+
+		spaceRepo.Close()
 	}(&wg)
 
 	wg.Wait()

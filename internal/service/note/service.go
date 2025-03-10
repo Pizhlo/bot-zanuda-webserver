@@ -22,11 +22,12 @@ func New(repo repo) *Note {
 	return &Note{repo: repo}
 }
 
-// Create создает заметку пользователя в БД
+// Create создает новую заметку в личном пространстве пользователя
 func (s *Note) Create(ctx context.Context, note model.CreateNoteRequest) error {
 	return s.repo.Create(ctx, note)
 }
 
+// GetAllbyUserID возвращает все заметки пользователя из его личного пространства
 func (s *Note) GetAllbyUserID(ctx context.Context, userID int64) ([]model.Note, error) {
 	return s.repo.GetAllbyUserID(ctx, userID)
 }

@@ -2,8 +2,14 @@ package note
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"webserver/internal/model"
+)
+
+var (
+	// ошибка о том, что у пользователя нет заметок
+	ErrNoNotesFoundByUserID = errors.New("user does not have any notes")
 )
 
 func (db *noteRepo) GetAllbyUserID(ctx context.Context, userID int64) ([]model.Note, error) {
@@ -37,24 +43,12 @@ and notes.notes.space_id = (select id from shared_spaces.shared_spaces where cre
 
 		note.User.PersonalSpace = *note.Space
 
-		// необходимо заполнить информацию о личном пространстве пользвоателя
-		// err = db.fillPersonalSpace(ctx, &note)
-		// if err != nil {
-		// 	return nil, fmt.Errorf("error filling personal space: %+v", err)
-		// }
-
 		res = append(res, note)
 	}
 
+	if len(res) == 0 {
+		return nil, ErrNoNotesFoundByUserID
+	}
+
 	return res, nil
-}
-
-func (db *noteRepo) fillPersonalSpace(ctx context.Context, note *model.Note) error {
-	space := model.Space{}
-	err := db.db.QueryRowContext(ctx, `select id, name, created, creator, personal from
-	shared_access.shared_access where user_id = $1 and personal = true`, note.User.TgID, true).
-		Scan(&space.ID, &space.Name, &space.Created, &space.Creator, &space.Personal)
-
-	note.User.PersonalSpace = space
-	return err
 }

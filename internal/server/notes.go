@@ -57,6 +57,15 @@ func (s *server) createNote(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
+//	@Summary		Запрос на получение всех заметок
+//	@Description	Запрос на получение всех заметок из личного пространства пользователя
+//	@Success		200 {object}    []model.Note
+//	@Success		204
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/notes/users/:id [get]
+//
+// ручка для получения всех заметок пользователя из его личного пространства
 func (s *server) notesByUserID(c echo.Context) error {
 	userIDStr := c.Param("id")
 
@@ -67,10 +76,13 @@ func (s *server) notesByUserID(c echo.Context) error {
 
 	notes, err := s.note.GetAllbyUserID(c.Request().Context(), int64(userID))
 	if err != nil {
+		// у пользователя нет заметок - отдаем 204
+		if errors.Is(err, note.ErrNoNotesFoundByUserID) {
+			return c.NoContent(http.StatusNoContent)
+		}
+
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-
-	// добавить проверку на то что нет заметок - 204
 
 	return c.JSON(http.StatusOK, notes)
 }

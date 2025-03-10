@@ -2,8 +2,10 @@ package server
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,7 +15,9 @@ import (
 	note_db "webserver/internal/service/storage/postgres/note"
 	"webserver/mocks"
 
+	"bou.ke/monkey"
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -169,6 +173,114 @@ func TestCreateNote(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Equal(t, tt.expectedResponse, result)
+			}
+		})
+	}
+}
+
+func TestNotesByUserID(t *testing.T) {
+	type test struct {
+		name             string
+		param            int   // user ID
+		dbErr            error // ошибка, которую возвращает база
+		expectedCode     int
+		expectedResponse []model.Note
+		expectedErr      map[string]string
+	}
+
+	wayback := time.Date(2024, time.May, 19, 1, 2, 3, 4, time.UTC)
+	patch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer patch.Unpatch()
+
+	tests := []test{
+		{
+			name:         "positive test",
+			param:        1234,
+			expectedCode: http.StatusOK,
+			expectedResponse: []model.Note{
+				{
+					ID: uuid.New(),
+					User: &model.User{
+						ID:       1,
+						TgID:     1234,
+						Username: "test user",
+						PersonalSpace: model.Space{
+							ID:       1,
+							Name:     "personal space for user 1234",
+							Created:  time.Now(),
+							Creator:  1,
+							Personal: true,
+						},
+						Timezone: "Europe/Moscow",
+					},
+					Text: "test note",
+					Space: &model.Space{
+						ID:       1,
+						Name:     "personal space for user 1234",
+						Created:  time.Now(),
+						Creator:  1,
+						Personal: true,
+					},
+					Created:  time.Now(),
+					LastEdit: sql.NullTime{Valid: false},
+				},
+			},
+		},
+		{
+			name:         "user does not have any notes",
+			param:        1234,
+			dbErr:        note_db.ErrNoNotesFoundByUserID,
+			expectedCode: http.StatusNoContent,
+			expectedErr:  nil,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	repo := mocks.NewMockrepo(ctrl)
+
+	noteSrv := note.New(repo)
+
+	server := New("", noteSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr != nil {
+				repo.EXPECT().GetAllbyUserID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+			} else if tt.expectedCode == http.StatusOK {
+				repo.EXPECT().GetAllbyUserID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+			}
+
+			url := fmt.Sprintf("/notes/users/%d", tt.param)
+
+			resp := testRequest(t, ts, http.MethodGet, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			// произошла ошибка
+			if tt.expectedCode != http.StatusOK && tt.expectedErr != nil {
+				var result map[string]string
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else if tt.expectedCode == http.StatusOK { // успешный кейс
+				var result []model.Note
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else { // у пользователя нет заметок
+				assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 			}
 		})
 	}

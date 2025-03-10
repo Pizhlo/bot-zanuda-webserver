@@ -41,7 +41,7 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	e.GET("/health", server.health)
 	notes := e.Group("notes")
 
-	notes.GET("/:id", server.notesByUserID)
+	notes.GET("/users/:id", server.notesByUserID)
 	notes.POST("/create", server.createNote)
 
 	return e, nil

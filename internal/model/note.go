@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -44,10 +45,12 @@ func (s *CreateNoteRequest) Validate() error {
 }
 
 type Note struct {
-	User    *User  `json:"user"`    // кто создал заметку
-	Text    string `json:"text"`    // текст заметки
-	Space   *Space `json:"space"`   // айди пространства, куда сохранить заметку
-	Created int64  `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	ID       uuid.UUID    `json:"id"`
+	User     *User        `json:"user"`    // кто создал заметку
+	Text     string       `json:"text"`    // текст заметки
+	Space    *Space       `json:"space"`   // айди пространства, куда сохранить заметку
+	Created  time.Time    `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	LastEdit sql.NullTime `json:"last_edit"`
 }
 
 func (s *Note) Validate() error {
@@ -63,7 +66,7 @@ func (s *Note) Validate() error {
 		return fmt.Errorf("field `text` not filled")
 	}
 
-	if s.Created == 0 {
+	if s.Created.IsZero() {
 		return fmt.Errorf("field `created` not filled")
 	}
 
@@ -76,12 +79,4 @@ func (s *Note) Validate() error {
 	}
 
 	return nil
-}
-
-// ответ на запрос получить заметку
-type GetNoteResponse struct {
-	ID       uuid.UUID    `json:"id"`
-	LastEdit sql.NullTime `json:"last_edit"`
-
-	Note Note `json:"note"`
 }

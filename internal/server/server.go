@@ -44,7 +44,7 @@ func (s *server) Serve() error {
 
 	notes := e.Group("notes")
 
-	notes.GET("/:id", s.notesByUserID)
+	notes.GET("/users/:id", s.notesByUserID)
 	notes.POST("/create", s.createNote)
 
 	s.e = e

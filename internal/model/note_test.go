@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -107,7 +108,7 @@ func TestNoteValidate(t *testing.T) {
 					TgID: 1,
 				},
 				Text:    "test",
-				Created: 123566,
+				Created: time.Date(2025, 2, 12, 0, 0, 0, 0, time.Local),
 			},
 			err: fmt.Errorf("field `Space` is nil"),
 		},
@@ -118,7 +119,7 @@ func TestNoteValidate(t *testing.T) {
 					TgID: 1,
 				},
 				Text:    "test",
-				Created: 123566,
+				Created: time.Date(2025, 2, 12, 0, 0, 0, 0, time.Local),
 				Space:   &Space{},
 			},
 			err: nil,

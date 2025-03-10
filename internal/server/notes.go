@@ -3,7 +3,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"webserver/internal/model"
 	"webserver/internal/service/storage/postgres/note"
 
@@ -56,5 +58,19 @@ func (s *server) createNote(c echo.Context) error {
 }
 
 func (s *server) notesByUserID(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
+	userIDStr := c.Param("id")
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid user id param: %+v", err)})
+	}
+
+	notes, err := s.note.GetAllbyUserID(c.Request().Context(), int64(userID))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// добавить проверку на то что нет заметок - 204
+
+	return c.JSON(http.StatusOK, notes)
 }

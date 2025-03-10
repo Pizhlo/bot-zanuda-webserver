@@ -50,10 +50,10 @@ func (mr *MockrepoMockRecorder) Create(ctx, note interface{}) *gomock.Call {
 }
 
 // GetAllbyUserID mocks base method.
-func (m *Mockrepo) GetAllbyUserID(ctx context.Context, userID int64) ([]model.GetNoteResponse, error) {
+func (m *Mockrepo) GetAllbyUserID(ctx context.Context, userID int64) ([]model.Note, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllbyUserID", ctx, userID)
-	ret0, _ := ret[0].([]model.GetNoteResponse)
+	ret0, _ := ret[0].([]model.Note)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

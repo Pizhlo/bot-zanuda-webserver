@@ -14,6 +14,7 @@ import (
 	"webserver/internal/service/note"
 	"webserver/internal/service/space"
 	note_db "webserver/internal/service/storage/postgres/note"
+	space_db "webserver/internal/service/storage/postgres/space"
 	"webserver/mocks"
 
 	"bou.ke/monkey"
@@ -230,14 +231,14 @@ func TestNotesByUserID(t *testing.T) {
 		{
 			name:         "user does not have any notes",
 			param:        "1234",
-			dbErr:        note_db.ErrNoNotesFoundByUserID,
+			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
 			name:         "invalid param",
 			param:        "1234abc",
-			dbErr:        note_db.ErrNoNotesFoundByUserID,
+			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusBadRequest,
 			expectedErr:  map[string]string{},
 		},

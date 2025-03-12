@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"webserver/internal/model"
 )
 
@@ -16,8 +17,8 @@ func (db *spaceRepo) GetSpaceByID(ctx context.Context, id int) (model.Space, err
 }
 
 var (
-	// ошибка о том, что у пользователя нет заметок
-	ErrNoNotesFoundByUserID = errors.New("user does not have any notes")
+	// ошибка о том, что в пространстве нет заметок
+	ErrNoNotesFoundBySpaceID = errors.New("space does not have any notes")
 )
 
 // GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
@@ -30,8 +31,8 @@ func (db *spaceRepo) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]
 	users.users.tg_id,  users.users.username,  users.users.space_id as users_personal_space, users.timezones.timezone 
 	from shared_spaces.shared_spaces
 left join notes.notes on shared_spaces.shared_spaces.id = notes.notes.space_id
-join users.users on users.users.id = notes.notes.user_id
-join users.timezones on users.timezones.user_id = notes.notes.user_id
+left join users.users on users.users.id = notes.notes.user_id
+left join users.timezones on users.timezones.user_id = notes.notes.user_id
 where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting all notes by user id: %+v", err)
@@ -47,6 +48,11 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 			&note.Space.Creator, &note.Space.Created, &note.User.TgID,
 			&note.User.Username, &note.User.PersonalSpace.ID, &note.User.Timezone)
 		if err != nil {
+			// "sql: Scan error on column index 1, name \"note_text\": converting NULL to string is unsupported"
+			if strings.Contains(err.Error(), "converting NULL") {
+				return nil, ErrNoNotesFoundBySpaceID
+			}
+
 			return nil, fmt.Errorf("error scanning note: %+v", err)
 		}
 
@@ -56,7 +62,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrNoNotesFoundByUserID
+		return nil, ErrNoNotesFoundBySpaceID
 	}
 
 	return res, nil
@@ -82,6 +88,11 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 			&note.SpaceID, &note.UserID,
 		)
 		if err != nil {
+			// "sql: Scan error on column index 1, name \"note_text\": converting NULL to string is unsupported"
+			if strings.Contains(err.Error(), "converting NULL") {
+				return nil, ErrNoNotesFoundBySpaceID
+			}
+
 			return nil, fmt.Errorf("error scanning note: %+v", err)
 		}
 
@@ -89,7 +100,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrNoNotesFoundByUserID
+		return nil, ErrNoNotesFoundBySpaceID
 	}
 
 	return res, nil

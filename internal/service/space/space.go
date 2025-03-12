@@ -32,6 +32,7 @@ func (s *Space) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model
 	return s.repo.GetAllbySpaceIDFull(ctx, spaceID)
 }
 
+// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
 func (s *Space) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
 	return s.repo.GetAllBySpaceID(ctx, spaceID)
 }

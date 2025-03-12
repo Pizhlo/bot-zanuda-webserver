@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"webserver/internal/model"
 	"webserver/internal/service/storage/postgres/note"
+	"webserver/internal/service/storage/postgres/space"
 
 	"github.com/labstack/echo/v4"
 )
@@ -93,7 +94,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 		notes, err := s.space.GetAllbySpaceIDFull(c.Request().Context(), int64(spaceID))
 		if err != nil {
 			// у пользователя нет заметок - отдаем 204
-			if errors.Is(err, note.ErrNoNotesFoundByUserID) {
+			if errors.Is(err, space.ErrNoNotesFoundBySpaceID) {
 				return c.NoContent(http.StatusNoContent)
 			}
 
@@ -107,7 +108,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	notes, err := s.space.GetAllBySpaceID(c.Request().Context(), int64(spaceID))
 	if err != nil {
 		// у пользователя нет заметок - отдаем 204
-		if errors.Is(err, note.ErrNoNotesFoundByUserID) {
+		if errors.Is(err, space.ErrNoNotesFoundBySpaceID) {
 			return c.NoContent(http.StatusNoContent)
 		}
 

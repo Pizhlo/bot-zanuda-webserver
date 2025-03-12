@@ -42,7 +42,7 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	spaces := e.Group("spaces")
 
 	spaces.GET("/:id/notes", server.notesBySpaceID)
-	spaces.POST("/create", server.createNote)
+	spaces.POST("/notes/create", server.createNote)
 
 	return e, nil
 }

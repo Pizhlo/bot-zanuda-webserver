@@ -76,14 +76,13 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	}
 
 	// предоставлять ли полную инф-ю о пользователе, который создал заметку
-	fullUserStr := c.QueryParam("full_user")
+	fullUserParam := c.QueryParam("full_user")
 
-	var fullUser bool
-	if len(fullUserStr) == 0 {
-		fullUserStr = "false"
-	} else {
+	var fullUser bool // по умолчанию false
+
+	if len(fullUserParam) > 0 {
 		var err error
-		fullUser, err = strconv.ParseBool(fullUserStr)
+		fullUser, err = strconv.ParseBool(fullUserParam)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid full user parameter: %+v", err)})
 		}
@@ -98,6 +97,11 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 				return c.NoContent(http.StatusNoContent)
 			}
 
+			// пространство не существует - отдаем 404
+			if errors.Is(err, space.ErrSpaceNotExists) {
+				return c.NoContent(http.StatusNotFound)
+			}
+
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
@@ -110,6 +114,11 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 		// у пользователя нет заметок - отдаем 204
 		if errors.Is(err, space.ErrNoNotesFoundBySpaceID) {
 			return c.NoContent(http.StatusNoContent)
+		}
+
+		// пространство не существует - отдаем 404
+		if errors.Is(err, space.ErrSpaceNotExists) {
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

@@ -163,7 +163,7 @@ func TestCreateNote(t *testing.T) {
 			bodyJSON, err := json.Marshal(tt.req)
 			require.NoError(t, err)
 
-			resp := testRequest(t, ts, http.MethodPost, "/notes/create", bytes.NewReader(bodyJSON))
+			resp := testRequest(t, ts, http.MethodPost, "/spaces/notes/create", bytes.NewReader(bodyJSON))
 			defer resp.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
@@ -180,11 +180,11 @@ func TestCreateNote(t *testing.T) {
 	}
 }
 
-func TestNotesByUserID(t *testing.T) {
+func TestNotesBeSpaceID_Full(t *testing.T) {
 	type test struct {
 		name             string
-		param            string // user ID
-		dbErr            error  // ошибка, которую возвращает база
+		spaceID          string
+		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.Note
 		expectedErr      map[string]string
@@ -197,7 +197,7 @@ func TestNotesByUserID(t *testing.T) {
 	tests := []test{
 		{
 			name:         "positive test",
-			param:        "1234",
+			spaceID:      "1234",
 			expectedCode: http.StatusOK,
 			expectedResponse: []model.Note{
 				{
@@ -229,18 +229,24 @@ func TestNotesByUserID(t *testing.T) {
 			},
 		},
 		{
-			name:         "user does not have any notes",
-			param:        "1234",
+			name:         "space does not have any notes",
+			spaceID:      "1234",
 			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
+			name:         "space does not exist",
+			spaceID:      "1234",
+			dbErr:        space_db.ErrSpaceNotExists,
+			expectedCode: http.StatusNotFound,
+			expectedErr:  nil,
+		},
+		{
 			name:         "invalid param",
-			param:        "1234abc",
-			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
+			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{},
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: strconv.Atoi: parsing \"1234abc\": invalid syntax"},
 		},
 	}
 
@@ -265,7 +271,7 @@ func TestNotesByUserID(t *testing.T) {
 				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
-			url := fmt.Sprintf("/notes/users/%s", tt.param)
+			url := fmt.Sprintf("/spaces/%s/notes?full_user=true", tt.spaceID)
 
 			resp := testRequest(t, ts, http.MethodGet, url, nil)
 			defer resp.Body.Close()
@@ -279,7 +285,7 @@ func TestNotesByUserID(t *testing.T) {
 				err = dec.Decode(&result)
 				require.NoError(t, err)
 
-				assert.Equal(t, tt.expectedResponse, result)
+				assert.Equal(t, tt.expectedErr, result)
 			} else if tt.expectedCode == http.StatusOK { // успешный кейс
 				var result []model.Note
 
@@ -289,7 +295,114 @@ func TestNotesByUserID(t *testing.T) {
 
 				assert.Equal(t, tt.expectedResponse, result)
 			} else { // у пользователя нет заметок
-				assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+				assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestNotesBeSpaceID(t *testing.T) {
+	type test struct {
+		name             string
+		spaceID          string
+		dbErr            error // ошибка, которую возвращает база
+		expectedCode     int
+		expectedResponse []model.GetNote
+		expectedErr      map[string]string
+	}
+
+	wayback := time.Date(2024, time.May, 19, 1, 2, 3, 4, time.UTC)
+	patch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer patch.Unpatch()
+
+	noteID := uuid.New()
+	noteIDPatch := monkey.Patch(uuid.New, func() uuid.UUID { return noteID })
+	defer noteIDPatch.Unpatch()
+
+	tests := []test{
+		{
+			name:         "positive test",
+			spaceID:      "1234",
+			expectedCode: http.StatusOK,
+			expectedResponse: []model.GetNote{
+				{
+					ID:       uuid.New(),
+					UserID:   1,
+					Text:     "test note",
+					SpaceID:  1,
+					Created:  time.Now(),
+					LastEdit: sql.NullTime{Valid: false},
+				},
+			},
+		},
+		{
+			name:         "space does not have any notes",
+			spaceID:      "1234",
+			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
+			expectedCode: http.StatusNoContent,
+			expectedErr:  nil,
+		},
+		{
+			name:         "space does not exist",
+			spaceID:      "1234",
+			dbErr:        space_db.ErrSpaceNotExists,
+			expectedCode: http.StatusNotFound,
+			expectedErr:  nil,
+		},
+		{
+			name:         "invalid param",
+			spaceID:      "1234abc",
+			expectedCode: http.StatusBadRequest,
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: strconv.Atoi: parsing \"1234abc\": invalid syntax"},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	repo := mocks.NewMockspaceRepo(ctrl)
+
+	spaceSrv := space.New(repo)
+
+	server := New("", nil, spaceSrv)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr != nil {
+				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+			} else if tt.expectedCode == http.StatusOK {
+				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+			}
+
+			url := fmt.Sprintf("/spaces/%s/notes", tt.spaceID)
+
+			resp := testRequest(t, ts, http.MethodGet, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			// произошла ошибка
+			if tt.expectedCode != http.StatusOK && tt.expectedErr != nil {
+				var result map[string]string
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
+			} else if tt.expectedCode == http.StatusOK { // успешный кейс
+				var result []model.GetNote
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else { // у пользователя нет заметок
+				assert.Equal(t, tt.expectedCode, resp.StatusCode)
 			}
 		})
 	}

@@ -19,6 +19,9 @@ func (db *spaceRepo) GetSpaceByID(ctx context.Context, id int) (model.Space, err
 var (
 	// ошибка о том, что в пространстве нет заметок
 	ErrNoNotesFoundBySpaceID = errors.New("space does not have any notes")
+
+	// ошибка о том, что пространство не существует
+	ErrSpaceNotExists = errors.New("space does not exist")
 )
 
 // GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
@@ -62,7 +65,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrNoNotesFoundBySpaceID
+		return nil, ErrSpaceNotExists
 	}
 
 	return res, nil
@@ -100,7 +103,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrNoNotesFoundBySpaceID
+		return nil, ErrSpaceNotExists
 	}
 
 	return res, nil

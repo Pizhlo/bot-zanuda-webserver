@@ -45,7 +45,7 @@ func (s *server) Serve() error {
 	spaces := e.Group("spaces")
 
 	spaces.GET("/:id/notes", s.notesBySpaceID)
-	spaces.POST("/create", s.createNote)
+	spaces.POST("/notes/create", s.createNote)
 
 	s.e = e
 

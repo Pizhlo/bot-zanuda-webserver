@@ -12,31 +12,31 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// Mockrepo is a mock of repo interface.
-type Mockrepo struct {
+// MocknoteRepo is a mock of noteRepo interface.
+type MocknoteRepo struct {
 	ctrl     *gomock.Controller
-	recorder *MockrepoMockRecorder
+	recorder *MocknoteRepoMockRecorder
 }
 
-// MockrepoMockRecorder is the mock recorder for Mockrepo.
-type MockrepoMockRecorder struct {
-	mock *Mockrepo
+// MocknoteRepoMockRecorder is the mock recorder for MocknoteRepo.
+type MocknoteRepoMockRecorder struct {
+	mock *MocknoteRepo
 }
 
-// NewMockrepo creates a new mock instance.
-func NewMockrepo(ctrl *gomock.Controller) *Mockrepo {
-	mock := &Mockrepo{ctrl: ctrl}
-	mock.recorder = &MockrepoMockRecorder{mock}
+// NewMocknoteRepo creates a new mock instance.
+func NewMocknoteRepo(ctrl *gomock.Controller) *MocknoteRepo {
+	mock := &MocknoteRepo{ctrl: ctrl}
+	mock.recorder = &MocknoteRepoMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *Mockrepo) EXPECT() *MockrepoMockRecorder {
+func (m *MocknoteRepo) EXPECT() *MocknoteRepoMockRecorder {
 	return m.recorder
 }
 
 // Create mocks base method.
-func (m *Mockrepo) Create(ctx context.Context, note model.CreateNoteRequest) error {
+func (m *MocknoteRepo) Create(ctx context.Context, note model.CreateNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, note)
 	ret0, _ := ret[0].(error)
@@ -44,7 +44,37 @@ func (m *Mockrepo) Create(ctx context.Context, note model.CreateNoteRequest) err
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockrepoMockRecorder) Create(ctx, note interface{}) *gomock.Call {
+func (mr *MocknoteRepoMockRecorder) Create(ctx, note interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockrepo)(nil).Create), ctx, note)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MocknoteRepo)(nil).Create), ctx, note)
+}
+
+// GetAllBySpaceID mocks base method.
+func (m *MocknoteRepo) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllBySpaceID", ctx, spaceID)
+	ret0, _ := ret[0].([]model.GetNote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllBySpaceID indicates an expected call of GetAllBySpaceID.
+func (mr *MocknoteRepoMockRecorder) GetAllBySpaceID(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllBySpaceID", reflect.TypeOf((*MocknoteRepo)(nil).GetAllBySpaceID), ctx, spaceID)
+}
+
+// GetAllbySpaceIDFull mocks base method.
+func (m *MocknoteRepo) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllbySpaceIDFull", ctx, spaceID)
+	ret0, _ := ret[0].([]model.Note)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllbySpaceIDFull indicates an expected call of GetAllbySpaceIDFull.
+func (mr *MocknoteRepoMockRecorder) GetAllbySpaceIDFull(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllbySpaceIDFull", reflect.TypeOf((*MocknoteRepo)(nil).GetAllbySpaceIDFull), ctx, spaceID)
 }

@@ -39,10 +39,10 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	server.e = e
 
 	e.GET("/health", server.health)
-	notes := e.Group("notes")
+	spaces := e.Group("spaces")
 
-	notes.GET("/:id", server.notesByUserID)
-	notes.POST("/create", server.createNote)
+	spaces.GET("/:id/notes", server.notesBySpaceID)
+	spaces.POST("/notes/create", server.createNote)
 
 	return e, nil
 }

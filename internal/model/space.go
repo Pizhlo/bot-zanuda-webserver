@@ -10,3 +10,7 @@ type Space struct {
 	Creator  int64     `json:"creator"`  // айди пользователя-создателя в телеге
 	Personal bool      `json:"personal"` // личное / совместное пространство
 }
+
+func (s *Space) Validate() error {
+	return nil
+}

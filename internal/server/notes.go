@@ -58,13 +58,16 @@ func (s *server) createNote(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-//	@Summary		Запрос на получение всех заметок
-//	@Description	Запрос на получение всех заметок из личного пространства пользователя
-//	@Success		200 {object}    []model.Note
-//	@Success		204
-//	@Failure		400	{object}	map[string]string "Невалидный запрос"
-//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			spaces/:id/notes [get]
+//		@Summary		Запрос на получение всех заметок
+//		@Description	Запрос на получение всех заметок из личного пространства пользователя
+//	 @Param        id   path      int  true  "ID пространства"
+//		@Success		200 {object}    []model.Note
+//		@Success		200 {object}    []model.GetNote
+//		@Success		204                               "В пространстве отсутствют заметки"
+//		@Failure		400	{object}	map[string]string "Невалидный запрос"
+//		@Failure		404                               "Пространства не существует"
+//		@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//		@Router			/spaces/{id}/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
 func (s *server) notesBySpaceID(c echo.Context) error {

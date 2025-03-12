@@ -5,7 +5,7 @@ definitions:
         description: дата создания заметки в часовом поясе пользователя в unix
         type: integer
       space_id:
-        description: айди пространства (личного или совместного), куда сохранить заметку
+        description: айди пространства, куда сохранить заметку
         type: integer
       text:
         description: текст заметки
@@ -13,6 +13,80 @@ definitions:
       user_id:
         description: кто создал заметку
         type: integer
+    type: object
+  model.GetNote:
+    properties:
+      created:
+        description: дата создания заметки в часовом поясе пользователя в unix
+        type: string
+      id:
+        type: string
+      last_edit:
+        $ref: '#/definitions/sql.NullTime'
+      space_id:
+        type: integer
+      text:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  model.Note:
+    properties:
+      created:
+        description: дата создания заметки в часовом поясе пользователя в unix
+        type: string
+      id:
+        type: string
+      last_edit:
+        $ref: '#/definitions/sql.NullTime'
+      space:
+        allOf:
+        - $ref: '#/definitions/model.Space'
+        description: айди пространства, куда сохранить заметку
+      text:
+        description: текст заметки
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/model.User'
+        description: кто создал заметку
+    type: object
+  model.Space:
+    properties:
+      created:
+        description: указывается в часовом поясе пользователя-создателя
+        type: string
+      creator:
+        description: айди пользователя-создателя в телеге
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      personal:
+        description: личное / совместное пространство
+        type: boolean
+    type: object
+  model.User:
+    properties:
+      id:
+        type: integer
+      personal_space:
+        $ref: '#/definitions/model.Space'
+      tg_id:
+        type: integer
+      timezone:
+        type: string
+      username:
+        type: string
+    type: object
+  sql.NullTime:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
     type: object
 info:
   contact: {}
@@ -58,4 +132,37 @@ paths:
               type: string
             type: object
       summary: Запрос на создание заметки
+  /spaces/{id}/notes:
+    get:
+      description: Запрос на получение всех заметок из личного пространства пользователя
+      parameters:
+      - description: ID пространства
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GetNote'
+            type: array
+        "204":
+          description: В пространстве отсутствют заметки
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пространства не существует
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на получение всех заметок
 swagger: "2.0"

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	sqldblogger "github.com/simukti/sqldb-logger"
+	"github.com/simukti/sqldb-logger/logadapter/logrusadapter"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,10 +20,16 @@ func New(addr string) (*spaceRepo, error) {
 		return nil, fmt.Errorf("connect open a db driver: %w", err)
 	}
 
+	logger := logrus.New()
+	logger.Level = logrus.DebugLevel           // miminum level
+	logger.Formatter = &logrus.JSONFormatter{} // logrus automatically add time field
+
+	db = sqldblogger.OpenDriver(addr, db.Driver(), logrusadapter.New(logger) /*, using_default_options*/) // db is STILL *sql.DB
 	err = db.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to a db: %w", err)
-	}
+	} // to check connectivity and DSN correctness
+
 	return &spaceRepo{db, nil}, nil
 }
 

@@ -65,6 +65,56 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/spaces/{id}/notes": {
+            "get": {
+                "description": "Запрос на получение всех заметок из личного пространства пользователя",
+                "summary": "Запрос на получение всех заметок",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пространства",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "В пространстве отсутствют заметки"
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Пространства не существует"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -76,7 +126,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "space_id": {
-                    "description": "айди пространства (личного или совместного), куда сохранить заметку",
+                    "description": "айди пространства, куда сохранить заметку",
                     "type": "integer"
                 },
                 "text": {
@@ -86,6 +136,120 @@ const docTemplate = `{
                 "user_id": {
                     "description": "кто создал заметку",
                     "type": "integer"
+                }
+            }
+        },
+        "model.GetNote": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "дата создания заметки в часовом поясе пользователя в unix",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_edit": {
+                    "$ref": "#/definitions/sql.NullTime"
+                },
+                "space_id": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Note": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "дата создания заметки в часовом поясе пользователя в unix",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_edit": {
+                    "$ref": "#/definitions/sql.NullTime"
+                },
+                "space": {
+                    "description": "айди пространства, куда сохранить заметку",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.Space"
+                        }
+                    ]
+                },
+                "text": {
+                    "description": "текст заметки",
+                    "type": "string"
+                },
+                "user": {
+                    "description": "кто создал заметку",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.User"
+                        }
+                    ]
+                }
+            }
+        },
+        "model.Space": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "указывается в часовом поясе пользователя-создателя",
+                    "type": "string"
+                },
+                "creator": {
+                    "description": "айди пользователя-создателя в телеге",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "personal": {
+                    "description": "личное / совместное пространство",
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "personal_space": {
+                    "$ref": "#/definitions/model.Space"
+                },
+                "tg_id": {
+                    "type": "integer"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "sql.NullTime": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
                 }
             }
         }

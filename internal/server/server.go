@@ -42,10 +42,10 @@ func (s *server) Serve() error {
 	e.GET("/health", s.health)
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	notes := e.Group("notes")
+	spaces := e.Group("spaces")
 
-	notes.GET("/users/:id", s.notesByUserID)
-	notes.POST("/create", s.createNote)
+	spaces.GET("/:id/notes", s.notesBySpaceID)
+	spaces.POST("/create", s.createNote)
 
 	s.e = e
 

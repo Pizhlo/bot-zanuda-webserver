@@ -12,18 +12,19 @@ var (
 	ErrNoNotesFoundByUserID = errors.New("user does not have any notes")
 )
 
-func (db *noteRepo) GetAllbyUserID(ctx context.Context, userID int64) ([]model.Note, error) {
+// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
+func (db *noteRepo) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
 	res := []model.Note{}
 
-	rows, err := db.db.QueryContext(ctx, `select notes.notes.id, text, notes.notes.created, last_edit, 
-	shared_spaces.shared_spaces.id, shared_spaces.shared_spaces.name, shared_spaces.shared_spaces.personal, 
-	shared_spaces.shared_spaces.creator, shared_spaces.shared_spaces.created,  users.users.id,  users.users.tg_id,  
-	users.users.username,  users.users.space_id, users.timezones.timezone  from notes.notes
+	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, 
+	last_edit as note_last_edit, shared_spaces.shared_spaces.id as space_id,  shared_spaces.shared_spaces.name as space_name, 
+	shared_spaces.shared_spaces.personal, shared_spaces.shared_spaces.creator,shared_spaces.shared_spaces.created as space_created, 
+	users.users.tg_id,  users.users.username,  users.users.space_id as users_personal_space, users.timezones.timezone 
+	from shared_spaces.shared_spaces
+left join notes.notes on shared_spaces.shared_spaces.id = notes.notes.space_id
 join users.users on users.users.id = notes.notes.user_id
 join users.timezones on users.timezones.user_id = notes.notes.user_id
-join shared_spaces.shared_spaces on shared_spaces.shared_spaces.id = notes.notes.space_id
-where notes.notes.user_id = (select id from users.users where tg_id = $1)
-and notes.notes.space_id = (select id from shared_spaces.shared_spaces where creator = (select id from users.users where tg_id = $1) and personal = true);`, userID)
+where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting all notes by user id: %+v", err)
 	}
@@ -35,7 +36,7 @@ and notes.notes.space_id = (select id from shared_spaces.shared_spaces where cre
 		}
 		err := rows.Scan(&note.ID, &note.Text, &note.Created, &note.LastEdit,
 			&note.Space.ID, &note.Space.Name, &note.Space.Personal,
-			&note.Space.Creator, &note.Space.Created, &note.User.ID, &note.User.TgID,
+			&note.Space.Creator, &note.Space.Created, &note.User.TgID,
 			&note.User.Username, &note.User.PersonalSpace.ID, &note.User.Timezone)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning note: %+v", err)
@@ -51,4 +52,9 @@ and notes.notes.space_id = (select id from shared_spaces.shared_spaces where cre
 	}
 
 	return res, nil
+}
+
+// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
+func (db *noteRepo) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
+	return nil, nil
 }

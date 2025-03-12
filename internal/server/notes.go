@@ -63,18 +63,48 @@ func (s *server) createNote(c echo.Context) error {
 //	@Success		204
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/notes/users/:id [get]
+//	@Router			spaces/:id/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
-func (s *server) notesByUserID(c echo.Context) error {
-	userIDStr := c.Param("id")
+func (s *server) notesBySpaceID(c echo.Context) error {
+	spaceIDStr := c.Param("id")
 
-	userID, err := strconv.Atoi(userIDStr)
+	spaceID, err := strconv.Atoi(spaceIDStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid user id param: %+v", err)})
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
 
-	notes, err := s.note.GetAllbyUserID(c.Request().Context(), int64(userID))
+	// предоставлять ли полную инф-ю о пользователе, который создал заметку
+	fullUserStr := c.QueryParam("full_user")
+
+	var fullUser bool
+	if len(fullUserStr) == 0 {
+		fullUserStr = "false"
+	} else {
+		var err error
+		fullUser, err = strconv.ParseBool(fullUserStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid full user parameter: %+v", err)})
+		}
+	}
+
+	// получение заметок в полном режиме
+	if fullUser {
+		notes, err := s.space.GetAllbySpaceIDFull(c.Request().Context(), int64(spaceID))
+		if err != nil {
+			// у пользователя нет заметок - отдаем 204
+			if errors.Is(err, note.ErrNoNotesFoundByUserID) {
+				return c.NoContent(http.StatusNoContent)
+			}
+
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, notes)
+	}
+
+	// получение заметок в кратком режиме
+	notes, err := s.space.GetAllBySpaceID(c.Request().Context(), int64(spaceID))
 	if err != nil {
 		// у пользователя нет заметок - отдаем 204
 		if errors.Is(err, note.ErrNoNotesFoundByUserID) {

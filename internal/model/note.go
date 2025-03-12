@@ -80,3 +80,34 @@ func (s *Note) Validate() error {
 
 	return nil
 }
+
+// структура для ответа на запрос всех заметок пространства в кратком режиме.
+// У этой структуры поля пользователь и пространство заменены на айди
+type GetNote struct {
+	ID       uuid.UUID    `json:"id"`
+	UserID   int          `json:"user_id"`
+	Text     string       `json:"text"`
+	SpaceID  int          `json:"space_id"`
+	Created  time.Time    `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	LastEdit sql.NullTime `json:"last_edit"`
+}
+
+func (s *GetNote) Validate() error {
+	if s.UserID == 0 {
+		return fmt.Errorf("field `UserID` is nil")
+	}
+
+	if s.Text == "" {
+		return fmt.Errorf("field `text` not filled")
+	}
+
+	if s.Created.IsZero() {
+		return fmt.Errorf("field `created` not filled")
+	}
+
+	if s.SpaceID == 0 {
+		return fmt.Errorf("field `SpaceID` is nil")
+	}
+
+	return nil
+}

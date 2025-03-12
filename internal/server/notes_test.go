@@ -12,6 +12,7 @@ import (
 	"time"
 	"webserver/internal/model"
 	"webserver/internal/service/note"
+	"webserver/internal/service/space"
 	note_db "webserver/internal/service/storage/postgres/note"
 	"webserver/mocks"
 
@@ -138,9 +139,9 @@ func TestCreateNote(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	repo := mocks.NewMockrepo(ctrl)
+	noteRepo := mocks.NewMocknoteRepo(ctrl)
 
-	noteSrv := note.New(repo)
+	noteSrv := note.New(noteRepo)
 
 	server := New("", noteSrv, nil)
 
@@ -155,7 +156,7 @@ func TestCreateNote(t *testing.T) {
 			// ожидаем вызова базы либо, если статус кода успешен (значит запрос успешно прошел),
 			// либо если есть ошибка из базы
 			if tt.dbErr != nil || tt.expectedCode == http.StatusCreated {
-				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tt.dbErr)
+				noteRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tt.dbErr)
 			}
 
 			bodyJSON, err := json.Marshal(tt.req)
@@ -181,8 +182,8 @@ func TestCreateNote(t *testing.T) {
 func TestNotesByUserID(t *testing.T) {
 	type test struct {
 		name             string
-		param            int   // user ID
-		dbErr            error // ошибка, которую возвращает база
+		param            string // user ID
+		dbErr            error  // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.Note
 		expectedErr      map[string]string
@@ -195,7 +196,7 @@ func TestNotesByUserID(t *testing.T) {
 	tests := []test{
 		{
 			name:         "positive test",
-			param:        1234,
+			param:        "1234",
 			expectedCode: http.StatusOK,
 			expectedResponse: []model.Note{
 				{
@@ -228,19 +229,26 @@ func TestNotesByUserID(t *testing.T) {
 		},
 		{
 			name:         "user does not have any notes",
-			param:        1234,
+			param:        "1234",
 			dbErr:        note_db.ErrNoNotesFoundByUserID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
+		{
+			name:         "invalid param",
+			param:        "1234abc",
+			dbErr:        note_db.ErrNoNotesFoundByUserID,
+			expectedCode: http.StatusBadRequest,
+			expectedErr:  map[string]string{},
+		},
 	}
 
 	ctrl := gomock.NewController(t)
-	repo := mocks.NewMockrepo(ctrl)
+	repo := mocks.NewMockspaceRepo(ctrl)
 
-	noteSrv := note.New(repo)
+	spaceSrv := space.New(repo)
 
-	server := New("", noteSrv, nil)
+	server := New("", nil, spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -251,12 +259,12 @@ func TestNotesByUserID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr != nil {
-				repo.EXPECT().GetAllbyUserID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
 			} else if tt.expectedCode == http.StatusOK {
-				repo.EXPECT().GetAllbyUserID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
-			url := fmt.Sprintf("/notes/users/%d", tt.param)
+			url := fmt.Sprintf("/notes/users/%s", tt.param)
 
 			resp := testRequest(t, ts, http.MethodGet, url, nil)
 			defer resp.Body.Close()

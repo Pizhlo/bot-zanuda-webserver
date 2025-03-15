@@ -13,12 +13,12 @@ import (
 )
 
 //	@Summary		Запрос на создание заметки
-//	@Description	Запрос на создание заметки с текстом для определенного пользователя
+//	@Description	Запрос на создание заметки с текстом. Создается в указанном пространстве
 //	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix"
 //	@Success		201
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/notes/create [post]
+//	@Router			/spaces/notes/create [post]
 //
 // ручка для создания заметки
 func (s *server) createNote(c echo.Context) error {

@@ -101,37 +101,6 @@ paths:
         "200":
           description: OK
       summary: Проверить состояние сервера и соединения
-  /notes/create:
-    post:
-      description: Запрос на создание заметки с текстом для определенного пользователя
-      parameters:
-      - description: |-
-          создать заметку:
-          указать айди пользователя,
-          айди его личного / совместного пространства,
-          текст заметки,
-          дата создания в часовом поясе пользователя в unix
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateNoteRequest'
-      responses:
-        "201":
-          description: Created
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Запрос на создание заметки
   /spaces/{id}/notes:
     get:
       description: Запрос на получение всех заметок из личного пространства пользователя
@@ -165,4 +134,35 @@ paths:
               type: string
             type: object
       summary: Запрос на получение всех заметок
+  /spaces/notes/create:
+    post:
+      description: Запрос на создание заметки с текстом. Создается в указанном пространстве
+      parameters:
+      - description: |-
+          создать заметку:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          текст заметки,
+          дата создания в часовом поясе пользователя в unix
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateNoteRequest'
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на создание заметки
 swagger: "2.0"

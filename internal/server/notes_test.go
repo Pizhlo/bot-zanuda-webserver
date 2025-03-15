@@ -11,9 +11,7 @@ import (
 	"testing"
 	"time"
 	"webserver/internal/model"
-	"webserver/internal/service/note"
 	"webserver/internal/service/space"
-	note_db "webserver/internal/service/storage/postgres/note"
 	space_db "webserver/internal/service/storage/postgres/space"
 	"webserver/mocks"
 
@@ -91,7 +89,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: unknown user",
-			dbErr: note_db.ErrUnknownUser,
+			dbErr: space_db.ErrUnknownUser,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -103,7 +101,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: space not exists",
-			dbErr: note_db.ErrSpaceNotExists,
+			dbErr: space_db.ErrSpaceNotExists,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -111,7 +109,7 @@ func TestCreateNote(t *testing.T) {
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "space not exists"},
+			expectedResponse: map[string]string{"bad request": "space does not exist"},
 		},
 		{
 			name:  "db err: space not exists",
@@ -127,7 +125,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: space belongs another user",
-			dbErr: note_db.ErrSpaceNotBelongsUser,
+			dbErr: space_db.ErrSpaceNotBelongsUser,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -140,11 +138,13 @@ func TestCreateNote(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	noteRepo := mocks.NewMocknoteRepo(ctrl)
+	defer ctrl.Finish()
 
-	noteSrv := note.New(noteRepo)
+	spaceRepo := mocks.NewMockspaceRepo(ctrl)
 
-	server := New("", noteSrv, nil)
+	spaceSrv := space.New(spaceRepo)
+
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestCreateNote(t *testing.T) {
 			// ожидаем вызова базы либо, если статус кода успешен (значит запрос успешно прошел),
 			// либо если есть ошибка из базы
 			if tt.dbErr != nil || tt.expectedCode == http.StatusCreated {
-				noteRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tt.dbErr)
+				spaceRepo.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(tt.dbErr)
 			}
 
 			bodyJSON, err := json.Marshal(tt.req)
@@ -251,11 +251,13 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	repo := mocks.NewMockspaceRepo(ctrl)
 
 	spaceSrv := space.New(repo)
 
-	server := New("", nil, spaceSrv)
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -358,11 +360,13 @@ func TestNotesBeSpaceID(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	repo := mocks.NewMockspaceRepo(ctrl)
 
 	spaceSrv := space.New(repo)
 
-	server := New("", nil, spaceSrv)
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)

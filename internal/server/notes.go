@@ -7,19 +7,18 @@ import (
 	"net/http"
 	"strconv"
 	"webserver/internal/model"
-	"webserver/internal/service/storage/postgres/note"
 	"webserver/internal/service/storage/postgres/space"
 
 	"github.com/labstack/echo/v4"
 )
 
 //	@Summary		Запрос на создание заметки
-//	@Description	Запрос на создание заметки с текстом для определенного пользователя
+//	@Description	Запрос на создание заметки с текстом. Создается в указанном пространстве
 //	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix"
 //	@Success		201
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/notes/create [post]
+//	@Router			/spaces/notes/create [post]
 //
 // ручка для создания заметки
 func (s *server) createNote(c echo.Context) error {
@@ -35,20 +34,20 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
-	err = s.note.Create(c.Request().Context(), req)
+	err = s.space.CreateNote(c.Request().Context(), req)
 	if err != nil {
 		// неизвестный пользователь
-		if errors.Is(err, note.ErrUnknownUser) {
+		if errors.Is(err, space.ErrUnknownUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
 		// пространства не существует
-		if errors.Is(err, note.ErrSpaceNotExists) {
+		if errors.Is(err, space.ErrSpaceNotExists) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
 		// пространство личное и принадлежит другому пользователю
-		if errors.Is(err, note.ErrSpaceNotBelongsUser) {
+		if errors.Is(err, space.ErrSpaceNotBelongsUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 

@@ -35,6 +35,20 @@ func (m *MockspaceRepo) EXPECT() *MockspaceRepoMockRecorder {
 	return m.recorder
 }
 
+// CreateNote mocks base method.
+func (m *MockspaceRepo) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateNote", ctx, note)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateNote indicates an expected call of CreateNote.
+func (mr *MockspaceRepoMockRecorder) CreateNote(ctx, note interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*MockspaceRepo)(nil).CreateNote), ctx, note)
+}
+
 // GetAllBySpaceID mocks base method.
 func (m *MockspaceRepo) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
 	m.ctrl.T.Helper()

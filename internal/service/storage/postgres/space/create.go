@@ -1,4 +1,4 @@
-package note
+package space
 
 import (
 	"context"
@@ -14,13 +14,11 @@ import (
 var (
 	// ошибка о том, что пользователя не существует в БД
 	ErrUnknownUser = errors.New("unknown user")
-	// ошибка о том, что пространства не существует
-	ErrSpaceNotExists = errors.New("space not exists")
 	// ошибка о том, что пользователь не может добавить запись в это пространство: оно личное и не принадлежит ему
 	ErrSpaceNotBelongsUser = errors.New("space not belongs to user")
 )
 
-func (db *noteRepo) Create(ctx context.Context, note model.CreateNoteRequest) error {
+func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
 	tx, err := db.tx(ctx)
 	if err != nil {
 		return fmt.Errorf("error while creating transaction: %w", err)

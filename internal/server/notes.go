@@ -29,32 +29,35 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
-	// проверяем поля на валидность
-	if err := req.Validate(); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-	}
-
 	err = s.space.CreateNote(c.Request().Context(), req)
 	if err != nil {
-		// неизвестный пользователь
-		if errors.Is(err, space.ErrUnknownUser) {
+		// ошибки запроса
+		errs := []error{
+			model.ErrSpaceIdNotFilled, model.ErrFieldCreatedNotFilled,
+			model.ErrFieldTextNotFilled, model.ErrNoteIdNotFilled,
+			model.ErrFieldUserNotFilled, space.ErrUnknownUser,
+			space.ErrSpaceNotExists, space.ErrSpaceNotBelongsUser,
+		}
+
+		if errorIn(err, errs) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
-		// пространства не существует
-		if errors.Is(err, space.ErrSpaceNotExists) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-		}
-
-		// пространство личное и принадлежит другому пользователю
-		if errors.Is(err, space.ErrSpaceNotBelongsUser) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-		}
-
+		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return c.NoContent(http.StatusCreated)
+}
+
+func errorIn(target error, errs []error) bool {
+	for _, err := range errs {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+
+	return false
 }
 
 //		@Summary		Запрос на получение всех заметок
@@ -127,4 +130,32 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, notes)
+}
+
+func (s *server) updateNote(c echo.Context) error {
+	var req model.UpdateNote
+
+	err := json.NewDecoder(c.Request().Body).Decode(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
+		// ошибки запроса
+		errs := []error{
+			model.ErrSpaceIdNotFilled, model.ErrFieldCreatedNotFilled,
+			model.ErrFieldTextNotFilled, model.ErrNoteIdNotFilled,
+			model.ErrFieldUserNotFilled, space.ErrUnknownUser,
+			space.ErrSpaceNotExists, space.ErrSpaceNotBelongsUser,
+		}
+
+		if errorIn(err, errs) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		// внутренняя ошибка
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

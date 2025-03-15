@@ -49,34 +49,34 @@ func (mr *MockspaceRepoMockRecorder) CreateNote(ctx, note interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*MockspaceRepo)(nil).CreateNote), ctx, note)
 }
 
-// GetAllBySpaceID mocks base method.
-func (m *MockspaceRepo) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
+// GetAllNotesBySpaceID mocks base method.
+func (m *MockspaceRepo) GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllBySpaceID", ctx, spaceID)
+	ret := m.ctrl.Call(m, "GetAllNotesBySpaceID", ctx, spaceID)
 	ret0, _ := ret[0].([]model.GetNote)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAllBySpaceID indicates an expected call of GetAllBySpaceID.
-func (mr *MockspaceRepoMockRecorder) GetAllBySpaceID(ctx, spaceID interface{}) *gomock.Call {
+// GetAllNotesBySpaceID indicates an expected call of GetAllNotesBySpaceID.
+func (mr *MockspaceRepoMockRecorder) GetAllNotesBySpaceID(ctx, spaceID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllBySpaceID", reflect.TypeOf((*MockspaceRepo)(nil).GetAllBySpaceID), ctx, spaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotesBySpaceID", reflect.TypeOf((*MockspaceRepo)(nil).GetAllNotesBySpaceID), ctx, spaceID)
 }
 
-// GetAllbySpaceIDFull mocks base method.
-func (m *MockspaceRepo) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
+// GetAllNotesBySpaceIDFull mocks base method.
+func (m *MockspaceRepo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllbySpaceIDFull", ctx, spaceID)
+	ret := m.ctrl.Call(m, "GetAllNotesBySpaceIDFull", ctx, spaceID)
 	ret0, _ := ret[0].([]model.Note)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAllbySpaceIDFull indicates an expected call of GetAllbySpaceIDFull.
-func (mr *MockspaceRepoMockRecorder) GetAllbySpaceIDFull(ctx, spaceID interface{}) *gomock.Call {
+// GetAllNotesBySpaceIDFull indicates an expected call of GetAllNotesBySpaceIDFull.
+func (mr *MockspaceRepoMockRecorder) GetAllNotesBySpaceIDFull(ctx, spaceID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllbySpaceIDFull", reflect.TypeOf((*MockspaceRepo)(nil).GetAllbySpaceIDFull), ctx, spaceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotesBySpaceIDFull", reflect.TypeOf((*MockspaceRepo)(nil).GetAllNotesBySpaceIDFull), ctx, spaceID)
 }
 
 // GetSpaceByID mocks base method.
@@ -92,4 +92,18 @@ func (m *MockspaceRepo) GetSpaceByID(ctx context.Context, id int) (model.Space, 
 func (mr *MockspaceRepoMockRecorder) GetSpaceByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpaceByID", reflect.TypeOf((*MockspaceRepo)(nil).GetSpaceByID), ctx, id)
+}
+
+// UpdateNote mocks base method.
+func (m *MockspaceRepo) UpdateNote(ctx context.Context, update model.UpdateNote) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNote", ctx, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNote indicates an expected call of UpdateNote.
+func (mr *MockspaceRepoMockRecorder) UpdateNote(ctx, update interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNote", reflect.TypeOf((*MockspaceRepo)(nil).UpdateNote), ctx, update)
 }

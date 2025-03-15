@@ -41,8 +41,10 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	e.GET("/health", server.health)
 	spaces := e.Group("spaces")
 
+	// notes
 	spaces.GET("/:id/notes", server.notesBySpaceID)
 	spaces.POST("/notes/create", server.createNote)
+	spaces.PATCH("/notes/update", server.updateNote)
 
 	return e, nil
 }

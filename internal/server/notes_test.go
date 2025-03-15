@@ -38,7 +38,7 @@ func TestCreateNote(t *testing.T) {
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusCreated,
@@ -48,7 +48,7 @@ func TestCreateNote(t *testing.T) {
 			dbErr: nil,
 			req: model.CreateNoteRequest{
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -59,7 +59,7 @@ func TestCreateNote(t *testing.T) {
 			dbErr: nil,
 			req: model.CreateNoteRequest{
 				UserID:  1,
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -70,7 +70,7 @@ func TestCreateNote(t *testing.T) {
 			dbErr: nil,
 			req: model.CreateNoteRequest{
 				UserID:  1,
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Text:    "new note",
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -93,7 +93,7 @@ func TestCreateNote(t *testing.T) {
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -105,7 +105,7 @@ func TestCreateNote(t *testing.T) {
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -117,7 +117,7 @@ func TestCreateNote(t *testing.T) {
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusInternalServerError,
@@ -129,7 +129,7 @@ func TestCreateNote(t *testing.T) {
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
+				SpaceID: uuid.New(),
 				Created: time.Now().Unix(),
 			},
 			expectedCode:     http.StatusBadRequest,
@@ -207,7 +207,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 						TgID:     1234,
 						Username: "test user",
 						PersonalSpace: model.Space{
-							ID:       1,
+							ID:       uuid.New(),
 							Name:     "personal space for user 1234",
 							Created:  time.Now(),
 							Creator:  1,
@@ -217,7 +217,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 					},
 					Text: "test note",
 					Space: &model.Space{
-						ID:       1,
+						ID:       uuid.New(),
 						Name:     "personal space for user 1234",
 						Created:  time.Now(),
 						Creator:  1,
@@ -268,9 +268,9 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr != nil {
-				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+				repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
 			} else if tt.expectedCode == http.StatusOK {
-				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+				repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
 			url := fmt.Sprintf("/spaces/%s/notes?full_user=true", tt.spaceID)
@@ -331,7 +331,7 @@ func TestNotesBeSpaceID(t *testing.T) {
 					ID:       uuid.New(),
 					UserID:   1,
 					Text:     "test note",
-					SpaceID:  1,
+					SpaceID:  uuid.New(),
 					Created:  time.Now(),
 					LastEdit: sql.NullTime{Valid: false},
 				},
@@ -377,9 +377,9 @@ func TestNotesBeSpaceID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr != nil {
-				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+				repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
 			} else if tt.expectedCode == http.StatusOK {
-				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+				repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
 			url := fmt.Sprintf("/spaces/%s/notes", tt.spaceID)

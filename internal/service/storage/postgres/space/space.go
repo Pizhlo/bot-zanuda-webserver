@@ -26,7 +26,7 @@ type elasticClient interface {
 	// SearchByID(ctx context.Context, search elastic.Data) ([]string, error)
 	// Delete(ctx context.Context, search elastic.Data) error
 	// DeleteAllByUserID(ctx context.Context, data elastic.Data) error
-	// Update(ctx context.Context, search elastic.Data) error
+	UpdateNote(ctx context.Context, search elastic.Data) error
 }
 
 func New(addr string, elasticClient elasticClient) (*spaceRepo, error) {

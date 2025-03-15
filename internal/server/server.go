@@ -42,8 +42,10 @@ func (s *server) Serve() error {
 
 	spaces := e.Group("spaces")
 
+	// notes
 	spaces.GET("/:id/notes", s.notesBySpaceID)
 	spaces.POST("/notes/create", s.createNote)
+	spaces.PATCH("/notes/update", s.updateNote)
 
 	s.e = e
 

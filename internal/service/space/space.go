@@ -15,9 +15,10 @@ type spaceRepo interface {
 	CreateNote(ctx context.Context, note model.CreateNoteRequest) error
 	GetSpaceByID(ctx context.Context, id int) (model.Space, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
-	GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
+	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
-	GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error)
+	GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error)
+	UpdateNote(ctx context.Context, update model.UpdateNote) error
 }
 
 func New(repo spaceRepo) *Space {
@@ -30,16 +31,30 @@ func (s *Space) GetSpaceByID(ctx context.Context, id int) (model.Space, error) {
 
 // Create создает новую заметку в личном пространстве пользователя
 func (s *Space) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
+	err := note.Validate()
+	if err != nil {
+		return err
+	}
+
 	return s.repo.CreateNote(ctx, note)
 }
 
 // GetAllbySpaceIDFull возвращает все заметки пространства.
 // Информацию о пользователе возвращает в полном виде.
 func (s *Space) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
-	return s.repo.GetAllbySpaceIDFull(ctx, spaceID)
+	return s.repo.GetAllNotesBySpaceIDFull(ctx, spaceID)
 }
 
 // GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
 func (s *Space) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
-	return s.repo.GetAllBySpaceID(ctx, spaceID)
+	return s.repo.GetAllNotesBySpaceID(ctx, spaceID)
+}
+
+func (s *Space) UpdateNote(ctx context.Context, update model.UpdateNote) error {
+	err := update.Validate()
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdateNote(ctx, update)
 }

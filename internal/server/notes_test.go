@@ -11,9 +11,7 @@ import (
 	"testing"
 	"time"
 	"webserver/internal/model"
-	"webserver/internal/service/note"
 	"webserver/internal/service/space"
-	note_db "webserver/internal/service/storage/postgres/note"
 	space_db "webserver/internal/service/storage/postgres/space"
 	"webserver/mocks"
 
@@ -91,7 +89,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: unknown user",
-			dbErr: note_db.ErrUnknownUser,
+			dbErr: space_db.ErrUnknownUser,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -103,7 +101,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: space not exists",
-			dbErr: note_db.ErrSpaceNotExists,
+			dbErr: space_db.ErrSpaceNotExists,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -127,7 +125,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name:  "db err: space belongs another user",
-			dbErr: note_db.ErrSpaceNotBelongsUser,
+			dbErr: space_db.ErrSpaceNotBelongsUser,
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
@@ -142,9 +140,11 @@ func TestCreateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	noteRepo := mocks.NewMocknoteRepo(ctrl)
 
-	noteSrv := note.New(noteRepo)
+	spaceRepo := mocks.NewMockspaceRepo(ctrl)
 
-	server := New("", noteSrv, nil)
+	spaceSrv := space.New(spaceRepo)
+
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -255,7 +255,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 
 	spaceSrv := space.New(repo)
 
-	server := New("", nil, spaceSrv)
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -362,7 +362,7 @@ func TestNotesBeSpaceID(t *testing.T) {
 
 	spaceSrv := space.New(repo)
 
-	server := New("", nil, spaceSrv)
+	server := New("", spaceSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)

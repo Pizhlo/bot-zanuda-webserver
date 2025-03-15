@@ -11,6 +11,8 @@ type Space struct {
 
 //go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
 type spaceRepo interface {
+	// CreateNote создает новую заметку в пространстве пользователя
+	CreateNote(ctx context.Context, note model.CreateNoteRequest) error
 	GetSpaceByID(ctx context.Context, id int) (model.Space, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 	GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
@@ -24,6 +26,11 @@ func New(repo spaceRepo) *Space {
 
 func (s *Space) GetSpaceByID(ctx context.Context, id int) (model.Space, error) {
 	return s.repo.GetSpaceByID(ctx, id)
+}
+
+// Create создает новую заметку в личном пространстве пользователя
+func (s *Space) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
+	return s.repo.CreateNote(ctx, note)
 }
 
 // GetAllbySpaceIDFull возвращает все заметки пространства.

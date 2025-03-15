@@ -9,10 +9,8 @@ import (
 	"syscall"
 	"time"
 	"webserver/internal/server"
-	"webserver/internal/service/note"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
-	note_db "webserver/internal/service/storage/postgres/note"
 	space_db "webserver/internal/service/storage/postgres/space"
 
 	"github.com/joho/godotenv"
@@ -91,14 +89,7 @@ func main() {
 	addr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	logrus.Infof("connecting db on %s", addr)
-	noteRepo, err := note_db.New(addr, elasticClient)
-	if err != nil {
-		logrus.Fatalf("error connecting db: %+v", err)
-	}
-
-	noteSrv := note.New(noteRepo)
-
-	spaceRepo, err := space_db.New(addr)
+	spaceRepo, err := space_db.New(addr, elasticClient)
 	if err != nil {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
@@ -111,7 +102,7 @@ func main() {
 	}
 
 	logrus.Infof("starting server on %s", serverAddr)
-	s := server.New(serverAddr, noteSrv, spaceSrv)
+	s := server.New(serverAddr, spaceSrv)
 
 	err = s.Serve()
 	if err != nil {
@@ -139,8 +130,6 @@ func main() {
 		if err != nil {
 			logrus.Errorf("error shutdown server: %+v", err)
 		}
-
-		noteRepo.Close()
 
 		spaceRepo.Close()
 	}(&wg)

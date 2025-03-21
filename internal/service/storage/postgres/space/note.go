@@ -2,28 +2,16 @@ package space
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"webserver/internal/model"
 	"webserver/internal/model/elastic"
 
+	api_errors "webserver/internal/errors"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-)
-
-var (
-	// ошибка о том, что пользователя не существует в БД
-	ErrUnknownUser = errors.New("unknown user")
-	// ошибка о том, что пользователь не может добавить запись в это пространство: оно личное и не принадлежит ему
-	ErrSpaceNotBelongsUser = errors.New("space not belongs to user")
-	// ошибка о том, что в пространстве нет заметок
-	ErrNoNotesFoundBySpaceID = errors.New("space does not have any notes")
-	// ошибка о том, что пространство не существует
-	ErrSpaceNotExists = errors.New("space does not exist")
-	// ошибка о том, что в пространстве нет такой заметки
-	ErrNoteNotBelongsSpace = errors.New("note does not belong space")
 )
 
 func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
@@ -42,15 +30,15 @@ func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteReques
 		switch t := err.(type) {
 		case *pq.Error:
 			if t.Code == "23502" && t.Column == "user_id" { // null value in column \"user_id\" of relation \"notes\" violates not-null constraint
-				return ErrUnknownUser
+				return api_errors.ErrUnknownUser
 			}
 
 			if t.Code == "23503" && t.Constraint == "notes_space_id" {
-				return ErrSpaceNotExists
+				return api_errors.ErrSpaceNotExists
 			}
 
 			if t.Code == "P0001" && t.Where == "PL/pgSQL function check_personal_space() line 9 at RAISE" {
-				return ErrSpaceNotBelongsUser
+				return api_errors.ErrSpaceNotBelongsUser
 			}
 		}
 
@@ -107,7 +95,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 		if err != nil {
 			// "sql: Scan error on column index 1, name \"note_text\": converting NULL to string is unsupported"
 			if strings.Contains(err.Error(), "converting NULL") {
-				return nil, ErrNoNotesFoundBySpaceID
+				return nil, api_errors.ErrNoNotesFoundBySpaceID
 			}
 
 			return nil, fmt.Errorf("error scanning note: %+v", err)
@@ -119,7 +107,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrSpaceNotExists
+		return nil, api_errors.ErrSpaceNotExists
 	}
 
 	return res, nil
@@ -147,7 +135,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 		if err != nil {
 			// "sql: Scan error on column index 1, name \"note_text\": converting NULL to string is unsupported"
 			if strings.Contains(err.Error(), "converting NULL") {
-				return nil, ErrNoNotesFoundBySpaceID
+				return nil, api_errors.ErrNoNotesFoundBySpaceID
 			}
 
 			return nil, fmt.Errorf("error scanning note: %+v", err)
@@ -157,7 +145,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	}
 
 	if len(res) == 0 {
-		return nil, ErrSpaceNotExists
+		return nil, api_errors.ErrSpaceNotExists
 	}
 
 	return res, nil
@@ -209,14 +197,14 @@ func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, space
 	err := row.Scan(&id)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows") {
-			return ErrNoteNotBelongsSpace
+			return api_errors.ErrNoteNotBelongsSpace
 		}
 
 		return err
 	}
 
 	if id == uuid.Nil {
-		return ErrNoteNotBelongsSpace
+		return api_errors.ErrNoteNotBelongsSpace
 	}
 
 	return nil

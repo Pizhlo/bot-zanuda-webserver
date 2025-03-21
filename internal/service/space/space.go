@@ -2,8 +2,8 @@ package space
 
 import (
 	"context"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
-	"webserver/internal/service/storage/postgres/space"
 
 	"github.com/google/uuid"
 )
@@ -83,5 +83,5 @@ func (s *Space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UU
 		return nil
 	}
 
-	return space.ErrSpaceNotBelongsUser
+	return api_errors.ErrSpaceNotBelongsUser
 }

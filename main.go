@@ -12,6 +12,7 @@ import (
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
+	space_cache "webserver/internal/service/storage/redis/space"
 	user_cache "webserver/internal/service/storage/redis/user"
 	"webserver/internal/service/user"
 
@@ -96,21 +97,31 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	spaceSrv := space.New(spaceRepo, nil)
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if len(redisAddr) == 0 {
+		logrus.Fatalf("REDIS_ADDR not set")
+	}
+
+	spaceCache, err := space_cache.New(ctx, redisAddr)
+	if err != nil {
+		logrus.Fatalf("error connecting redis (space cache): %+v", err)
+	}
+
+	spaceSrv := space.New(spaceRepo, spaceCache)
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
 		logrus.Fatalf("SERVER_ADDR not set")
 	}
 
-	logrus.Infof("starting server on %s", serverAddr)
-
-	userCache, err := user_cache.New(ctx, "")
+	userCache, err := user_cache.New(ctx, redisAddr)
 	if err != nil {
 		logrus.Fatalf("error connecting redis (user cache): %+v", err)
 	}
 
 	userSrv := user.New(nil, userCache)
+
+	logrus.Infof("starting server on %s", serverAddr)
 
 	s := server.New(serverAddr, spaceSrv, userSrv)
 

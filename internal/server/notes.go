@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
-	"webserver/internal/service/storage/postgres/space"
 
 	"github.com/labstack/echo/v4"
 )
@@ -36,8 +36,8 @@ func (s *server) createNote(c echo.Context) error {
 		errs := []error{
 			model.ErrSpaceIdNotFilled, model.ErrFieldCreatedNotFilled,
 			model.ErrFieldTextNotFilled, model.ErrNoteIdNotFilled,
-			model.ErrFieldUserNotFilled, space.ErrUnknownUser,
-			space.ErrSpaceNotExists, space.ErrSpaceNotBelongsUser,
+			model.ErrFieldUserNotFilled, api_errors.ErrUnknownUser,
+			api_errors.ErrSpaceNotExists, api_errors.ErrSpaceNotBelongsUser,
 		}
 
 		if errorsIn(err, errs) {
@@ -99,12 +99,12 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 		notes, err := s.space.GetAllbySpaceIDFull(c.Request().Context(), int64(spaceID))
 		if err != nil {
 			// у пользователя нет заметок - отдаем 204
-			if errors.Is(err, space.ErrNoNotesFoundBySpaceID) {
+			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
 				return c.NoContent(http.StatusNoContent)
 			}
 
 			// пространство не существует - отдаем 404
-			if errors.Is(err, space.ErrSpaceNotExists) {
+			if errors.Is(err, api_errors.ErrSpaceNotExists) {
 				return c.NoContent(http.StatusNotFound)
 			}
 
@@ -118,12 +118,12 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	notes, err := s.space.GetAllBySpaceID(c.Request().Context(), int64(spaceID))
 	if err != nil {
 		// у пользователя нет заметок - отдаем 204
-		if errors.Is(err, space.ErrNoNotesFoundBySpaceID) {
+		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
 			return c.NoContent(http.StatusNoContent)
 		}
 
 		// пространство не существует - отдаем 404
-		if errors.Is(err, space.ErrSpaceNotExists) {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
 			return c.NoContent(http.StatusNotFound)
 		}
 
@@ -147,7 +147,7 @@ func (s *server) updateNote(c echo.Context) error {
 		errs := []error{
 			model.ErrSpaceIdNotFilled, model.ErrFieldCreatedNotFilled,
 			model.ErrFieldTextNotFilled, model.ErrNoteIdNotFilled,
-			model.ErrFieldUserNotFilled, space.ErrUnknownUser,
+			model.ErrFieldUserNotFilled, api_errors.ErrUnknownUser,
 		}
 
 		if errorsIn(err, errs) {
@@ -156,8 +156,8 @@ func (s *server) updateNote(c echo.Context) error {
 	}
 
 	// после валидации - проверяем, что пользователь существует
-	if err := s.user.CheckUser(req.UserID); err != nil {
-		if errors.Is(err, space.ErrUnknownUser) {
+	if err := s.user.CheckUser(c.Request().Context(), req.UserID); err != nil {
+		if errors.Is(err, api_errors.ErrUnknownUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
@@ -166,7 +166,7 @@ func (s *server) updateNote(c echo.Context) error {
 
 	// проверяем, что пользователь состоит в пространстве (сюда потом еще добавится проверка на права)
 	if err := s.space.IsUserInSpace(c.Request().Context(), req.UserID, req.SpaceID); err != nil {
-		if errors.Is(err, space.ErrSpaceNotBelongsUser) || errors.Is(err, space.ErrSpaceNotExists) {
+		if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
@@ -175,7 +175,7 @@ func (s *server) updateNote(c echo.Context) error {
 
 	// проверяем, что в пространстве есть заметка с таким айди
 	if err := s.space.CheckIfNoteExistsInSpace(c.Request().Context(), req.ID, req.SpaceID); err != nil {
-		if errors.Is(err, space.ErrNoteNotBelongsSpace) {
+		if errors.Is(err, api_errors.ErrNoteNotBelongsSpace) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 

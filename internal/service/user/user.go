@@ -1,8 +1,10 @@
 package user
 
 import (
+	"context"
+	"errors"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
-	"webserver/internal/service/storage/postgres/space"
 )
 
 type User struct {
@@ -14,7 +16,7 @@ type userRepo interface {
 	GetUser(tgID int64) (model.User, error)
 }
 type cache interface {
-	GetUser(tgID int64) (model.User, error)
+	GetUser(ctx context.Context, tgID int64) (model.User, error)
 }
 
 func New(repo userRepo, cache cache) *User {
@@ -22,17 +24,24 @@ func New(repo userRepo, cache cache) *User {
 }
 
 // CheckUser проверяет существование пользователя по tgID
-func (s *User) CheckUser(tgID int64) error {
+func (s *User) CheckUser(ctx context.Context, tgID int64) error {
 	// проверяем в кэшэ
-	if _, err := s.cache.GetUser(tgID); err == nil {
-		return nil
+	_, err := s.cache.GetUser(ctx, tgID)
+	if err != nil {
+		if !errors.Is(err, api_errors.ErrUnknownUser) {
+			return err
+		}
 	}
 
-	// в кэшэ не найдено - проверяем в БД
-	_, err := s.repo.GetUser(tgID)
 	if err == nil {
 		return nil
 	}
 
-	return space.ErrUnknownUser
+	// в кэшэ не найдено - проверяем в БД
+	_, err = s.repo.GetUser(tgID)
+	if err == nil {
+		return nil
+	}
+
+	return api_errors.ErrUnknownUser
 }

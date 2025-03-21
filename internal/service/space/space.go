@@ -4,6 +4,7 @@ import (
 	"context"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 
 	"github.com/google/uuid"
 )
@@ -11,6 +12,7 @@ import (
 type Space struct {
 	repo  spaceRepo
 	cache cache
+	saver dbWorker // создание / обновление записей
 }
 
 //go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
@@ -22,7 +24,6 @@ type spaceRepo interface {
 	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
 	GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error)
-	UpdateNote(ctx context.Context, update model.UpdateNote) error
 	// CheckParticipant проверяет, является ли пользователь участником пространства
 	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
 	// CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка
@@ -34,8 +35,13 @@ type cache interface {
 	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
 }
 
-func New(repo spaceRepo, cache cache) *Space {
-	return &Space{repo: repo, cache: cache}
+// dbWorker работает на создание / обновление записей
+type dbWorker interface {
+	AddQuery(req rabbit.Request) error
+}
+
+func New(repo spaceRepo, cache cache, saver dbWorker) *Space {
+	return &Space{repo: repo, cache: cache, saver: saver}
 }
 
 func (s *Space) GetSpaceByID(ctx context.Context, id int) (model.Space, error) {
@@ -63,8 +69,14 @@ func (s *Space) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.Get
 	return s.repo.GetAllNotesBySpaceID(ctx, spaceID)
 }
 
-func (s *Space) UpdateNote(ctx context.Context, update model.UpdateNote) error {
-	return s.repo.UpdateNote(ctx, update)
+// UpdateNote отправляет запрос на обновление заметки в db-worker
+func (s *Space) UpdateNote(ctx context.Context, reqID uuid.UUID, update model.UpdateNote) error {
+	req := rabbit.Request{
+		ID:   reqID,
+		Data: update,
+	}
+
+	return s.saver.AddQuery(req)
 }
 
 // CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка

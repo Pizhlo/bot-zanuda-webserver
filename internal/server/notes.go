@@ -9,6 +9,7 @@ import (
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -182,13 +183,15 @@ func (s *server) updateNote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	reqID := uuid.New()
+
 	// TODO: переделать на db worker
-	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
+	if err := s.space.UpdateNote(c.Request().Context(), reqID, req); err != nil {
 		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	// запрос принят в обработку
 	// TODO: добавить возврат requestID
-	return c.NoContent(http.StatusAccepted)
+	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
 }

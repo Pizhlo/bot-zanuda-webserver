@@ -9,10 +9,12 @@ import (
 	"syscall"
 	"time"
 	"webserver/internal/server"
+	dbsaver "webserver/internal/service/db_saver"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
 	user_db "webserver/internal/service/storage/postgres/user"
+	"webserver/internal/service/storage/rabbit/worker"
 	space_cache "webserver/internal/service/storage/redis/space"
 	user_cache "webserver/internal/service/storage/redis/user"
 	"webserver/internal/service/user"
@@ -108,7 +110,18 @@ func main() {
 		logrus.Fatalf("error connecting redis (space cache): %+v", err)
 	}
 
-	spaceSrv := space.New(spaceRepo, spaceCache)
+	rabbitAddr := os.Getenv("RABBIT_ADDR")
+	if len(rabbitAddr) == 0 {
+		logrus.Fatalf("RABBIT_ADDR not set")
+	}
+	rabbit, err := worker.New(rabbitAddr)
+	if err != nil {
+		logrus.Fatalf("error connecting rabbit: %+v", err)
+	}
+
+	saver := dbsaver.New(rabbit)
+
+	spaceSrv := space.New(spaceRepo, spaceCache, saver)
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {

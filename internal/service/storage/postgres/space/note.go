@@ -22,6 +22,8 @@ var (
 	ErrNoNotesFoundBySpaceID = errors.New("space does not have any notes")
 	// ошибка о том, что пространство не существует
 	ErrSpaceNotExists = errors.New("space does not exist")
+	// ошибка о том, что в пространстве нет такой заметки
+	ErrNoteNotBelongsSpace = errors.New("note does not belong space")
 )
 
 func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
@@ -196,4 +198,31 @@ func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNote) er
 	}
 
 	return tx.Commit()
+}
+
+// CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка
+func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error {
+	var id uuid.UUID
+
+	row := db.db.QueryRowContext(ctx, "select id from notes.notes where id = $1", noteID)
+
+	err := row.Scan(&id)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			return ErrNoteNotBelongsSpace
+		}
+
+		return err
+	}
+
+	if id == uuid.Nil {
+		return ErrNoteNotBelongsSpace
+	}
+
+	return nil
+}
+
+// CheckParticipant проверяет, является ли пользователь участником пространства
+func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+	return nil
 }

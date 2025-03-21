@@ -29,6 +29,7 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	// TODO: переделать на rabbitMQ
 	err = s.space.CreateNote(c.Request().Context(), req)
 	if err != nil {
 		// ошибки запроса
@@ -39,7 +40,7 @@ func (s *server) createNote(c echo.Context) error {
 			space.ErrSpaceNotExists, space.ErrSpaceNotBelongsUser,
 		}
 
-		if errorIn(err, errs) {
+		if errorsIn(err, errs) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
@@ -50,7 +51,7 @@ func (s *server) createNote(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func errorIn(target error, errs []error) bool {
+func errorsIn(target error, errs []error) bool {
 	for _, err := range errs {
 		if errors.Is(err, target) {
 			return true
@@ -140,22 +141,53 @@ func (s *server) updateNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
-	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
+	// валидируем данные
+	if err := req.Validate(); err != nil {
 		// ошибки запроса
 		errs := []error{
 			model.ErrSpaceIdNotFilled, model.ErrFieldCreatedNotFilled,
 			model.ErrFieldTextNotFilled, model.ErrNoteIdNotFilled,
 			model.ErrFieldUserNotFilled, space.ErrUnknownUser,
-			space.ErrSpaceNotExists, space.ErrSpaceNotBelongsUser,
 		}
 
-		if errorIn(err, errs) {
+		if errorsIn(err, errs) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+	}
+
+	// после валидации - проверяем, что пользователь существует
+	if err := s.user.CheckUser(req.UserID); err != nil {
+		if errors.Is(err, space.ErrUnknownUser) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// проверяем, что пользователь состоит в пространстве (сюда потом еще добавится проверка на права)
+	if err := s.space.IsUserInSpace(c.Request().Context(), req.UserID, req.SpaceID); err != nil {
+		if errors.Is(err, space.ErrSpaceNotBelongsUser) || errors.Is(err, space.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// проверяем, что в пространстве есть заметка с таким айди
+	if err := s.space.CheckIfNoteExistsInSpace(c.Request().Context(), req.ID, req.SpaceID); err != nil {
+		if errors.Is(err, space.ErrNoteNotBelongsSpace) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	// запрос принят в обработку
+	// TODO: добавить возврат requestID
+	return c.NoContent(http.StatusAccepted)
 }

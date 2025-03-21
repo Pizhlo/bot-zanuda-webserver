@@ -3,10 +3,14 @@ package space
 import (
 	"context"
 	"webserver/internal/model"
+	"webserver/internal/service/storage/postgres/space"
+
+	"github.com/google/uuid"
 )
 
 type Space struct {
-	repo spaceRepo
+	repo  spaceRepo
+	cache cache
 }
 
 //go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
@@ -19,10 +23,19 @@ type spaceRepo interface {
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
 	GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error)
 	UpdateNote(ctx context.Context, update model.UpdateNote) error
+	// CheckParticipant проверяет, является ли пользователь участником пространства
+	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
+	// CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка
+	CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error
 }
 
-func New(repo spaceRepo) *Space {
-	return &Space{repo: repo}
+type cache interface {
+	// CheckParticipant проверяет, является ли пользователь участником пространства
+	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
+}
+
+func New(repo spaceRepo, cache cache) *Space {
+	return &Space{repo: repo, cache: cache}
 }
 
 func (s *Space) GetSpaceByID(ctx context.Context, id int) (model.Space, error) {
@@ -51,10 +64,24 @@ func (s *Space) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.Get
 }
 
 func (s *Space) UpdateNote(ctx context.Context, update model.UpdateNote) error {
-	err := update.Validate()
-	if err != nil {
-		return err
+	return s.repo.UpdateNote(ctx, update)
+}
+
+// CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка
+func (s *Space) CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error {
+	return s.repo.CheckIfNoteExistsInSpace(ctx, noteID, spaceID)
+}
+
+// IsUserInSpace проверяет, состоит ли пользователь в пространстве
+func (s *Space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+	if err := s.cache.CheckParticipant(ctx, userID, spaceID); err == nil {
+		return nil
 	}
 
-	return s.repo.UpdateNote(ctx, update)
+	err := s.repo.CheckParticipant(ctx, userID, spaceID)
+	if err == nil {
+		return nil
+	}
+
+	return space.ErrSpaceNotBelongsUser
 }

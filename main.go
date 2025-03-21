@@ -12,6 +12,8 @@ import (
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
+	user_cache "webserver/internal/service/storage/redis/user"
+	"webserver/internal/service/user"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -94,7 +96,7 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	spaceSrv := space.New(spaceRepo)
+	spaceSrv := space.New(spaceRepo, nil)
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
@@ -102,7 +104,15 @@ func main() {
 	}
 
 	logrus.Infof("starting server on %s", serverAddr)
-	s := server.New(serverAddr, spaceSrv)
+
+	userCache, err := user_cache.New(ctx, "")
+	if err != nil {
+		logrus.Fatalf("error connecting redis (user cache): %+v", err)
+	}
+
+	userSrv := user.New(nil, userCache)
+
+	s := server.New(serverAddr, spaceSrv, userSrv)
 
 	err = s.Serve()
 	if err != nil {

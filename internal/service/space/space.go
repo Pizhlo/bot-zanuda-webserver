@@ -74,10 +74,6 @@ func (s *Space) CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uu
 
 // IsUserInSpace проверяет, состоит ли пользователь в пространстве
 func (s *Space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error {
-	if err := s.cache.CheckParticipant(ctx, userID, spaceID); err == nil {
-		return nil
-	}
-
 	err := s.repo.CheckParticipant(ctx, userID, spaceID)
 	if err == nil {
 		return nil

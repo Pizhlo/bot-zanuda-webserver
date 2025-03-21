@@ -182,6 +182,7 @@ func (s *server) updateNote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// TODO: переделать на db worker
 	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

@@ -192,7 +192,7 @@ func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNote) er
 func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error {
 	var id uuid.UUID
 
-	row := db.db.QueryRowContext(ctx, "select id from notes.notes where id = $1", noteID)
+	row := db.db.QueryRowContext(ctx, "select id from notes.notes where id = $1 and space_id = $2", noteID, spaceID)
 
 	err := row.Scan(&id)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
+	user_db "webserver/internal/service/storage/postgres/user"
 	space_cache "webserver/internal/service/storage/redis/space"
 	user_cache "webserver/internal/service/storage/redis/user"
 	"webserver/internal/service/user"
@@ -119,7 +120,12 @@ func main() {
 		logrus.Fatalf("error connecting redis (user cache): %+v", err)
 	}
 
-	userSrv := user.New(nil, userCache)
+	userRepo, err := user_db.New(addr)
+	if err != nil {
+		logrus.Fatalf("error connecting db: %+v", err)
+	}
+
+	userSrv := user.New(userRepo, userCache)
 
 	logrus.Infof("starting server on %s", serverAddr)
 

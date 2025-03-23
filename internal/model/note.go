@@ -47,10 +47,6 @@ func (s *CreateNoteRequest) Validate() error {
 		return ErrFieldTextNotFilled
 	}
 
-	if s.Created == 0 {
-		return ErrFieldCreatedNotFilled
-	}
-
 	if err := uuid.Validate(s.SpaceID.String()); err != nil {
 		return ErrSpaceIdNotFilled
 	}

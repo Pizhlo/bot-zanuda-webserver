@@ -46,8 +46,8 @@ func (s *server) Serve() error {
 
 	// notes
 	spaces.GET("/:id/notes", s.notesBySpaceID)
-	spaces.POST("/notes/create", s.createNote)
-	spaces.PATCH("/notes/update", s.updateNote)
+	spaces.POST("/notes/create", s.createNote, s.validateNoteRequest)
+	spaces.PATCH("/notes/update", s.updateNote, s.validateNoteRequest)
 
 	s.e = e
 

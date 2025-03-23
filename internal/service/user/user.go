@@ -9,17 +9,18 @@ import (
 
 type User struct {
 	repo  userRepo
-	cache cache
+	cache userCache
 }
 
+//go:generate mockgen -source ./user.go -destination=../../../mocks/user_srv.go -package=mocks
 type userRepo interface {
 	GetUser(tgID int64) (model.User, error)
 }
-type cache interface {
+type userCache interface {
 	GetUser(ctx context.Context, tgID int64) (model.User, error)
 }
 
-func New(repo userRepo, cache cache) *User {
+func New(repo userRepo, cache userCache) *User {
 	return &User{repo: repo, cache: cache}
 }
 

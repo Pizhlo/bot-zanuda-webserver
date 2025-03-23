@@ -12,14 +12,12 @@ import (
 
 type Space struct {
 	repo  spaceRepo
-	cache cache
+	cache spaceCache
 	saver dbWorker // создание / обновление записей
 }
 
 //go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
 type spaceRepo interface {
-	// CreateNote создает новую заметку в пространстве пользователя
-	CreateNote(ctx context.Context, note model.CreateNoteRequest) error
 	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
@@ -31,7 +29,7 @@ type spaceRepo interface {
 	CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error
 }
 
-type cache interface {
+type spaceCache interface {
 	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 }
 
@@ -41,7 +39,7 @@ type dbWorker interface {
 	UpdateNote(req rabbit.Request) error
 }
 
-func New(repo spaceRepo, cache cache, saver dbWorker) *Space {
+func New(repo spaceRepo, cache spaceCache, saver dbWorker) *Space {
 	return &Space{repo: repo, cache: cache, saver: saver}
 }
 
@@ -62,11 +60,6 @@ func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 
 // Create создает новую заметку в личном пространстве пользователя
 func (s *Space) CreateNote(ctx context.Context, reqID uuid.UUID, note model.CreateNoteRequest) error {
-	err := note.Validate()
-	if err != nil {
-		return err
-	}
-
 	req := rabbit.Request{
 		ID:   reqID,
 		Data: note,
@@ -75,14 +68,14 @@ func (s *Space) CreateNote(ctx context.Context, reqID uuid.UUID, note model.Crea
 	return s.saver.CreateNote(req)
 }
 
-// GetAllbySpaceIDFull возвращает все заметки пространства.
+// GetAllNotesBySpaceIDFull возвращает все заметки пространства.
 // Информацию о пользователе возвращает в полном виде.
-func (s *Space) GetAllbySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
+func (s *Space) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
 	return s.repo.GetAllNotesBySpaceIDFull(ctx, spaceID)
 }
 
 // GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
-func (s *Space) GetAllBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
+func (s *Space) GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
 	return s.repo.GetAllNotesBySpaceID(ctx, spaceID)
 }
 

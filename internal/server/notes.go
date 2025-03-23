@@ -30,8 +30,10 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	reqID := uuid.New()
+
 	// TODO: переделать на rabbitMQ
-	err = s.space.CreateNote(c.Request().Context(), req)
+	err = s.space.CreateNote(c.Request().Context(), reqID, req)
 	if err != nil {
 		// ошибки запроса
 		errs := []error{
@@ -49,7 +51,7 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.NoContent(http.StatusCreated)
+	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
 }
 
 func errorsIn(target error, errs []error) bool {
@@ -159,6 +161,15 @@ func (s *server) updateNote(c echo.Context) error {
 	// после валидации - проверяем, что пользователь существует
 	if err := s.user.CheckUser(c.Request().Context(), req.UserID); err != nil {
 		if errors.Is(err, api_errors.ErrUnknownUser) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// проверяем, что пространство существует
+	if _, err := s.space.GetSpaceByID(c.Request().Context(), req.SpaceID); err != nil {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 

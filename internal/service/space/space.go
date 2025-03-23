@@ -2,6 +2,7 @@ package space
 
 import (
 	"context"
+	"errors"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
@@ -19,7 +20,7 @@ type Space struct {
 type spaceRepo interface {
 	// CreateNote создает новую заметку в пространстве пользователя
 	CreateNote(ctx context.Context, note model.CreateNoteRequest) error
-	GetSpaceByID(ctx context.Context, id int) (model.Space, error)
+	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error)
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
@@ -31,31 +32,47 @@ type spaceRepo interface {
 }
 
 type cache interface {
-	// CheckParticipant проверяет, является ли пользователь участником пространства
-	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
+	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 }
 
 // dbWorker работает на создание / обновление записей
 type dbWorker interface {
-	AddQuery(req rabbit.Request) error
+	CreateNote(req rabbit.Request) error
+	UpdateNote(req rabbit.Request) error
 }
 
 func New(repo spaceRepo, cache cache, saver dbWorker) *Space {
 	return &Space{repo: repo, cache: cache, saver: saver}
 }
 
-func (s *Space) GetSpaceByID(ctx context.Context, id int) (model.Space, error) {
+func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
+	space, err := s.cache.GetSpaceByID(ctx, id)
+	if err != nil {
+		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return model.Space{}, err
+		}
+	}
+
+	if err == nil {
+		return space, nil
+	}
+
 	return s.repo.GetSpaceByID(ctx, id)
 }
 
 // Create создает новую заметку в личном пространстве пользователя
-func (s *Space) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
+func (s *Space) CreateNote(ctx context.Context, reqID uuid.UUID, note model.CreateNoteRequest) error {
 	err := note.Validate()
 	if err != nil {
 		return err
 	}
 
-	return s.repo.CreateNote(ctx, note)
+	req := rabbit.Request{
+		ID:   reqID,
+		Data: note,
+	}
+
+	return s.saver.CreateNote(req)
 }
 
 // GetAllbySpaceIDFull возвращает все заметки пространства.
@@ -76,7 +93,7 @@ func (s *Space) UpdateNote(ctx context.Context, reqID uuid.UUID, update model.Up
 		Data: update,
 	}
 
-	return s.saver.AddQuery(req)
+	return s.saver.UpdateNote(req)
 }
 
 // CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка

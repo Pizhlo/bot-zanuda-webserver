@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 	"webserver/internal/server"
-	dbsaver "webserver/internal/service/db_saver"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
@@ -114,14 +113,17 @@ func main() {
 	if len(rabbitAddr) == 0 {
 		logrus.Fatalf("RABBIT_ADDR not set")
 	}
+
+	logrus.Infof("connecting rabbit on %s", rabbitAddr)
+
 	rabbit, err := worker.New(rabbitAddr)
 	if err != nil {
 		logrus.Fatalf("error connecting rabbit: %+v", err)
 	}
 
-	saver := dbsaver.New(rabbit)
+	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
 
-	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+	spaceSrv := space.New(spaceRepo, spaceCache, rabbit)
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
@@ -172,6 +174,12 @@ func main() {
 		}
 
 		spaceRepo.Close()
+		err = rabbit.Close()
+		if err != nil {
+			logrus.Errorf("error closing rabbit: %+v", err)
+		}
+
+		userRepo.Close()
 	}(&wg)
 
 	wg.Wait()

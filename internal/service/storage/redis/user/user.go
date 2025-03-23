@@ -30,7 +30,7 @@ func New(ctx context.Context, addr string) (*userCache, error) {
 		return nil, err
 	}
 
-	logrus.Infof("successfully connected redis on %s", addr)
+	logrus.Infof("user cache: successfully connected redis on %s", addr)
 
 	return &userCache{
 		client: redisClient,

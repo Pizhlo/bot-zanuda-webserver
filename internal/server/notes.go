@@ -27,7 +27,12 @@ import (
 func (s *server) createNote(c echo.Context) error {
 	var req model.CreateNoteRequest
 
-	err := json.NewDecoder(c.Request().Body).Decode(&req)
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	err = json.Unmarshal(body, &req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
@@ -35,8 +40,8 @@ func (s *server) createNote(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
 		errs := []error{
-			model.ErrSpaceIdNotFilled, model.ErrFieldTextNotFilled,
-			model.ErrFieldUserNotFilled,
+			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
+			model.ErrFieldUserNotFilled, model.ErrFieldTypeNotFilled,
 		}
 
 		if errorsIn(err, errs) {
@@ -156,7 +161,7 @@ func (s *server) updateNote(c echo.Context) error {
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
 		errs := []error{
-			model.ErrSpaceIdNotFilled, model.ErrFieldTextNotFilled,
+			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
 			model.ErrNoteIdNotFilled, model.ErrFieldUserNotFilled,
 		}
 
@@ -213,7 +218,7 @@ func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// проверяем, что пространство существует
 		if _, err := s.space.GetSpaceByID(c.Request().Context(), note.SpaceID); err != nil {
-			if errors.Is(err, api_errors.ErrSpaceNotExists) {
+			if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
 				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 			}
 

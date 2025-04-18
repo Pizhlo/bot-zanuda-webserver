@@ -40,9 +40,5 @@ func (s *User) CheckUser(ctx context.Context, tgID int64) error {
 
 	// в кэшэ не найдено - проверяем в БД
 	_, err = s.repo.GetUser(tgID)
-	if err == nil {
-		return nil
-	}
-
-	return api_errors.ErrUnknownUser
+	return err
 }

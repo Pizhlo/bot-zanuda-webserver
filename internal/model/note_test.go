@@ -3,7 +3,6 @@ package model
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,30 +29,12 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 			err: fmt.Errorf("field `text` not filled"),
 		},
 		{
-			name: "created not filled",
+			name: "SpaceID not filled",
 			model: CreateNoteRequest{
 				UserID: 1,
 				Text:   "test",
 			},
-			err: fmt.Errorf("field `created` not filled"),
-		},
-		{
-			name: "SpaceID not filled",
-			model: CreateNoteRequest{
-				UserID:  1,
-				Text:    "test",
-				Created: 123566,
-			},
-			err: fmt.Errorf("field `space_id` not filled"),
-		},
-		{
-			name: "SpaceID not filled",
-			model: CreateNoteRequest{
-				UserID:  1,
-				Text:    "test",
-				Created: 123566,
-			},
-			err: fmt.Errorf("field `space_id` not filled"),
+			err: fmt.Errorf("invalid space id"),
 		},
 	}
 
@@ -80,7 +61,7 @@ func TestNoteValidate(t *testing.T) {
 		{
 			name:  "field `User` is nil",
 			model: Note{},
-			err:   fmt.Errorf("field `User` is nil"),
+			err:   ErrFieldUserNotFilled,
 		},
 		{
 			name: "text not filled",
@@ -89,17 +70,7 @@ func TestNoteValidate(t *testing.T) {
 					TgID: 1,
 				},
 			},
-			err: fmt.Errorf("field `text` not filled"),
-		},
-		{
-			name: "created not filled",
-			model: Note{
-				User: &User{
-					TgID: 1,
-				},
-				Text: "test",
-			},
-			err: fmt.Errorf("field `created` not filled"),
+			err: ErrFieldTextNotFilled,
 		},
 		{
 			name: "Space not filled",
@@ -107,10 +78,20 @@ func TestNoteValidate(t *testing.T) {
 				User: &User{
 					TgID: 1,
 				},
-				Text:    "test",
-				Created: time.Date(2025, 2, 12, 0, 0, 0, 0, time.Local),
+				Text: "test",
 			},
-			err: fmt.Errorf("field `Space` is nil"),
+			err: ErrSpaceIsNil,
+		},
+		{
+			name: "Type not filled",
+			model: Note{
+				User: &User{
+					TgID: 1,
+				},
+				Space: &Space{},
+				Text:  "test",
+			},
+			err: ErrFieldTypeNotFilled,
 		},
 		{
 			name: "Space filled",
@@ -118,9 +99,9 @@ func TestNoteValidate(t *testing.T) {
 				User: &User{
 					TgID: 1,
 				},
-				Text:    "test",
-				Created: time.Date(2025, 2, 12, 0, 0, 0, 0, time.Local),
-				Space:   &Space{},
+				Text:  "test",
+				Space: &Space{},
+				Type:  TextNoteType,
 			},
 			err: nil,
 		},

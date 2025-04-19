@@ -74,8 +74,8 @@ func (db *spaceRepo) tx(ctx context.Context) (*sql.Tx, error) {
 	return tx, nil
 }
 
-func (db *spaceRepo) commit() error {
-	tx := db.currentTx
-	db.currentTx = nil
-	return tx.Commit()
-}
+// func (db *spaceRepo) commit() error {
+// 	tx := db.currentTx
+// 	db.currentTx = nil
+// 	return tx.Commit()
+// }

@@ -2,6 +2,8 @@ package space
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"webserver/internal/model"
@@ -214,14 +216,14 @@ func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, space
 func (db *spaceRepo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
 	var note model.GetNote
 
-	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, last_edit
+	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, last_edit, type
 	 from notes.notes 
 left join users.users on users.users.id = notes.notes.user_id
 where notes.notes.id = $1;`, noteID)
 
-	err := row.Scan(&note.ID, &note.UserID, &note.Text, &note.SpaceID, &note.Created, &note.LastEdit)
+	err := row.Scan(&note.ID, &note.UserID, &note.Text, &note.SpaceID, &note.Created, &note.LastEdit, &note.Type)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, sql.ErrNoRows) {
 			return model.GetNote{}, api_errors.ErrNoteNotFound
 		}
 

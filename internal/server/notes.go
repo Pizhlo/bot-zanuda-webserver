@@ -73,7 +73,7 @@ func errorsIn(target error, errs []error) bool {
 
 //		@Summary		Запрос на получение всех заметок
 //		@Description	Запрос на получение всех заметок из личного пространства пользователя
-//	 @Param        id   path      int  true  "ID пространства"
+//	    @Param        id   path      uuid  true  "ID пространства"
 //		@Success		200 {object}    []model.Note
 //		@Success		200 {object}    []model.GetNote
 //		@Success		204                               "В пространстве отсутствют заметки"
@@ -209,6 +209,16 @@ func (s *server) updateNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
+//	@Summary		Получить все типы заметок
+//	@Description	Получить список всех типов заметок и их количество
+//	@Param          id   path      string  true  "ID пространства"//
+//	@Success		200 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
+//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/{id}/notes/types [get]
+//
+// ручка для получения типов заметок
 func (s *server) getNoteTypes(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
@@ -227,4 +237,43 @@ func (s *server) getNoteTypes(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, types)
+}
+
+//	@Summary		Получить все заметки одного типа
+//	@Description	Получить все заметки определенного типа: текстовые, фото, етс
+//	@Param          id   path      string  true  "ID пространства"
+//	@Param          type   path      string  true  "тип заметки: текст, фото, етс"
+//	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
+//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/{id}/notes/{type} [get]
+//
+// ручка для заметок по типу
+func (s *server) getNotesByType(c echo.Context) error {
+	spaceIDStr := c.Param("id")
+	noteType := c.Param("type")
+
+	// валидируем запрос: тип должен быть одним из перечисленных
+	switch noteType {
+	case string(model.TextNoteType), string(model.PhotoNoteType):
+	default:
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note type: %s", noteType)})
+	}
+
+	spaceID, err := uuid.Parse(spaceIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
+	}
+
+	notes, err := s.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoNotesFoundByType) {
+			return c.NoContent(http.StatusNoContent)
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, notes)
 }

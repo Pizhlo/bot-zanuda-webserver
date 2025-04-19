@@ -989,6 +989,7 @@ func TestGetNoteTypes(t *testing.T) {
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.NoteTypeResponse
+		expectedErr      map[string]string
 	}
 
 	tests := []test{
@@ -1012,6 +1013,12 @@ func TestGetNoteTypes(t *testing.T) {
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusNoContent,
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
+		},
+		{
+			name:         "invalid param",
+			spaceID:      "1234abc",
+			expectedCode: http.StatusBadRequest,
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
 		},
 	}
 
@@ -1053,9 +1060,121 @@ func TestGetNoteTypes(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Equal(t, tt.expectedResponse, result)
+			} else if tt.expectedErr != nil {
+				var result map[string]string
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
 			} else { // у пользователя нет заметок
 				assert.Equal(t, tt.expectedCode, resp.StatusCode)
 			}
+		})
+	}
+}
+
+func TestGetNotesByType(t *testing.T) {
+	type test struct {
+		name             string
+		spaceID          string
+		noteType         string
+		dbErr            error // ошибка, которую возвращает база
+		expectedCode     int
+		expectedResponse []model.GetNote
+		expectedErr      map[string]string
+	}
+
+	tests := []test{
+		{
+			name:         "positive test",
+			spaceID:      uuid.NewString(),
+			noteType:     string(model.TextNoteType),
+			expectedCode: http.StatusOK,
+			expectedResponse: []model.GetNote{
+				{
+					ID:      uuid.New(),
+					UserID:  1234,
+					Text:    "positive test",
+					SpaceID: uuid.New(),
+					Type:    model.TextNoteType,
+				},
+			},
+		},
+		{
+			name:         "no notes in space by type",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusNoContent,
+			dbErr:        api_errors.ErrNoNotesFoundByType,
+			noteType:     string(model.TextNoteType),
+		},
+		{
+			name:         "invalid type",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusBadRequest,
+			noteType:     "video",
+			expectedErr:  map[string]string{"bad request": "invalid note type: video"},
+		},
+		{
+			name:         "invalid param",
+			spaceID:      "1234abc",
+			noteType:     "text",
+			expectedCode: http.StatusBadRequest,
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockspaceRepo(ctrl)
+
+	spaceSrv := space.New(repo, nil, nil)
+
+	server := New("", spaceSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr != nil {
+				repo.EXPECT().GetNotesByType(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+			} else if tt.expectedCode == http.StatusOK {
+				repo.EXPECT().GetNotesByType(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+			}
+
+			url := fmt.Sprintf("/spaces/%s/notes/%s", tt.spaceID, tt.noteType)
+
+			resp := testRequest(t, ts, http.MethodGet, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusOK { // успешный кейс
+				var result []model.GetNote
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else if tt.expectedErr != nil {
+				var result map[string]string
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
+			} else { // у пользователя нет заметок
+				assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			}
+
 		})
 	}
 }

@@ -50,6 +50,7 @@ type CreateNoteRequest struct {
 	SpaceID uuid.UUID `json:"space_id"` // айди пространства, куда сохранить заметку
 	Text    string    `json:"text"`     // текст заметки
 	Type    NoteType  `json:"type"`     // тип заметки: текстовая, фото, видео, етс
+	File    string    `json:"file"`     // название файла в Minio (если есть)
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -82,6 +83,7 @@ type Note struct {
 	Created  time.Time    `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
 	LastEdit sql.NullTime `json:"last_edit"`
 	Type     NoteType     `json:"type"` // тип заметки: текстовая, фото, видео, етс
+	File     string       `json:"file"` // название файла в Minio (если есть)
 }
 
 var ErrSpaceIsNil = fmt.Errorf("field `Space` is nil")
@@ -117,13 +119,14 @@ func (s *Note) Validate() error {
 // структура для ответа на запрос всех заметок пространства в кратком режиме.
 // У этой структуры поля пользователь и пространство заменены на айди
 type GetNote struct {
-	ID       uuid.UUID    `json:"id"`
-	UserID   int          `json:"user_id"`
-	Text     string       `json:"text"`
-	SpaceID  uuid.UUID    `json:"space_id"`
-	Created  time.Time    `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
-	LastEdit sql.NullTime `json:"last_edit"`
-	Type     NoteType     `json:"type"`
+	ID       uuid.UUID      `json:"id"`
+	UserID   int            `json:"user_id"`
+	Text     string         `json:"text"`
+	SpaceID  uuid.UUID      `json:"space_id"`
+	Created  time.Time      `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	LastEdit sql.NullTime   `json:"last_edit"`
+	Type     NoteType       `json:"type"`
+	File     sql.NullString `json:"file"` // название файла в Minio (если есть)
 }
 
 func (s *GetNote) Validate() error {
@@ -166,6 +169,7 @@ type UpdateNoteRequest struct {
 	UserID  int64     `json:"user_id"`
 	NoteID  uuid.UUID `json:"id"`   // айди заметки
 	Text    string    `json:"text"` // новый текст
+	File    string    `json:"file"` // название файла в Minio (если есть)
 }
 
 func (s *UpdateNoteRequest) Validate() error {

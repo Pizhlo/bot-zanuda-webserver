@@ -254,6 +254,7 @@ func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID
 	return nil
 }
 
+// GetNotesTypes возвращает все типы заметок в пространстве и их количество (3 текстовых, 2 фото, и т.п.)
 func (db *spaceRepo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
 	res := []model.NoteTypeResponse{}
 
@@ -275,6 +276,39 @@ func (db *spaceRepo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]mo
 
 	if len(res) == 0 {
 		return nil, api_errors.ErrNoNotesFoundBySpaceID
+	}
+
+	return res, nil
+}
+
+// GetNotesByType возвращает все заметки указанного типа из пространства
+func (db *spaceRepo) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error) {
+	res := []model.GetNote{}
+
+	rows, err := db.db.QueryContext(ctx, `select notes.notes.id, users.users.tg_id, text, created, last_edit, file 
+from notes.notes
+join users.users on users.users.id = notes.notes.user_id
+where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
+	if err != nil {
+		return nil, fmt.Errorf("error getting note types: %+v", err)
+	}
+
+	for rows.Next() {
+		note := model.GetNote{
+			SpaceID: spaceID,
+			Type:    noteType,
+		}
+
+		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.LastEdit, &note.File)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning result of note types query: %+v", err)
+		}
+
+		res = append(res, note)
+	}
+
+	if len(res) == 0 {
+		return nil, api_errors.ErrNoNotesFoundByType
 	}
 
 	return res, nil

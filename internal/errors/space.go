@@ -11,4 +11,6 @@ var (
 	ErrSpaceNotExists = errors.New("space does not exist")
 	// ошибка о том, что пользователь не состоит в пространстве
 	ErrUserNotBelongsSpace = errors.New("user not in space")
+	// ошибка о том, что не найдены заметки указанного типа
+	ErrNoNotesFoundByType = errors.New("no notes found by this type")
 )

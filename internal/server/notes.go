@@ -239,5 +239,29 @@ func (s *server) getNoteTypes(c echo.Context) error {
 }
 
 func (s *server) getNotesByType(c echo.Context) error {
-	return nil
+	spaceIDStr := c.Param("id")
+	noteType := c.Param("type")
+
+	// валидируем запрос: тип должен быть одним из перечисленных
+	switch noteType {
+	case string(model.TextNoteType), string(model.PhotoNoteType):
+	default:
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note type: %s", noteType)})
+	}
+
+	spaceID, err := uuid.Parse(spaceIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
+	}
+
+	notes, err := s.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoNotesFoundByType) {
+			return c.NoContent(http.StatusNoContent)
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, notes)
 }

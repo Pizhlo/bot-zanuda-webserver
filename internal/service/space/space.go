@@ -28,6 +28,8 @@ type spaceRepo interface {
 	GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error)
 	// GetNotesTypes возвращает все типы заметок в пространстве и их количество (3 текстовых, 2 фото, и т.п.)
 	GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error)
+	// GetNotesByType возвращает все заметки указанного типа из пространства
+	GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error)
 }
 
 type spaceCache interface {
@@ -93,4 +95,9 @@ func (s *Space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UU
 // GetNotesTypes возвращает все типы заметок в пространстве и их количество (3 текстовых, 2 фото, и т.п.)
 func (s *Space) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
 	return s.repo.GetNotesTypes(ctx, spaceID)
+}
+
+// GetNotesByType возвращает все заметки указанного типа из пространства
+func (s *Space) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error) {
+	return s.repo.GetNotesByType(ctx, spaceID, noteType)
 }

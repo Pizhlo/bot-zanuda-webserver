@@ -95,6 +95,21 @@ func (mr *MockspaceRepoMockRecorder) GetNoteByID(ctx, noteID interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNoteByID", reflect.TypeOf((*MockspaceRepo)(nil).GetNoteByID), ctx, noteID)
 }
 
+// GetNotesByType mocks base method.
+func (m *MockspaceRepo) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNotesByType", ctx, spaceID, noteType)
+	ret0, _ := ret[0].([]model.GetNote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNotesByType indicates an expected call of GetNotesByType.
+func (mr *MockspaceRepoMockRecorder) GetNotesByType(ctx, spaceID, noteType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotesByType", reflect.TypeOf((*MockspaceRepo)(nil).GetNotesByType), ctx, spaceID, noteType)
+}
+
 // GetNotesTypes mocks base method.
 func (m *MockspaceRepo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
 	m.ctrl.T.Helper()

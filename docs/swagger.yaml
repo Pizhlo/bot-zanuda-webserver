@@ -1,15 +1,16 @@
 definitions:
   model.CreateNoteRequest:
     properties:
-      created:
-        description: дата создания заметки в часовом поясе пользователя в unix
-        type: integer
       space_id:
         description: айди пространства, куда сохранить заметку
-        type: integer
+        type: string
       text:
         description: текст заметки
         type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.NoteType'
+        description: 'тип заметки: текстовая, фото, видео, етс'
       user_id:
         description: кто создал заметку
         type: integer
@@ -24,9 +25,11 @@ definitions:
       last_edit:
         $ref: '#/definitions/sql.NullTime'
       space_id:
-        type: integer
+        type: string
       text:
         type: string
+      type:
+        $ref: '#/definitions/model.NoteType'
       user_id:
         type: integer
     type: object
@@ -46,11 +49,23 @@ definitions:
       text:
         description: текст заметки
         type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.NoteType'
+        description: 'тип заметки: текстовая, фото, видео, етс'
       user:
         allOf:
         - $ref: '#/definitions/model.User'
         description: кто создал заметку
     type: object
+  model.NoteType:
+    enum:
+    - text
+    - photo
+    type: string
+    x-enum-varnames:
+    - TextNoteType
+    - PhotoNoteType
   model.Space:
     properties:
       created:
@@ -60,12 +75,25 @@ definitions:
         description: айди пользователя-создателя в телеге
         type: integer
       id:
-        type: integer
+        type: string
       name:
         type: string
       personal:
         description: личное / совместное пространство
         type: boolean
+    type: object
+  model.UpdateNoteRequest:
+    properties:
+      id:
+        description: айди заметки
+        type: string
+      space_id:
+        type: string
+      text:
+        description: новый текст
+        type: string
+      user_id:
+        type: integer
     type: object
   model.User:
     properties:
@@ -142,16 +170,18 @@ paths:
           создать заметку:
           указать айди пользователя,
           айди его личного / совместного пространства,
-          текст заметки,
-          дата создания в часовом поясе пользователя в unix
+          текст заметки
+          тип заметки: текстовый, фото, видео, и т.п.
         in: body
         name: request
         required: true
         schema:
           $ref: '#/definitions/model.CreateNoteRequest'
       responses:
-        "201":
-          description: Created
+        "202":
+          description: Accepted
+          schema:
+            type: string
         "400":
           description: Невалидный запрос
           schema:
@@ -165,4 +195,38 @@ paths:
               type: string
             type: object
       summary: Запрос на создание заметки
+  /spaces/notes/update:
+    patch:
+      description: Запрос на обновление заметки с текстом. Создается в указанном пространстве
+      parameters:
+      - description: |-
+          обновить заметку:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          новый текст заметки,
+          тип заметки: текст, фото, етс
+          айди заметки, которую нужно обновить
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateNoteRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на обновление заметки
 swagger: "2.0"

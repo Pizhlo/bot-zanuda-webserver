@@ -1,10 +1,14 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // Space - пространство пользователя. Может быть личным или совместным (указано во флаге personal bool)
 type Space struct {
-	ID       int       `json:"id"`
+	ID       uuid.UUID `json:"id"`
 	Name     string    `json:"name"`
 	Created  time.Time `json:"created"`  // указывается в часовом поясе пользователя-создателя
 	Creator  int64     `json:"creator"`  // айди пользователя-создателя в телеге

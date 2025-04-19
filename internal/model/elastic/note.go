@@ -18,6 +18,7 @@ type Note struct {
 	ElasticID string    // id в elastic Search
 	TgID      int64
 	Text      string
+	SpaceID   uuid.UUID
 }
 
 // ValidateNote проверяет поля структуры elastic.Data на правильность и возвращает заметку

@@ -4,136 +4,118 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/internal/service/space"
-	space_db "webserver/internal/service/storage/postgres/space"
+	"webserver/internal/service/user"
 	"webserver/mocks"
 
 	"bou.ke/monkey"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/undefinedlabs/go-mpatch"
 )
 
 func TestCreateNote(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+
 	type test struct {
 		name             string
 		req              model.CreateNoteRequest
-		dbErr            error // ошибка, которую возвращает база
+		expectedNote     model.CreateNoteRequest
+		err              bool
 		expectedCode     int
 		expectedResponse map[string]string
 	}
 
+	generatedID := uuid.New()
+
+	uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
+	require.NoError(t, err)
+
+	defer uuidPatch.Unpatch()
+
 	tests := []test{
 		{
-			name:  "positive test",
-			dbErr: nil,
+			name: "positive test",
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
 			},
-			expectedCode: http.StatusCreated,
+			expectedNote: model.CreateNoteRequest{
+				ID:      uuid.New(),
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedCode: http.StatusAccepted,
+			expectedResponse: map[string]string{
+				"request_id": uuid.New().String(),
+			},
 		},
 		{
-			name:  "field `user_id` not filled",
-			dbErr: nil,
+			name: "user ID not filled",
 			req: model.CreateNoteRequest{
 				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
 			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "field `user_id` not filled"},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrFieldUserNotFilled.Error(),
+			},
 		},
 		{
-			name:  "field `text` not filled",
-			dbErr: nil,
+			name: "text not filled",
 			req: model.CreateNoteRequest{
 				UserID:  1,
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
 			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "field `text` not filled"},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrFieldTextNotFilled.Error(),
+			},
 		},
 		{
-			name:  "field `created` not filled",
-			dbErr: nil,
-			req: model.CreateNoteRequest{
-				UserID:  1,
-				SpaceID: 1,
-				Text:    "new note",
-			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "field `created` not filled"},
-		},
-		{
-			name:  "field `space_id` not filled",
-			dbErr: nil,
-			req: model.CreateNoteRequest{
-				UserID:  1,
-				Created: time.Now().Unix(),
-				Text:    "new note",
-			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "field `space_id` not filled"},
-		},
-		{
-			name:  "db err: unknown user",
-			dbErr: space_db.ErrUnknownUser,
+			name: "invalid space ID",
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+				SpaceID: uuid.Nil,
+				Type:    model.TextNoteType,
 			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "unknown user"},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrInvalidSpaceID.Error(),
+			},
 		},
 		{
-			name:  "db err: space not exists",
-			dbErr: space_db.ErrSpaceNotExists,
+			name: "field type not filled",
 			req: model.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+				SpaceID: uuid.New(),
 			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "space does not exist"},
-		},
-		{
-			name:  "db err: space not exists",
-			dbErr: errors.New("unknown error"),
-			req: model.CreateNoteRequest{
-				UserID:  1,
-				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrFieldTypeNotFilled.Error(),
 			},
-			expectedCode:     http.StatusInternalServerError,
-			expectedResponse: map[string]string{"error": "unknown error"},
-		},
-		{
-			name:  "db err: space belongs another user",
-			dbErr: space_db.ErrSpaceNotBelongsUser,
-			req: model.CreateNoteRequest{
-				UserID:  1,
-				Text:    "new note",
-				SpaceID: 1,
-				Created: time.Now().Unix(),
-			},
-			expectedCode:     http.StatusBadRequest,
-			expectedResponse: map[string]string{"bad request": "space not belongs to user"},
 		},
 	}
 
@@ -141,10 +123,17 @@ func TestCreateNote(t *testing.T) {
 	defer ctrl.Finish()
 
 	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceCache := mocks.NewMockspaceCache(ctrl)
+	saver := mocks.NewMockdbWorker(ctrl)
 
-	spaceSrv := space.New(spaceRepo)
+	spaceSrv := space.New(spaceRepo, spaceCache, saver)
 
-	server := New("", spaceSrv)
+	userRepo := mocks.NewMockuserRepo(ctrl)
+	userCache := mocks.NewMockuserCache(ctrl)
+
+	userSrv := user.New(userRepo, userCache)
+
+	server := New("", spaceSrv, userSrv)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -154,10 +143,20 @@ func TestCreateNote(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// ожидаем вызова базы либо, если статус кода успешен (значит запрос успешно прошел),
-			// либо если есть ошибка из базы
-			if tt.dbErr != nil || tt.expectedCode == http.StatusCreated {
-				spaceRepo.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(tt.dbErr)
+			userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
+				ID: 1,
+			}, nil)
+
+			spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
+				ID: generatedID,
+			}, nil)
+
+			if !tt.err {
+				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
+				})
 			}
 
 			bodyJSON, err := json.Marshal(tt.req)
@@ -168,19 +167,594 @@ func TestCreateNote(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 
-			if tt.expectedCode != http.StatusCreated {
+			if tt.expectedResponse != nil {
 				var result map[string]string
 				dec := json.NewDecoder(resp.Body)
 				err = dec.Decode(&result)
 				require.NoError(t, err)
 
-				assert.Equal(t, tt.expectedResponse, result)
+				assert.Equal(t, tt.expectedResponse, result, "result IDs not equal")
 			}
 		})
 	}
 }
 
-func TestNotesBeSpaceID_Full(t *testing.T) {
+func TestUpdateNote(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	type test struct {
+		name             string
+		req              model.UpdateNoteRequest
+		expectedNote     model.UpdateNoteRequest
+		dbNote           model.GetNote // что возвращает база при вызове GetNote
+		dbErr            error
+		err              bool
+		getNote          bool // нужно ли вызывать getNote
+		expectedCode     int
+		expectedResponse map[string]string
+		methodErrors     map[string]error // название метода : ошибка
+	}
+
+	generatedID := uuid.New()
+	newID := uuid.New() // для случая, когда айди должен отличаться (заметка не принадлежит пространству)
+
+	tests := []test{
+		{
+			name: "positive test",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: generatedID,
+			},
+			getNote: true,
+			dbNote: model.GetNote{
+				UserID:  1,
+				ID:      generatedID,
+				Text:    "new note",
+				SpaceID: generatedID,
+				Type:    model.TextNoteType,
+				Created: time.Now(),
+			},
+			expectedNote: model.UpdateNoteRequest{
+				UserID:  1,
+				ID:      generatedID,
+				Text:    "new note",
+				SpaceID: generatedID,
+			},
+			expectedCode: http.StatusAccepted,
+			expectedResponse: map[string]string{
+				"request_id": uuid.New().String(),
+			},
+		},
+		{
+			name: "user ID not filled",
+			req: model.UpdateNoteRequest{
+				Text:    "new note",
+				SpaceID: uuid.New(),
+			},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrFieldUserNotFilled.Error(),
+			},
+		},
+		{
+			name: "text not filled",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				SpaceID: uuid.New(),
+			},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrFieldTextNotFilled.Error(),
+			},
+		},
+		{
+			name: "invalid space ID",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "invalid space ID",
+				SpaceID: uuid.Nil,
+				NoteID:  generatedID,
+			},
+			err:          true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrInvalidSpaceID.Error(),
+			},
+		},
+		{
+			name: "note not belongs space",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "note not belongs space REQ",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			dbNote: model.GetNote{
+				UserID:  1,
+				ID:      generatedID,
+				Text:    "note not belongs space DB",
+				SpaceID: newID,
+				Type:    model.TextNoteType,
+				Created: time.Now(),
+			},
+			err:          true,
+			getNote:      true,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": api_errors.ErrNoteNotBelongsSpace.Error(),
+			},
+		},
+		{
+			name: "note type is not text",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "note type is not text REQ",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			err:     true,
+			getNote: true,
+			dbNote: model.GetNote{
+				UserID:  1,
+				ID:      generatedID,
+				Text:    "note type is not text DB",
+				SpaceID: generatedID,
+				Type:    model.PhotoNoteType,
+				Created: time.Now(),
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": model.ErrUpdateNotTextNote.Error(),
+			},
+		},
+		{
+			name: "note not found",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "note not found REQ",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			err:          true,
+			dbErr:        api_errors.ErrNoteNotFound,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": api_errors.ErrNoteNotFound.Error(),
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceCache := mocks.NewMockspaceCache(ctrl)
+	saver := mocks.NewMockdbWorker(ctrl)
+
+	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+
+	userRepo := mocks.NewMockuserRepo(ctrl)
+	userCache := mocks.NewMockuserCache(ctrl)
+
+	userSrv := user.New(userRepo, userCache)
+
+	server := New("", spaceSrv, userSrv)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
+				ID: 1,
+			}, nil)
+
+			spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
+				ID: generatedID,
+			}, nil)
+
+			if err, ok := tt.methodErrors["CheckIfNoteExistsInSpace"]; ok {
+				spaceRepo.EXPECT().CheckIfNoteExistsInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
+			}
+
+			logrus.Debugf("tt.name: %s. tt.dbNote: %+v", tt.name, tt.dbNote)
+
+			if tt.getNote {
+				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil)
+			}
+
+			if tt.dbErr != nil {
+				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, tt.dbErr)
+			}
+
+			if !tt.err {
+				uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
+				require.NoError(t, err)
+
+				defer uuidPatch.Unpatch()
+
+				tt.expectedResponse = map[string]string{"request_id": uuid.New().String()}
+
+				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
+				})
+			}
+
+			bodyJSON, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+
+			resp := testRequest(t, ts, http.MethodPatch, "/spaces/notes/update", bytes.NewReader(bodyJSON))
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedResponse != nil {
+				var result map[string]string
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result, "responses not equal")
+			}
+		})
+	}
+}
+
+// тест для проверки middleware
+func TestValidateNoteRequest_CreateNote(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	type test struct {
+		name         string
+		req          model.CreateNoteRequest
+		expectedNote model.CreateNoteRequest
+		dbErr        bool // должна ли база вернуть ошибку
+		// ошибки разных репозиториев
+		err              error            // ошибки валидации и т.п.
+		methodErrors     map[string]error // название метода : ошибка
+		expectedCode     int
+		expectedResponse map[string]string
+	}
+
+	generatedID := uuid.New()
+
+	uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
+	require.NoError(t, err)
+
+	defer uuidPatch.Unpatch()
+
+	tests := []test{
+		{
+			name: "create note",
+			req: model.CreateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedNote: model.CreateNoteRequest{
+				ID:      uuid.New(),
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedCode: http.StatusAccepted,
+			expectedResponse: map[string]string{
+				"request_id": uuid.New().String(),
+			},
+		},
+		{
+			name:         "db err: unknown user",
+			dbErr:        true,
+			err:          api_errors.ErrUnknownUser,
+			methodErrors: map[string]error{"CheckUser": api_errors.ErrUnknownUser},
+			req: model.CreateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "unknown user"},
+		},
+		{
+			name:         "db err: space not exists",
+			dbErr:        true,
+			err:          api_errors.ErrSpaceNotExists,
+			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
+			req: model.CreateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "space does not exist"},
+		},
+		{
+			name:         "db err: space belongs another user",
+			dbErr:        true,
+			err:          api_errors.ErrSpaceNotBelongsUser,
+			methodErrors: map[string]error{"IsUserInSpace": api_errors.ErrSpaceNotBelongsUser},
+			req: model.CreateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+				Type:    model.TextNoteType,
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "space not belongs to user"},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceCache := mocks.NewMockspaceCache(ctrl)
+	saver := mocks.NewMockdbWorker(ctrl)
+
+	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+
+	userRepo := mocks.NewMockuserRepo(ctrl)
+	userCache := mocks.NewMockuserCache(ctrl)
+
+	userSrv := user.New(userRepo, userCache)
+
+	server := New("", spaceSrv, userSrv)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr {
+				if err, ok := tt.methodErrors["CheckUser"]; ok {
+					userRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+				}
+
+				if err, ok := tt.methodErrors["GetSpaceByID"]; ok {
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
+
+					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+					spaceRepo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+				}
+
+				if err, ok := tt.methodErrors["IsUserInSpace"]; ok {
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
+					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+
+					spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
+				}
+			}
+
+			// positive case
+			if tt.err == nil {
+				userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
+					ID: 1,
+				}, nil)
+
+				spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
+					ID: generatedID,
+				}, nil)
+
+				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
+				})
+			}
+
+			bodyJSON, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+
+			resp := testRequest(t, ts, http.MethodPost, "/spaces/notes/create", bytes.NewReader(bodyJSON))
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedResponse != nil {
+				var result map[string]string
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result, "result IDs not equal")
+			}
+		})
+	}
+}
+
+func TestValidateNoteRequest_UpdateNote(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	type test struct {
+		name         string
+		req          model.UpdateNoteRequest
+		expectedNote model.UpdateNoteRequest
+		dbNote       model.GetNote // что возвращает база
+		dbErr        bool          // должна ли база вернуть ошибку
+		// ошибки разных репозиториев
+		err              error            // ошибки валидации и т.п.
+		methodErrors     map[string]error // название метода : ошибка
+		expectedCode     int
+		expectedResponse map[string]string
+	}
+
+	generatedID := uuid.New()
+
+	uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
+	require.NoError(t, err)
+
+	defer uuidPatch.Unpatch()
+
+	tests := []test{
+		{
+			name: "update note",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			dbNote: model.GetNote{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: generatedID,
+				ID:      generatedID,
+				Type:    model.TextNoteType,
+			},
+			expectedNote: model.UpdateNoteRequest{
+				ID:      generatedID,
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			expectedCode: http.StatusAccepted,
+			expectedResponse: map[string]string{
+				"request_id": uuid.New().String(),
+			},
+		},
+		{
+			name:         "db err: unknown user",
+			dbErr:        true,
+			err:          api_errors.ErrUnknownUser,
+			methodErrors: map[string]error{"CheckUser": api_errors.ErrUnknownUser},
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "unknown user"},
+		},
+		{
+			name:         "db err: space not exists",
+			dbErr:        true,
+			err:          api_errors.ErrSpaceNotExists,
+			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "space does not exist"},
+		},
+		{
+			name:         "db err: space belongs another user",
+			dbErr:        true,
+			err:          api_errors.ErrSpaceNotBelongsUser,
+			methodErrors: map[string]error{"IsUserInSpace": api_errors.ErrSpaceNotBelongsUser},
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "new note",
+				SpaceID: uuid.New(),
+			},
+			expectedCode:     http.StatusBadRequest,
+			expectedResponse: map[string]string{"bad request": "space not belongs to user"},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceCache := mocks.NewMockspaceCache(ctrl)
+	saver := mocks.NewMockdbWorker(ctrl)
+
+	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+
+	userRepo := mocks.NewMockuserRepo(ctrl)
+	userCache := mocks.NewMockuserCache(ctrl)
+
+	userSrv := user.New(userRepo, userCache)
+
+	server := New("", spaceSrv, userSrv)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr {
+				if err, ok := tt.methodErrors["CheckUser"]; ok {
+					userRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+				}
+
+				if err, ok := tt.methodErrors["GetSpaceByID"]; ok {
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
+
+					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+					spaceRepo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+				}
+
+				if err, ok := tt.methodErrors["IsUserInSpace"]; ok {
+					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
+					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+
+					spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
+				}
+			}
+
+			// positive case
+			if tt.err == nil {
+				userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
+					ID: 1,
+				}, nil)
+
+				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil)
+
+				spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
+					ID: generatedID,
+				}, nil)
+
+				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
+				})
+			}
+
+			bodyJSON, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+
+			resp := testRequest(t, ts, http.MethodPatch, "/spaces/notes/update", bytes.NewReader(bodyJSON))
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedResponse != nil {
+				var result map[string]string
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result, "result IDs not equal")
+			}
+		})
+	}
+}
+
+func TestNotesBySpaceID_Full(t *testing.T) {
 	type test struct {
 		name             string
 		spaceID          string
@@ -207,7 +781,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 						TgID:     1234,
 						Username: "test user",
 						PersonalSpace: model.Space{
-							ID:       1,
+							ID:       uuid.New(),
 							Name:     "personal space for user 1234",
 							Created:  time.Now(),
 							Creator:  1,
@@ -217,7 +791,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 					},
 					Text: "test note",
 					Space: &model.Space{
-						ID:       1,
+						ID:       uuid.New(),
 						Name:     "personal space for user 1234",
 						Created:  time.Now(),
 						Creator:  1,
@@ -231,14 +805,14 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 		{
 			name:         "space does not have any notes",
 			spaceID:      "1234",
-			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
+			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
 			name:         "space does not exist",
 			spaceID:      "1234",
-			dbErr:        space_db.ErrSpaceNotExists,
+			dbErr:        api_errors.ErrSpaceNotExists,
 			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
 		},
@@ -255,9 +829,9 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 
 	repo := mocks.NewMockspaceRepo(ctrl)
 
-	spaceSrv := space.New(repo)
+	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv)
+	server := New("", spaceSrv, nil)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -268,9 +842,9 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr != nil {
-				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+				repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
 			} else if tt.expectedCode == http.StatusOK {
-				repo.EXPECT().GetAllbySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+				repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
 			url := fmt.Sprintf("/spaces/%s/notes?full_user=true", tt.spaceID)
@@ -303,7 +877,7 @@ func TestNotesBeSpaceID_Full(t *testing.T) {
 	}
 }
 
-func TestNotesBeSpaceID(t *testing.T) {
+func TestNotesBySpaceID(t *testing.T) {
 	type test struct {
 		name             string
 		spaceID          string
@@ -312,6 +886,8 @@ func TestNotesBeSpaceID(t *testing.T) {
 		expectedResponse []model.GetNote
 		expectedErr      map[string]string
 	}
+
+	logrus.SetLevel(logrus.DebugLevel)
 
 	wayback := time.Date(2024, time.May, 19, 1, 2, 3, 4, time.UTC)
 	patch := monkey.Patch(time.Now, func() time.Time { return wayback })
@@ -328,26 +904,25 @@ func TestNotesBeSpaceID(t *testing.T) {
 			expectedCode: http.StatusOK,
 			expectedResponse: []model.GetNote{
 				{
-					ID:       uuid.New(),
-					UserID:   1,
-					Text:     "test note",
-					SpaceID:  1,
-					Created:  time.Now(),
-					LastEdit: sql.NullTime{Valid: false},
+					ID:      uuid.New(),
+					UserID:  1,
+					Text:    "test note",
+					SpaceID: uuid.New(),
+					Created: time.Now(),
 				},
 			},
 		},
 		{
 			name:         "space does not have any notes",
 			spaceID:      "1234",
-			dbErr:        space_db.ErrNoNotesFoundBySpaceID,
+			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
 			name:         "space does not exist",
 			spaceID:      "1234",
-			dbErr:        space_db.ErrSpaceNotExists,
+			dbErr:        api_errors.ErrSpaceNotExists,
 			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
 		},
@@ -364,9 +939,9 @@ func TestNotesBeSpaceID(t *testing.T) {
 
 	repo := mocks.NewMockspaceRepo(ctrl)
 
-	spaceSrv := space.New(repo)
+	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv)
+	server := New("", spaceSrv, nil)
 
 	r, err := runTestServer(server)
 	require.NoError(t, err)
@@ -377,9 +952,9 @@ func TestNotesBeSpaceID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr != nil {
-				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+				repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
 			} else if tt.expectedCode == http.StatusOK {
-				repo.EXPECT().GetAllBySpaceID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+				repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
 			}
 
 			url := fmt.Sprintf("/spaces/%s/notes", tt.spaceID)

@@ -12,6 +12,11 @@ import (
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
+	user_db "webserver/internal/service/storage/postgres/user"
+	"webserver/internal/service/storage/rabbit/worker"
+	space_cache "webserver/internal/service/storage/redis/space"
+	user_cache "webserver/internal/service/storage/redis/user"
+	"webserver/internal/service/user"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -94,15 +99,52 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	spaceSrv := space.New(spaceRepo)
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if len(redisAddr) == 0 {
+		logrus.Fatalf("REDIS_ADDR not set")
+	}
+
+	spaceCache, err := space_cache.New(ctx, redisAddr)
+	if err != nil {
+		logrus.Fatalf("error connecting redis (space cache): %+v", err)
+	}
+
+	rabbitAddr := os.Getenv("RABBIT_ADDR")
+	if len(rabbitAddr) == 0 {
+		logrus.Fatalf("RABBIT_ADDR not set")
+	}
+
+	logrus.Infof("connecting rabbit on %s", rabbitAddr)
+
+	rabbit, err := worker.New(rabbitAddr)
+	if err != nil {
+		logrus.Fatalf("error connecting rabbit: %+v", err)
+	}
+
+	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
+
+	spaceSrv := space.New(spaceRepo, spaceCache, rabbit)
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
 		logrus.Fatalf("SERVER_ADDR not set")
 	}
 
+	userCache, err := user_cache.New(ctx, redisAddr)
+	if err != nil {
+		logrus.Fatalf("error connecting redis (user cache): %+v", err)
+	}
+
+	userRepo, err := user_db.New(addr)
+	if err != nil {
+		logrus.Fatalf("error connecting db: %+v", err)
+	}
+
+	userSrv := user.New(userRepo, userCache)
+
 	logrus.Infof("starting server on %s", serverAddr)
-	s := server.New(serverAddr, spaceSrv)
+
+	s := server.New(serverAddr, spaceSrv, userSrv)
 
 	err = s.Serve()
 	if err != nil {
@@ -132,6 +174,12 @@ func main() {
 		}
 
 		spaceRepo.Close()
+		err = rabbit.Close()
+		if err != nil {
+			logrus.Errorf("error closing rabbit: %+v", err)
+		}
+
+		userRepo.Close()
 	}(&wg)
 
 	wg.Wait()

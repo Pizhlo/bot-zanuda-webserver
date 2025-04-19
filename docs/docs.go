@@ -32,7 +32,7 @@ const docTemplate = `{
                 "summary": "Запрос на создание заметки",
                 "parameters": [
                     {
-                        "description": "создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix",
+                        "description": "создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п.",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -42,8 +42,54 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created"
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/spaces/notes/update": {
+            "patch": {
+                "description": "Запрос на обновление заметки с текстом. Создается в указанном пространстве",
+                "summary": "Запрос на обновление заметки",
+                "parameters": [
+                    {
+                        "description": "обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "400": {
                         "description": "Невалидный запрос",
@@ -121,17 +167,21 @@ const docTemplate = `{
         "model.CreateNoteRequest": {
             "type": "object",
             "properties": {
-                "created": {
-                    "description": "дата создания заметки в часовом поясе пользователя в unix",
-                    "type": "integer"
-                },
                 "space_id": {
                     "description": "айди пространства, куда сохранить заметку",
-                    "type": "integer"
+                    "type": "string"
                 },
                 "text": {
                     "description": "текст заметки",
                     "type": "string"
+                },
+                "type": {
+                    "description": "тип заметки: текстовая, фото, видео, етс",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NoteType"
+                        }
+                    ]
                 },
                 "user_id": {
                     "description": "кто создал заметку",
@@ -153,10 +203,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/sql.NullTime"
                 },
                 "space_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "text": {
                     "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.NoteType"
                 },
                 "user_id": {
                     "type": "integer"
@@ -188,6 +241,14 @@ const docTemplate = `{
                     "description": "текст заметки",
                     "type": "string"
                 },
+                "type": {
+                    "description": "тип заметки: текстовая, фото, видео, етс",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NoteType"
+                        }
+                    ]
+                },
                 "user": {
                     "description": "кто создал заметку",
                     "allOf": [
@@ -197,6 +258,17 @@ const docTemplate = `{
                     ]
                 }
             }
+        },
+        "model.NoteType": {
+            "type": "string",
+            "enum": [
+                "text",
+                "photo"
+            ],
+            "x-enum-varnames": [
+                "TextNoteType",
+                "PhotoNoteType"
+            ]
         },
         "model.Space": {
             "type": "object",
@@ -210,7 +282,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -218,6 +290,25 @@ const docTemplate = `{
                 "personal": {
                     "description": "личное / совместное пространство",
                     "type": "boolean"
+                }
+            }
+        },
+        "model.UpdateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "айди заметки",
+                    "type": "string"
+                },
+                "space_id": {
+                    "type": "string"
+                },
+                "text": {
+                    "description": "новый текст",
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

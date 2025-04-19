@@ -48,3 +48,17 @@ func (mr *MockelasticClientMockRecorder) Save(ctx, search interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockelasticClient)(nil).Save), ctx, search)
 }
+
+// UpdateNote mocks base method.
+func (m *MockelasticClient) UpdateNote(ctx context.Context, search elastic.Data) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNote", ctx, search)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNote indicates an expected call of UpdateNote.
+func (mr *MockelasticClientMockRecorder) UpdateNote(ctx, search interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNote", reflect.TypeOf((*MockelasticClient)(nil).UpdateNote), ctx, search)
+}

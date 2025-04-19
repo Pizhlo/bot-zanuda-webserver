@@ -69,7 +69,7 @@ func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteReques
 }
 
 // GetAllNotesBySpaceIDFull возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
-func (db *spaceRepo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID int64) ([]model.Note, error) {
+func (db *spaceRepo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error) {
 	res := []model.Note{}
 
 	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, 
@@ -116,7 +116,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 }
 
 // GetAllNotesBySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
-func (db *spaceRepo) GetAllNotesBySpaceID(ctx context.Context, spaceID int64) ([]model.GetNote, error) {
+func (db *spaceRepo) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error) {
 	res := []model.GetNote{}
 
 	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, last_edit as note_last_edit, shared_spaces.shared_spaces.id as space_id,  users.users.tg_id from shared_spaces.shared_spaces
@@ -190,28 +190,6 @@ func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNoteRequ
 	return tx.Commit()
 }
 
-// CheckIfNoteExistsInSpace проверяет, что в пространстве существует такая заметка
-func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, spaceID uuid.UUID) error {
-	var id uuid.UUID
-
-	row := db.db.QueryRowContext(ctx, "select id from notes.notes where id = $1 and space_id = $2", noteID, spaceID)
-
-	err := row.Scan(&id)
-	if err != nil {
-		if strings.Contains(err.Error(), "no rows") {
-			return api_errors.ErrNoteNotBelongsSpace
-		}
-
-		return err
-	}
-
-	if id == uuid.Nil {
-		return api_errors.ErrNoteNotBelongsSpace
-	}
-
-	return nil
-}
-
 // GetNoteByID возвращает заметку по айди, либо ошибку о том, что такой заметки не существует
 func (db *spaceRepo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
 	var note model.GetNote
@@ -274,4 +252,30 @@ func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID
 	}
 
 	return nil
+}
+
+func (db *spaceRepo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
+	res := []model.NoteTypeResponse{}
+
+	rows, err := db.db.QueryContext(ctx, "select count(*), type from notes.notes group by type, notes.space_id having space_id = $1;", spaceID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting note types: %+v", err)
+	}
+
+	for rows.Next() {
+		noteType := model.NoteTypeResponse{}
+
+		err := rows.Scan(&noteType.Count, &noteType.Type)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning result of note types query: %+v", err)
+		}
+
+		res = append(res, noteType)
+	}
+
+	if len(res) == 0 {
+		return nil, api_errors.ErrNoNotesFoundBySpaceID
+	}
+
+	return res, nil
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -87,7 +86,7 @@ func errorsIn(target error, errs []error) bool {
 func (s *server) notesBySpaceID(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
-	spaceID, err := strconv.Atoi(spaceIDStr)
+	spaceID, err := uuid.Parse(spaceIDStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
@@ -107,7 +106,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 
 	// получение заметок в полном режиме
 	if fullUser {
-		notes, err := s.space.GetAllNotesBySpaceIDFull(c.Request().Context(), int64(spaceID))
+		notes, err := s.space.GetAllNotesBySpaceIDFull(c.Request().Context(), spaceID)
 		if err != nil {
 			// у пользователя нет заметок - отдаем 204
 			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
@@ -126,7 +125,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	}
 
 	// получение заметок в кратком режиме
-	notes, err := s.space.GetAllNotesBySpaceID(c.Request().Context(), int64(spaceID))
+	notes, err := s.space.GetAllNotesBySpaceID(c.Request().Context(), spaceID)
 	if err != nil {
 		// у пользователя нет заметок - отдаем 204
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
@@ -210,53 +209,18 @@ func (s *server) updateNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
-// validateNoteRequest производит валидацию запросов на создание и обновление заметки.
-// Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
-func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		var note model.UpdateNoteRequest
+func (s *server) noteTypes(c echo.Context) error {
+	spaceIDStr := c.Param("id")
 
-		// нам нужно сохранить тело запроса для последующей обработки в хендлерах
-		body, err := io.ReadAll(c.Request().Body)
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(body, &note)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-		}
-
-		// проверяем, что пользователь существует
-		if err := s.user.CheckUser(c.Request().Context(), note.UserID); err != nil {
-			if errors.Is(err, api_errors.ErrUnknownUser) {
-				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-			}
-
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		// проверяем, что пространство существует
-		if _, err := s.space.GetSpaceByID(c.Request().Context(), note.SpaceID); err != nil {
-			if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
-				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-			}
-
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		// проверяем, что пользователь состоит в пространстве (сюда потом еще добавится проверка на права)
-		if err := s.space.IsUserInSpace(c.Request().Context(), note.UserID, note.SpaceID); err != nil {
-			if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
-				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-			}
-
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		// Восстанавливаем тело запроса, чтобы его можно было прочитать в хендлере
-		c.Request().Body = io.NopCloser(bytes.NewBuffer(body))
-
-		return next(c)
+	spaceID, err := uuid.Parse(spaceIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
+
+	types, err := s.space.GetNotesTypes(c.Request().Context(), spaceID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, types)
 }

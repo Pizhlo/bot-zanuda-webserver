@@ -184,3 +184,9 @@ func (s *UpdateNoteRequest) Validate() error {
 
 	return nil
 }
+
+// структура для ответа на запрос всех типов заметок
+type NoteTypeResponse struct {
+	Type  NoteType `json:"type"`
+	Count int      `json:"count"`
+}

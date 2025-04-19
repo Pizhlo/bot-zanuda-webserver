@@ -361,10 +361,6 @@ func TestUpdateNote(t *testing.T) {
 				ID: generatedID,
 			}, nil)
 
-			if err, ok := tt.methodErrors["CheckIfNoteExistsInSpace"]; ok {
-				spaceRepo.EXPECT().CheckIfNoteExistsInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
-			}
-
 			logrus.Debugf("tt.name: %s. tt.dbNote: %+v", tt.name, tt.dbNote)
 
 			if tt.getNote {

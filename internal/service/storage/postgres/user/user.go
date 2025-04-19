@@ -1,7 +1,6 @@
 package user
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 
@@ -40,26 +39,26 @@ func (db *userRepo) Close() {
 	}
 }
 
-func (db *userRepo) tx(ctx context.Context) (*sql.Tx, error) {
-	if db.currentTx != nil {
-		return db.currentTx, nil
-	}
+// func (db *userRepo) tx(ctx context.Context) (*sql.Tx, error) {
+// 	if db.currentTx != nil {
+// 		return db.currentTx, nil
+// 	}
 
-	tx, err := db.db.BeginTx(ctx, &sql.TxOptions{
-		Isolation: sql.LevelReadCommitted,
-		ReadOnly:  false,
-	})
-	if err != nil {
-		return nil, err
-	}
+// 	tx, err := db.db.BeginTx(ctx, &sql.TxOptions{
+// 		Isolation: sql.LevelReadCommitted,
+// 		ReadOnly:  false,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	db.currentTx = tx
+// 	db.currentTx = tx
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-func (db *userRepo) commit() error {
-	tx := db.currentTx
-	db.currentTx = nil
-	return tx.Commit()
-}
+// func (db *userRepo) commit() error {
+// 	tx := db.currentTx
+// 	db.currentTx = nil
+// 	return tx.Commit()
+// }

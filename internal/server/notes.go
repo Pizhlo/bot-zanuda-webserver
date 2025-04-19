@@ -212,7 +212,8 @@ func (s *server) updateNote(c echo.Context) error {
 //	@Summary		Получить все типы заметок
 //	@Description	Получить список всех типов заметок и их количество
 //	@Param          id   path      string  true  "ID пространства"//
-//	@Success		202 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
+//	@Success		200 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
+//	@Failure		204	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/{id}/notes/types [get]
@@ -238,6 +239,17 @@ func (s *server) getNoteTypes(c echo.Context) error {
 	return c.JSON(http.StatusOK, types)
 }
 
+//	@Summary		Получить все заметки одного типа
+//	@Description	Получить все заметки определенного типа: текстовые, фото, етс
+//	@Param          id   path      string  true  "ID пространства"
+//	@Param          type   path      string  true  "тип заметки: текст, фото, етс"
+//	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
+//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/{id}/notes/{type} [get]
+//
+// ручка для заметок по типу
 func (s *server) getNotesByType(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 	noteType := c.Param("type")

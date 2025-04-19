@@ -167,14 +167,71 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/model.NoteTypeResponse"
                             }
                         }
+                    },
+                    "204": {
+                        "description": "Нет заметок"
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/spaces/{id}/notes/{type}": {
+            "get": {
+                "description": "Получить все заметки определенного типа: текстовые, фото, етс",
+                "summary": "Получить все заметки одного типа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "тип заметки: текст, фото, етс",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Нет заметок"
                     },
                     "400": {
                         "description": "Невалидный запрос",
@@ -202,6 +259,10 @@ const docTemplate = `{
         "model.CreateNoteRequest": {
             "type": "object",
             "properties": {
+                "file": {
+                    "description": "название файла в Minio (если есть)",
+                    "type": "string"
+                },
                 "space_id": {
                     "description": "айди пространства, куда сохранить заметку",
                     "type": "string"
@@ -231,6 +292,14 @@ const docTemplate = `{
                     "description": "дата создания заметки в часовом поясе пользователя в unix",
                     "type": "string"
                 },
+                "file": {
+                    "description": "название файла в Minio (если есть)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/sql.NullString"
+                        }
+                    ]
+                },
                 "id": {
                     "type": "string"
                 },
@@ -256,6 +325,10 @@ const docTemplate = `{
             "properties": {
                 "created": {
                     "description": "дата создания заметки в часовом поясе пользователя в unix",
+                    "type": "string"
+                },
+                "file": {
+                    "description": "название файла в Minio (если есть)",
                     "type": "string"
                 },
                 "id": {
@@ -342,6 +415,10 @@ const docTemplate = `{
         "model.UpdateNoteRequest": {
             "type": "object",
             "properties": {
+                "file": {
+                    "description": "название файла в Minio (если есть)",
+                    "type": "string"
+                },
                 "id": {
                     "description": "айди заметки",
                     "type": "string"
@@ -375,6 +452,18 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "sql.NullString": {
+            "type": "object",
+            "properties": {
+                "string": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if String is not NULL",
+                    "type": "boolean"
                 }
             }
         },

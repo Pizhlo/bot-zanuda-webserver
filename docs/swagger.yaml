@@ -1,6 +1,9 @@
 definitions:
   model.CreateNoteRequest:
     properties:
+      file:
+        description: название файла в Minio (если есть)
+        type: string
       space_id:
         description: айди пространства, куда сохранить заметку
         type: string
@@ -20,6 +23,10 @@ definitions:
       created:
         description: дата создания заметки в часовом поясе пользователя в unix
         type: string
+      file:
+        allOf:
+        - $ref: '#/definitions/sql.NullString'
+        description: название файла в Minio (если есть)
       id:
         type: string
       last_edit:
@@ -37,6 +44,9 @@ definitions:
     properties:
       created:
         description: дата создания заметки в часовом поясе пользователя в unix
+        type: string
+      file:
+        description: название файла в Minio (если есть)
         type: string
       id:
         type: string
@@ -91,6 +101,9 @@ definitions:
     type: object
   model.UpdateNoteRequest:
     properties:
+      file:
+        description: название файла в Minio (если есть)
+        type: string
       id:
         description: айди заметки
         type: string
@@ -114,6 +127,14 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  sql.NullString:
+    properties:
+      string:
+        type: string
+      valid:
+        description: Valid is true if String is not NULL
+        type: boolean
     type: object
   sql.NullTime:
     properties:
@@ -163,6 +184,42 @@ paths:
               type: string
             type: object
       summary: Запрос на получение всех заметок
+  /spaces/{id}/notes/{type}:
+    get:
+      description: 'Получить все заметки определенного типа: текстовые, фото, етс'
+      parameters:
+      - description: ID пространства
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'тип заметки: текст, фото, етс'
+        in: path
+        name: type
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GetNote'
+            type: array
+        "204":
+          description: Нет заметок
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все заметки одного типа
   /spaces/{id}/notes/types:
     get:
       description: Получить список всех типов заметок и их количество
@@ -173,12 +230,14 @@ paths:
         required: true
         type: string
       responses:
-        "202":
-          description: Accepted
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/model.NoteTypeResponse'
             type: array
+        "204":
+          description: Нет заметок
         "400":
           description: Невалидный запрос
           schema:

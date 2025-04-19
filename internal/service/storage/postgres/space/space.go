@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"webserver/internal/model/elastic"
 
+	"github.com/google/uuid"
 	sqldblogger "github.com/simukti/sqldb-logger"
 	"github.com/simukti/sqldb-logger/logadapter/logrusadapter"
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,7 @@ type spaceRepo struct {
 type elasticClient interface {
 	Save(ctx context.Context, search elastic.Data) error
 	// SearchByText производит поиск по тексту (названию). Возвращает ID из базы подходящих записей
-	// SearchByText(ctx context.Context, search elastic.Data) ([]uuid.UUID, error)
+	SearchByText(ctx context.Context, search elastic.Data) ([]uuid.UUID, error)
 	// // SearchByID производит поиск по ID из базы. Возвращает ID  из эластика подходящих записей
 	// SearchByID(ctx context.Context, search elastic.Data) ([]string, error)
 	// Delete(ctx context.Context, search elastic.Data) error

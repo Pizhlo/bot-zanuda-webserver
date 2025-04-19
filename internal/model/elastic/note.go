@@ -61,8 +61,8 @@ func (n Note) searchByTextQuery() (*search.Request, error) {
 				Must: []types.Query{
 					{
 						Match: map[string]types.MatchQuery{
-							"TgID": {
-								Query: fmt.Sprintf("%d", n.TgID),
+							"SpaceID": {
+								Query: n.SpaceID.String(),
 							},
 						},
 					},

@@ -140,6 +140,21 @@ func (mr *MockspaceRepoMockRecorder) GetSpaceByID(ctx, id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpaceByID", reflect.TypeOf((*MockspaceRepo)(nil).GetSpaceByID), ctx, id)
 }
 
+// SearchNoteByText mocks base method.
+func (m *MockspaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchNoteByText", ctx, req)
+	ret0, _ := ret[0].([]model.GetNote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchNoteByText indicates an expected call of SearchNoteByText.
+func (mr *MockspaceRepoMockRecorder) SearchNoteByText(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNoteByText", reflect.TypeOf((*MockspaceRepo)(nil).SearchNoteByText), ctx, req)
+}
+
 // MockspaceCache is a mock of spaceCache interface.
 type MockspaceCache struct {
 	ctrl     *gomock.Controller

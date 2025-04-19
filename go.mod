@@ -41,6 +41,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.17.1
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/lib/pq v1.10.9

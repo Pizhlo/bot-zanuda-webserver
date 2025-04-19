@@ -277,3 +277,23 @@ func (s *server) getNotesByType(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, notes)
 }
+
+func (s *server) searchNoteByText(c echo.Context) error {
+	var req model.SearchNoteByTextRequest
+
+	err := json.NewDecoder(c.Request().Body).Decode(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	notes, err := s.space.SearchNoteByText(c.Request().Context(), req)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoNotesFoundByText) {
+			return c.NoContent(http.StatusNoContent)
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, notes)
+}

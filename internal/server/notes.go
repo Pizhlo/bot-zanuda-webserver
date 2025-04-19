@@ -73,7 +73,7 @@ func errorsIn(target error, errs []error) bool {
 
 //		@Summary		Запрос на получение всех заметок
 //		@Description	Запрос на получение всех заметок из личного пространства пользователя
-//	 @Param        id   path      int  true  "ID пространства"
+//	    @Param        id   path      uuid  true  "ID пространства"
 //		@Success		200 {object}    []model.Note
 //		@Success		200 {object}    []model.GetNote
 //		@Success		204                               "В пространстве отсутствют заметки"
@@ -209,6 +209,15 @@ func (s *server) updateNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
+//	@Summary		Получить все типы заметок
+//	@Description	Получить список всех типов заметок и их количество
+//	@Param          id   path      string  true  "ID пространства"//
+//	@Success		202 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/{id}/notes/types [get]
+//
+// ручка для получения типов заметок
 func (s *server) getNoteTypes(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
@@ -227,4 +236,8 @@ func (s *server) getNoteTypes(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, types)
+}
+
+func (s *server) getNotesByType(c echo.Context) error {
+	return nil
 }

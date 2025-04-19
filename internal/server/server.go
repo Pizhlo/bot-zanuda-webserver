@@ -46,7 +46,8 @@ func (s *server) Serve() error {
 
 	// notes
 	spaces.GET("/:id/notes", s.notesBySpaceID)
-	spaces.GET("/:id/notes/types", s.getNoteTypes) // получить, какие есть типы заметок
+	spaces.GET("/:id/notes/types", s.getNoteTypes)   // получить, какие есть типы заметок
+	spaces.GET("/:id/notes/:type", s.getNotesByType) // получить все заметки одного типа
 	spaces.POST("/notes/create", s.createNote, s.validateNoteRequest)
 	spaces.PATCH("/notes/update", s.updateNote, s.validateNoteRequest)
 

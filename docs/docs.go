@@ -116,15 +116,6 @@ const docTemplate = `{
             "get": {
                 "description": "Запрос на получение всех заметок из личного пространства пользователя",
                 "summary": "Запрос на получение всех заметок",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID пространства",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -149,6 +140,50 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Пространства не существует"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/spaces/{id}/notes/types": {
+            "get": {
+                "description": "Получить список всех типов заметок и их количество",
+                "summary": "Получить все типы заметок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.NoteTypeResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -269,6 +304,17 @@ const docTemplate = `{
                 "TextNoteType",
                 "PhotoNoteType"
             ]
+        },
+        "model.NoteTypeResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.NoteType"
+                }
+            }
         },
         "model.Space": {
             "type": "object",

@@ -66,6 +66,13 @@ definitions:
     x-enum-varnames:
     - TextNoteType
     - PhotoNoteType
+  model.NoteTypeResponse:
+    properties:
+      count:
+        type: integer
+      type:
+        $ref: '#/definitions/model.NoteType'
+    type: object
   model.Space:
     properties:
       created:
@@ -132,12 +139,6 @@ paths:
   /spaces/{id}/notes:
     get:
       description: Запрос на получение всех заметок из личного пространства пользователя
-      parameters:
-      - description: ID пространства
-        in: path
-        name: id
-        required: true
-        type: integer
       responses:
         "200":
           description: OK
@@ -162,6 +163,35 @@ paths:
               type: string
             type: object
       summary: Запрос на получение всех заметок
+  /spaces/{id}/notes/types:
+    get:
+      description: Получить список всех типов заметок и их количество
+      parameters:
+      - description: ID пространства
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            items:
+              $ref: '#/definitions/model.NoteTypeResponse'
+            type: array
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все типы заметок
   /spaces/notes/create:
     post:
       description: Запрос на создание заметки с текстом. Создается в указанном пространстве

@@ -36,18 +36,18 @@ func (m *MockuserRepo) EXPECT() *MockuserRepoMockRecorder {
 }
 
 // GetUser mocks base method.
-func (m *MockuserRepo) GetUser(tgID int64) (model.User, error) {
+func (m *MockuserRepo) GetUser(ctx context.Context, tgID int64) (model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUser", tgID)
+	ret := m.ctrl.Call(m, "GetUser", ctx, tgID)
 	ret0, _ := ret[0].(model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUser indicates an expected call of GetUser.
-func (mr *MockuserRepoMockRecorder) GetUser(tgID interface{}) *gomock.Call {
+func (mr *MockuserRepoMockRecorder) GetUser(ctx, tgID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockuserRepo)(nil).GetUser), tgID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockuserRepo)(nil).GetUser), ctx, tgID)
 }
 
 // MockuserCache is a mock of userCache interface.

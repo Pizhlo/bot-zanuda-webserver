@@ -65,6 +65,10 @@ func (u *userCache) GetUser(ctx context.Context, tgID int64) (model.User, error)
 
 	logrus.Debugf("got user from redis: %+v", res)
 
+	if len(res) == 0 {
+		return model.User{}, api_errors.ErrUnknownUser
+	}
+
 	return parseUser(res)
 }
 

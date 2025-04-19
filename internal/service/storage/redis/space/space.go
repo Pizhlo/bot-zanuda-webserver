@@ -63,6 +63,10 @@ func (s *spaceCache) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Spac
 
 	logrus.Debugf("got space from redis: %+v", res)
 
+	if len(res) == 0 {
+		return model.Space{}, api_errors.ErrSpaceNotExists
+	}
+
 	return parseSpace(res)
 }
 

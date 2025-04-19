@@ -19,7 +19,7 @@ var (
 	// ошибка о том, что не заполнено поле type
 	ErrFieldTypeNotFilled = errors.New("field `type` not filled")
 	// ошибка о том, что произошла попытка обновить не текстовую заметку
-	ErrUpdateNotTextNote = errors.New("field `type` is not text. Unable to update note")
+	ErrUpdateNotTextNote = errors.New("not possible to update a non-text note")
 	// ошибка о том, что поле space_id заполнено неправильно
 	ErrInvalidSpaceID = errors.New("invalid space id")
 	// ошибка о том, что не заполнено поле id у заметки
@@ -45,10 +45,10 @@ const (
 //
 // Запрос на создание заметки
 type CreateNoteRequest struct {
+	ID      uuid.UUID `json:"-"`        // айди запроса
 	UserID  int64     `json:"user_id"`  // кто создал заметку
 	SpaceID uuid.UUID `json:"space_id"` // айди пространства, куда сохранить заметку
 	Text    string    `json:"text"`     // текст заметки
-	Created int64     `json:"created"`  // дата создания заметки в часовом поясе пользователя в unix
 	Type    NoteType  `json:"type"`     // тип заметки: текстовая, фото, видео, етс
 }
 
@@ -62,7 +62,8 @@ func (s *CreateNoteRequest) Validate() error {
 		return ErrFieldTextNotFilled
 	}
 
-	if err := uuid.Validate(s.SpaceID.String()); err != nil || s.SpaceID == uuid.Nil {
+	// можем не валидировать uuid, т.к. если он будет invalid, то структура просто не спарсится
+	if s.SpaceID == uuid.Nil {
 		return ErrInvalidSpaceID
 	}
 
@@ -138,7 +139,8 @@ func (s *GetNote) Validate() error {
 		return ErrFieldCreatedNotFilled
 	}
 
-	if err := uuid.Validate(s.SpaceID.String()); err != nil {
+	// можем не валидировать uuid, т.к. если он будет invalid, то структура просто не спарсится
+	if s.SpaceID == uuid.Nil {
 		return ErrInvalidSpaceID
 	}
 
@@ -158,15 +160,15 @@ func (s *GetNote) Validate() error {
 //		"id": “ed3a5b3a-b81e-4cad-acea-178e230a9b93”,
 //		“text”: “new note text"
 //	  }
-type UpdateNote struct {
+type UpdateNoteRequest struct {
+	ID      uuid.UUID `json:"-"` // айди запроса, генерируется в процессе обработки
 	SpaceID uuid.UUID `json:"space_id"`
 	UserID  int64     `json:"user_id"`
-	ID      uuid.UUID `json:"id"`   // айди заметки
+	NoteID  uuid.UUID `json:"id"`   // айди заметки
 	Text    string    `json:"text"` // новый текст
-	Type    NoteType  `json:"type"`
 }
 
-func (s *UpdateNote) Validate() error {
+func (s *UpdateNoteRequest) Validate() error {
 	if s.UserID == 0 {
 		return ErrFieldUserNotFilled
 	}
@@ -175,20 +177,9 @@ func (s *UpdateNote) Validate() error {
 		return ErrFieldTextNotFilled
 	}
 
-	if err := uuid.Validate(s.SpaceID.String()); err != nil {
+	// можем не валидировать uuid, т.к. если он будет invalid, то структура просто не спарсится
+	if s.SpaceID == uuid.Nil {
 		return ErrInvalidSpaceID
-	}
-
-	if err := uuid.Validate(s.ID.String()); err != nil {
-		return ErrInvalidSpaceID
-	}
-
-	if len(s.Type) == 0 {
-		return ErrFieldTypeNotFilled
-	}
-
-	if s.Type != TextNoteType {
-		return ErrUpdateNotTextNote
 	}
 
 	return nil

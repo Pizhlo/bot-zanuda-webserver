@@ -151,7 +151,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	return res, nil
 }
 
-func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNote) error {
+func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNoteRequest) error {
 	tx, err := db.tx(ctx)
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNote) er
 	var id uuid.UUID
 	err = tx.QueryRowContext(ctx, `update notes.notes set text = $1, last_edit = now()
 	where id = $2 and user_id = (select id from users.users where tg_id = $3) returning id`,
-		update.Text, update.ID, update.UserID).Scan(&id)
+		update.Text, update.NoteID, update.UserID).Scan(&id)
 	if err != nil {
 		return fmt.Errorf("error while updating note: %+v", err)
 	}
@@ -210,7 +210,66 @@ func (db *spaceRepo) CheckIfNoteExistsInSpace(ctx context.Context, noteID, space
 	return nil
 }
 
+// GetNoteByID возвращает заметку по айди, либо ошибку о том, что такой заметки не существует
+func (db *spaceRepo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
+	var note model.GetNote
+
+	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, last_edit
+	 from notes.notes 
+left join users.users on users.users.id = notes.notes.user_id
+where notes.notes.id = $1;`, noteID)
+
+	err := row.Scan(&note.ID, &note.UserID, &note.Text, &note.SpaceID, &note.Created, &note.LastEdit)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			return model.GetNote{}, api_errors.ErrNoteNotFound
+		}
+
+		return model.GetNote{}, err
+	}
+
+	if note.ID == uuid.Nil {
+		return model.GetNote{}, api_errors.ErrNoteNotFound
+	}
+
+	return note, nil
+}
+
 // CheckParticipant проверяет, является ли пользователь участником пространства
 func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+	space, err := db.GetSpaceByID(ctx, spaceID) // получаем информацию о пространстве (проверить, личное ли оно)
+	if err != nil {
+		return err
+	}
+
+	if space.Personal {
+		var userSpaceID uuid.UUID
+
+		// выясняем айди личного пространства пользователя
+		err := db.db.QueryRowContext(ctx, "select space_id from users.users where tg_id = $1", userID).
+			Scan(&userSpaceID)
+		if err != nil {
+			return err
+		}
+
+		if userSpaceID != spaceID {
+			return api_errors.ErrUserNotBelongsSpace
+		}
+
+		return nil
+	}
+
+	var id int
+
+	err = db.db.QueryRowContext(ctx, "select id from shared_spaces.participants where user_id = $1 and space_id = $2", userID, spaceID).
+		Scan(&id)
+	if err != nil {
+		return err
+	}
+
+	if id == 0 {
+		return api_errors.ErrUserNotBelongsSpace
+	}
+
 	return nil
 }

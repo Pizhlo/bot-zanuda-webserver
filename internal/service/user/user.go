@@ -14,7 +14,7 @@ type User struct {
 
 //go:generate mockgen -source ./user.go -destination=../../../mocks/user_srv.go -package=mocks
 type userRepo interface {
-	GetUser(tgID int64) (model.User, error)
+	GetUser(ctx context.Context, tgID int64) (model.User, error)
 }
 type userCache interface {
 	GetUser(ctx context.Context, tgID int64) (model.User, error)
@@ -39,6 +39,6 @@ func (s *User) CheckUser(ctx context.Context, tgID int64) error {
 	}
 
 	// в кэшэ не найдено - проверяем в БД
-	_, err = s.repo.GetUser(tgID)
+	_, err = s.repo.GetUser(ctx, tgID)
 	return err
 }

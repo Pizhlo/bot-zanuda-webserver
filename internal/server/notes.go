@@ -13,12 +13,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 //	@Summary		Запрос на создание заметки
 //	@Description	Запрос на создание заметки с текстом. Создается в указанном пространстве
-//	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки,\nдата создания в часовом поясе пользователя в unix"
-//	@Success		201
+//	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п."
+//	@Success		202 {object}    string             айди запроса для отслеживания
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/notes/create [post]
@@ -52,14 +53,14 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	reqID := uuid.New()
+	req.ID = uuid.New()
 
-	err = s.space.CreateNote(c.Request().Context(), reqID, req)
+	err = s.space.CreateNote(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
+	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
 func errorsIn(target error, errs []error) bool {
@@ -144,8 +145,17 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	return c.JSON(http.StatusOK, notes)
 }
 
+//	@Summary		Запрос на обновление заметки
+//	@Description	Запрос на обновление заметки с текстом. Создается в указанном пространстве
+//	@Param			request	body	model.UpdateNote	true	"обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить"
+//	@Success		202 {object}    string             айди запроса для отслеживания
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/notes/create [post]
+//
+// ручка для создания заметки
 func (s *server) updateNote(c echo.Context) error {
-	var req model.UpdateNote
+	var req model.UpdateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
@@ -163,6 +173,7 @@ func (s *server) updateNote(c echo.Context) error {
 		errs := []error{
 			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
 			model.ErrNoteIdNotFilled, model.ErrFieldUserNotFilled,
+			model.ErrFieldTypeNotFilled, model.ErrUpdateNotTextNote,
 		}
 
 		if errorsIn(err, errs) {
@@ -171,30 +182,43 @@ func (s *server) updateNote(c echo.Context) error {
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
-	if err := s.space.CheckIfNoteExistsInSpace(c.Request().Context(), req.ID, req.SpaceID); err != nil {
-		if errors.Is(err, api_errors.ErrNoteNotBelongsSpace) {
+	note, err := s.space.GetNoteByID(c.Request().Context(), req.NoteID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoteNotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	reqID := uuid.New()
+	logrus.Debugf("request note: %+v", req)
+	logrus.Debugf("got note from db: %+v", note)
 
-	if err := s.space.UpdateNote(c.Request().Context(), reqID, req); err != nil {
+	if note.SpaceID != req.SpaceID {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
+	}
+
+	// обновлять можно только текстовые заметки (пока)
+	if note.Type != model.TextNoteType {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": model.ErrUpdateNotTextNote.Error()})
+	}
+
+	req.ID = uuid.New()
+
+	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	// запрос принят в обработку
-	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
+	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
 // validateNoteRequest производит валидацию запросов на создание и обновление заметки.
 // Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
 func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var note model.UpdateNote
+		var note model.UpdateNoteRequest
 
 		// нам нужно сохранить тело запроса для последующей обработки в хендлерах
 		body, err := io.ReadAll(c.Request().Body)

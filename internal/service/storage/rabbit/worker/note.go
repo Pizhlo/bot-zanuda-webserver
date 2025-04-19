@@ -2,10 +2,10 @@ package worker
 
 import (
 	"encoding/json"
-	"webserver/internal/model/rabbit"
+	"webserver/internal/model"
 )
 
-func (s *worker) CreateNote(req rabbit.Request) error {
+func (s *worker) CreateNote(req model.CreateNoteRequest) error {
 	bodyJSON, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -14,7 +14,7 @@ func (s *worker) CreateNote(req rabbit.Request) error {
 	return s.publish(createNoteQueueName, bodyJSON)
 }
 
-func (s *worker) UpdateNote(req rabbit.Request) error {
+func (s *worker) UpdateNote(req model.UpdateNoteRequest) error {
 	bodyJSON, err := json.Marshal(req)
 	if err != nil {
 		return err

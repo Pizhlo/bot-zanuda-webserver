@@ -8,7 +8,6 @@ import (
 	context "context"
 	reflect "reflect"
 	model "webserver/internal/model"
-	rabbit "webserver/internal/model/rabbit"
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
@@ -95,6 +94,21 @@ func (mr *MockspaceRepoMockRecorder) GetAllNotesBySpaceIDFull(ctx, spaceID inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotesBySpaceIDFull", reflect.TypeOf((*MockspaceRepo)(nil).GetAllNotesBySpaceIDFull), ctx, spaceID)
 }
 
+// GetNoteByID mocks base method.
+func (m *MockspaceRepo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNoteByID", ctx, noteID)
+	ret0, _ := ret[0].(model.GetNote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNoteByID indicates an expected call of GetNoteByID.
+func (mr *MockspaceRepoMockRecorder) GetNoteByID(ctx, noteID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNoteByID", reflect.TypeOf((*MockspaceRepo)(nil).GetNoteByID), ctx, noteID)
+}
+
 // GetSpaceByID mocks base method.
 func (m *MockspaceRepo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
 	m.ctrl.T.Helper()
@@ -172,7 +186,7 @@ func (m *MockdbWorker) EXPECT() *MockdbWorkerMockRecorder {
 }
 
 // CreateNote mocks base method.
-func (m *MockdbWorker) CreateNote(req rabbit.Request) error {
+func (m *MockdbWorker) CreateNote(req model.CreateNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNote", req)
 	ret0, _ := ret[0].(error)
@@ -186,7 +200,7 @@ func (mr *MockdbWorkerMockRecorder) CreateNote(req interface{}) *gomock.Call {
 }
 
 // UpdateNote mocks base method.
-func (m *MockdbWorker) UpdateNote(req rabbit.Request) error {
+func (m *MockdbWorker) UpdateNote(req model.UpdateNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateNote", req)
 	ret0, _ := ret[0].(error)

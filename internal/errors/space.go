@@ -9,4 +9,6 @@ var (
 	ErrNoNotesFoundBySpaceID = errors.New("space does not have any notes")
 	// ошибка о том, что пространство не существует
 	ErrSpaceNotExists = errors.New("space does not exist")
+	// ошибка о том, что пользователь не состоит в пространстве
+	ErrUserNotBelongsSpace = errors.New("user not in space")
 )

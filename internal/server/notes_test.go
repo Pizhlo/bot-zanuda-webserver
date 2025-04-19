@@ -192,7 +192,6 @@ func TestUpdateNote(t *testing.T) {
 		getNote          bool // нужно ли вызывать getNote
 		expectedCode     int
 		expectedResponse map[string]string
-		methodErrors     map[string]error // название метода : ошибка
 	}
 
 	generatedID := uuid.New()
@@ -767,7 +766,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 	tests := []test{
 		{
 			name:         "positive test",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			expectedCode: http.StatusOK,
 			expectedResponse: []model.Note{
 				{
@@ -800,14 +799,14 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 		},
 		{
 			name:         "space does not have any notes",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
 			name:         "space does not exist",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrSpaceNotExists,
 			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
@@ -816,7 +815,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 			name:         "invalid param",
 			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: strconv.Atoi: parsing \"1234abc\": invalid syntax"},
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
 		},
 	}
 
@@ -896,7 +895,7 @@ func TestNotesBySpaceID(t *testing.T) {
 	tests := []test{
 		{
 			name:         "positive test",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			expectedCode: http.StatusOK,
 			expectedResponse: []model.GetNote{
 				{
@@ -910,14 +909,14 @@ func TestNotesBySpaceID(t *testing.T) {
 		},
 		{
 			name:         "space does not have any notes",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
 			expectedCode: http.StatusNoContent,
 			expectedErr:  nil,
 		},
 		{
 			name:         "space does not exist",
-			spaceID:      "1234",
+			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrSpaceNotExists,
 			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
@@ -926,7 +925,7 @@ func TestNotesBySpaceID(t *testing.T) {
 			name:         "invalid param",
 			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: strconv.Atoi: parsing \"1234abc\": invalid syntax"},
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
 		},
 	}
 
@@ -970,6 +969,84 @@ func TestNotesBySpaceID(t *testing.T) {
 				assert.Equal(t, tt.expectedErr, result)
 			} else if tt.expectedCode == http.StatusOK { // успешный кейс
 				var result []model.GetNote
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else { // у пользователя нет заметок
+				assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestGetNoteTypes(t *testing.T) {
+	type test struct {
+		name             string
+		spaceID          string
+		dbErr            error // ошибка, которую возвращает база
+		expectedCode     int
+		expectedResponse []model.NoteTypeResponse
+	}
+
+	tests := []test{
+		{
+			name:         "positive test",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusOK,
+			expectedResponse: []model.NoteTypeResponse{
+				{
+					Type:  model.TextNoteType,
+					Count: 10,
+				},
+				{
+					Type:  model.PhotoNoteType,
+					Count: 1,
+				},
+			},
+		},
+		{
+			name:         "no notes in space",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusNoContent,
+			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockspaceRepo(ctrl)
+
+	spaceSrv := space.New(repo, nil, nil)
+
+	server := New("", spaceSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr != nil {
+				repo.EXPECT().GetNotesTypes(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+			} else if tt.expectedCode == http.StatusOK {
+				repo.EXPECT().GetNotesTypes(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+			}
+
+			url := fmt.Sprintf("/spaces/%s/notes/types", tt.spaceID)
+
+			resp := testRequest(t, ts, http.MethodGet, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusOK { // успешный кейс
+				var result []model.NoteTypeResponse
 
 				dec := json.NewDecoder(resp.Body)
 				err = dec.Decode(&result)

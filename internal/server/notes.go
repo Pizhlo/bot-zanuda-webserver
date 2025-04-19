@@ -151,7 +151,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/notes/update [patch]
 //
-// ручка для создания заметки
+// ручка для обновления заметки
 func (s *server) updateNote(c echo.Context) error {
 	var req model.UpdateNoteRequest
 
@@ -209,7 +209,7 @@ func (s *server) updateNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
 }
 
-func (s *server) noteTypes(c echo.Context) error {
+func (s *server) getNoteTypes(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
 	spaceID, err := uuid.Parse(spaceIDStr)
@@ -219,6 +219,10 @@ func (s *server) noteTypes(c echo.Context) error {
 
 	types, err := s.space.GetNotesTypes(c.Request().Context(), spaceID)
 	if err != nil {
+		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
+			return c.NoContent(http.StatusNoContent)
+		}
+
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 

@@ -45,6 +45,7 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	spaces.GET("/:id/notes", server.notesBySpaceID)
 	spaces.POST("/notes/create", server.createNote, server.validateNoteRequest)
 	spaces.PATCH("/notes/update", server.updateNote, server.validateNoteRequest)
+	spaces.GET("/:id/notes/types", server.getNoteTypes)
 
 	return e, nil
 }

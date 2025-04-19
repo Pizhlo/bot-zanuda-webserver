@@ -19,6 +19,7 @@ type Note struct {
 	TgID      int64
 	Text      string
 	SpaceID   uuid.UUID
+	Type      string // тип заметки
 }
 
 // ValidateNote проверяет поля структуры elastic.Data на правильность и возвращает заметку
@@ -61,8 +62,21 @@ func (n Note) searchByTextQuery() (*search.Request, error) {
 				Must: []types.Query{
 					{
 						Match: map[string]types.MatchQuery{
-							"TgID": {
-								Query: fmt.Sprintf("%d", n.TgID),
+							"SpaceID": {
+								Query: n.SpaceID.String(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Bool: &types.BoolQuery{
+				Must: []types.Query{
+					{
+						Match: map[string]types.MatchQuery{
+							"Type": {
+								Query: n.Type,
 							},
 						},
 					},

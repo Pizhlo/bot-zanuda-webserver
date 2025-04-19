@@ -60,6 +60,55 @@
                 }
             }
         },
+        "/spaces/notes/search/text": {
+            "post": {
+                "description": "Получить все заметки с текстом среди указанного типа (по умолчанию: текстовые)",
+                "summary": "Получить все заметки по тексту",
+                "parameters": [
+                    {
+                        "description": "запрос на поиск по тексту",
+                        "name": "type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SearchNoteByTextRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Нет заметок"
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/spaces/notes/update": {
             "patch": {
                 "description": "Запрос на обновление заметки с текстом. Создается в указанном пространстве",
@@ -377,6 +426,21 @@
                 },
                 "type": {
                     "$ref": "#/definitions/model.NoteType"
+                }
+            }
+        },
+        "model.SearchNoteByTextRequest": {
+            "type": "object",
+            "properties": {
+                "space_id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "тип заметок, для которого осуществлять поиск",
+                    "type": "string"
                 }
             }
         },

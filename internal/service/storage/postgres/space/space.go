@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"webserver/internal/model/elastic"
 
+	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	sqldblogger "github.com/simukti/sqldb-logger"
 	"github.com/simukti/sqldb-logger/logadapter/logrusadapter"
 	"github.com/sirupsen/logrus"
@@ -21,7 +23,7 @@ type spaceRepo struct {
 type elasticClient interface {
 	Save(ctx context.Context, search elastic.Data) error
 	// SearchByText производит поиск по тексту (названию). Возвращает ID из базы подходящих записей
-	// SearchByText(ctx context.Context, search elastic.Data) ([]uuid.UUID, error)
+	SearchByText(ctx context.Context, search elastic.Data) ([]uuid.UUID, error)
 	// // SearchByID производит поиск по ID из базы. Возвращает ID  из эластика подходящих записей
 	// SearchByID(ctx context.Context, search elastic.Data) ([]string, error)
 	// Delete(ctx context.Context, search elastic.Data) error
@@ -72,8 +74,8 @@ func (db *spaceRepo) tx(ctx context.Context) (*sql.Tx, error) {
 	return tx, nil
 }
 
-func (db *spaceRepo) commit() error {
-	tx := db.currentTx
-	db.currentTx = nil
-	return tx.Commit()
-}
+// func (db *spaceRepo) commit() error {
+// 	tx := db.currentTx
+// 	db.currentTx = nil
+// 	return tx.Commit()
+// }

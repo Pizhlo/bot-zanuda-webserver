@@ -10,6 +10,7 @@ import (
 	elastic "webserver/internal/model/elastic"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockelasticClient is a mock of elasticClient interface.
@@ -47,6 +48,21 @@ func (m *MockelasticClient) Save(ctx context.Context, search elastic.Data) error
 func (mr *MockelasticClientMockRecorder) Save(ctx, search interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockelasticClient)(nil).Save), ctx, search)
+}
+
+// SearchByText mocks base method.
+func (m *MockelasticClient) SearchByText(ctx context.Context, search elastic.Data) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchByText", ctx, search)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchByText indicates an expected call of SearchByText.
+func (mr *MockelasticClientMockRecorder) SearchByText(ctx, search interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchByText", reflect.TypeOf((*MockelasticClient)(nil).SearchByText), ctx, search)
 }
 
 // UpdateNote mocks base method.

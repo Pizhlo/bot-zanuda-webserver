@@ -1178,3 +1178,133 @@ func TestGetNotesByType(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchNotesByText(t *testing.T) {
+	type test struct {
+		name             string
+		spaceID          string
+		req              model.SearchNoteByTextRequest
+		dbErr            error // ошибка, которую возвращает база
+		expectedCode     int
+		expectedResponse []model.GetNote
+		expectedErr      map[string]string
+	}
+
+	tests := []test{
+		{
+			name:         "positive test: without parameter",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusOK,
+			req: model.SearchNoteByTextRequest{
+				SpaceID: uuid.New(),
+				Text:    "positive test",
+			},
+			expectedResponse: []model.GetNote{
+				{
+					ID:      uuid.New(),
+					UserID:  1234,
+					Text:    "positive test",
+					SpaceID: uuid.New(),
+					Type:    model.TextNoteType,
+				},
+			},
+		},
+		{
+			name:         "positive test: with parameter",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusOK,
+			req: model.SearchNoteByTextRequest{
+				SpaceID: uuid.New(),
+				Text:    "positive test",
+				Type:    "text",
+			},
+			expectedResponse: []model.GetNote{
+				{
+					ID:      uuid.New(),
+					UserID:  1234,
+					Text:    "positive test",
+					SpaceID: uuid.New(),
+					Type:    model.TextNoteType,
+				},
+			},
+		},
+		{
+			name:         "invalid note type",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusBadRequest,
+			req: model.SearchNoteByTextRequest{
+				SpaceID: uuid.New(),
+				Text:    "positive test",
+				Type:    "video",
+			},
+			expectedErr: map[string]string{"bad request": "invalid note type: video"},
+		},
+		{
+			name:         "notes not found",
+			spaceID:      uuid.NewString(),
+			expectedCode: http.StatusNoContent,
+			dbErr:        api_errors.ErrNoNotesFoundByText,
+			req: model.SearchNoteByTextRequest{
+				SpaceID: uuid.New(),
+				Text:    "positive test",
+				Type:    "text",
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockspaceRepo(ctrl)
+
+	spaceSrv := space.New(repo, nil, nil)
+
+	server := New("", spaceSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	url := "/spaces/notes/search/text"
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dbErr != nil {
+				repo.EXPECT().SearchNoteByText(gomock.Any(), gomock.Any()).Return(nil, tt.dbErr)
+			} else if tt.expectedCode == http.StatusOK {
+				repo.EXPECT().SearchNoteByText(gomock.Any(), gomock.Any()).Return(tt.expectedResponse, nil)
+			}
+
+			bodyJSON, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+
+			resp := testRequest(t, ts, http.MethodPost, url, bytes.NewReader(bodyJSON))
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusOK { // успешный кейс
+				var result []model.GetNote
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedResponse, result)
+			} else if tt.expectedErr != nil {
+				var result map[string]string
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
+			} else { // у пользователя нет заметок
+				assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			}
+
+		})
+	}
+}

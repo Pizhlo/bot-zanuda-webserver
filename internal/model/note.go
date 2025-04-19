@@ -194,3 +194,10 @@ type NoteTypeResponse struct {
 	Type  NoteType `json:"type"`
 	Count int      `json:"count"`
 }
+
+// запрос на поиск заметок по тексту в пространстве
+type SearchNoteByTextRequest struct {
+	SpaceID uuid.UUID `json:"space_id"`
+	Text    string    `json:"text"`
+	Type    string    `json:"type"` // тип заметок, для которого осуществлять поиск
+}

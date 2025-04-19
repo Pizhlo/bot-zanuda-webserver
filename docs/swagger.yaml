@@ -83,6 +83,16 @@ definitions:
       type:
         $ref: '#/definitions/model.NoteType'
     type: object
+  model.SearchNoteByTextRequest:
+    properties:
+      space_id:
+        type: string
+      text:
+        type: string
+      type:
+        description: тип заметок, для которого осуществлять поиск
+        type: string
+    type: object
   model.Space:
     properties:
       created:
@@ -284,6 +294,39 @@ paths:
               type: string
             type: object
       summary: Запрос на создание заметки
+  /spaces/notes/search/text:
+    post:
+      description: 'Получить все заметки с текстом среди указанного типа (по умолчанию:
+        текстовые)'
+      parameters:
+      - description: запрос на поиск по тексту
+        in: body
+        name: type
+        required: true
+        schema:
+          $ref: '#/definitions/model.SearchNoteByTextRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GetNote'
+            type: array
+        "204":
+          description: Нет заметок
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все заметки по тексту
   /spaces/notes/update:
     patch:
       description: Запрос на обновление заметки с текстом. Создается в указанном пространстве

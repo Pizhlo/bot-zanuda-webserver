@@ -10,63 +10,12 @@ import (
 	"webserver/internal/model/elastic"
 
 	api_errors "webserver/internal/errors"
+	"webserver/internal/service/storage/elasticsearch"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 )
-
-func (db *spaceRepo) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
-	tx, err := db.tx(ctx)
-	if err != nil {
-		return fmt.Errorf("error while creating transaction: %w", err)
-	}
-
-	// id новой заметки после создания; нужен для сохранения в elastic
-	var noteID uuid.UUID
-	err = tx.QueryRowContext(ctx, `insert into notes.notes (user_id, text, space_id, created) values((select id from users.users where tg_id=$1), $2, $3, now()) returning ID`,
-		note.UserID, note.Text, note.SpaceID).Scan(&noteID)
-	if err != nil {
-		db.currentTx = nil
-
-		switch t := err.(type) {
-		case *pq.Error:
-			if t.Code == "23502" && t.Column == "user_id" { // null value in column \"user_id\" of relation \"notes\" violates not-null constraint
-				return api_errors.ErrUnknownUser
-			}
-
-			if t.Code == "23503" && t.Constraint == "notes_space_id" {
-				return api_errors.ErrSpaceNotExists
-			}
-
-			if t.Code == "P0001" && t.Where == "PL/pgSQL function check_personal_space() line 9 at RAISE" {
-				return api_errors.ErrSpaceNotBelongsUser
-			}
-		}
-
-		return err
-	}
-
-	// создаем структуру для сохранения в elastic
-	elasticData := elastic.Data{
-		Index: elastic.NoteIndex,
-		Model: &elastic.Note{
-			ID:      noteID,
-			Text:    note.Text,
-			TgID:    note.UserID,
-			SpaceID: note.SpaceID,
-		}}
-
-	// сохраняем в elastic
-	err = db.elasticClient.Save(ctx, elasticData)
-	if err != nil {
-		// отменяем транзакцию в случае ошибки (для консистентности данных)
-		_ = tx.Rollback()
-		return fmt.Errorf("error saving note to Elastic: %+v", err)
-	}
-
-	return db.commit()
-}
 
 // GetAllNotesBySpaceIDFull возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 func (db *spaceRepo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error) {
@@ -312,4 +261,58 @@ where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
 	}
 
 	return res, nil
+}
+
+func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+	search := elastic.Data{
+		Index: elastic.NoteIndex,
+		Model: &elastic.Note{
+			SpaceID: req.SpaceID,
+			Text:    req.Text,
+			Type:    req.Type,
+		},
+	}
+
+	ids, err := db.elasticClient.SearchByText(ctx, search)
+	if err != nil {
+		if errors.Is(err, elasticsearch.ErrRecordsNotFound) {
+			return nil, api_errors.ErrNoNotesFoundByText
+		}
+
+		return nil, err
+	}
+
+	var notes []model.GetNote
+
+	q, args, err := sqlx.In(`select notes.notes.id, users.users.tg_id, text, created, last_edit, type, file from notes.notes
+	join users.users on users.users.id = notes.notes.user_id
+	where notes.notes.id IN(?);`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("error while creating query while searching notes: %+v", err)
+	}
+
+	q = sqlx.Rebind(sqlx.DOLLAR, q)
+	rows, err := db.db.Query(q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error while searching notes by text: %w", err)
+	}
+
+	for rows.Next() {
+		note := model.GetNote{
+			SpaceID: req.SpaceID,
+		}
+
+		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.LastEdit, &note.Type, &note.File)
+		if err != nil {
+			return nil, fmt.Errorf("error while scanning note (search by text): %w", err)
+		}
+
+		notes = append(notes, note)
+	}
+
+	if len(notes) == 0 {
+		return nil, api_errors.ErrNoNotesFoundByText
+	}
+
+	return notes, nil
 }

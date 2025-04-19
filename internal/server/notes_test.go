@@ -187,6 +187,7 @@ func TestUpdateNote(t *testing.T) {
 		req              model.UpdateNoteRequest
 		expectedNote     model.UpdateNoteRequest
 		dbNote           model.GetNote // что возвращает база при вызове GetNote
+		dbErr            error
 		err              bool
 		getNote          bool // нужно ли вызывать getNote
 		expectedCode     int
@@ -309,6 +310,21 @@ func TestUpdateNote(t *testing.T) {
 				"bad request": model.ErrUpdateNotTextNote.Error(),
 			},
 		},
+		{
+			name: "note not found",
+			req: model.UpdateNoteRequest{
+				UserID:  1,
+				Text:    "note not found REQ",
+				SpaceID: generatedID,
+				NoteID:  generatedID,
+			},
+			err:          true,
+			dbErr:        api_errors.ErrNoteNotFound,
+			expectedCode: http.StatusBadRequest,
+			expectedResponse: map[string]string{
+				"bad request": api_errors.ErrNoteNotFound.Error(),
+			},
+		},
 	}
 
 	ctrl := gomock.NewController(t)
@@ -355,6 +371,10 @@ func TestUpdateNote(t *testing.T) {
 				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil)
 			}
 
+			if tt.dbErr != nil {
+				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, tt.dbErr)
+			}
+
 			if !tt.err {
 				uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
 				require.NoError(t, err)
@@ -382,7 +402,7 @@ func TestUpdateNote(t *testing.T) {
 				err = dec.Decode(&result)
 				require.NoError(t, err)
 
-				assert.Equal(t, tt.expectedResponse, result, "result IDs not equal")
+				assert.Equal(t, tt.expectedResponse, result, "responses not equal")
 			}
 		})
 	}

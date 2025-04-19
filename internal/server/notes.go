@@ -278,12 +278,31 @@ func (s *server) getNotesByType(c echo.Context) error {
 	return c.JSON(http.StatusOK, notes)
 }
 
+//	@Summary		Получить все заметки по тексту
+//	@Description	Получить все заметки с текстом среди указанного типа (по умолчанию: текстовые)
+//	@Param          type   body      model.SearchNoteByTextRequest  true  "запрос на поиск по тексту"
+//	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
+//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		400	{object}	map[string]string "Невалидный запрос"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/notes/search/text [post]
+//
+// ручка для поиска заметок по тексту
 func (s *server) searchNoteByText(c echo.Context) error {
 	var req model.SearchNoteByTextRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	if len(req.Type) > 0 {
+		// валидируем запрос: тип должен быть одним из перечисленных
+		switch req.Type {
+		case string(model.TextNoteType), string(model.PhotoNoteType):
+		default:
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note type: %s", req.Type)})
+		}
 	}
 
 	notes, err := s.space.SearchNoteByText(c.Request().Context(), req)

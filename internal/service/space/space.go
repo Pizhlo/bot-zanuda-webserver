@@ -104,5 +104,9 @@ func (s *Space) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType 
 }
 
 func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+	if len(req.Type) == 0 { // по умолчанию, если не указано, ищем среди текстовых
+		req.Type = string(model.TextNoteType)
+	}
+
 	return s.repo.SearchNoteByText(ctx, req)
 }

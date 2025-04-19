@@ -7,6 +7,7 @@ import (
 	"webserver/internal/model/elastic"
 
 	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	sqldblogger "github.com/simukti/sqldb-logger"
 	"github.com/simukti/sqldb-logger/logadapter/logrusadapter"
 	"github.com/sirupsen/logrus"

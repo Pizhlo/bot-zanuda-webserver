@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 )
 
 //	@Summary		Запрос на создание заметки
@@ -147,11 +146,11 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 
 //	@Summary		Запрос на обновление заметки
 //	@Description	Запрос на обновление заметки с текстом. Создается в указанном пространстве
-//	@Param			request	body	model.UpdateNote	true	"обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить"
+//	@Param			request	body	model.UpdateNoteRequest	true	"обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить"
 //	@Success		202 {object}    string             айди запроса для отслеживания
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/spaces/notes/create [post]
+//	@Router			/spaces/notes/update [patch]
 //
 // ручка для создания заметки
 func (s *server) updateNote(c echo.Context) error {
@@ -190,9 +189,6 @@ func (s *server) updateNote(c echo.Context) error {
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-
-	logrus.Debugf("request note: %+v", req)
-	logrus.Debugf("got note from db: %+v", note)
 
 	if note.SpaceID != req.SpaceID {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})

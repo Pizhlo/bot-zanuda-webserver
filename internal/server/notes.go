@@ -76,7 +76,6 @@ func errorsIn(target error, errs []error) bool {
 //	    @Param        id   path      uuid  true  "ID пространства"
 //		@Success		200 {object}    []model.Note
 //		@Success		200 {object}    []model.GetNote
-//		@Success		204                               "В пространстве отсутствют заметки"
 //		@Failure		400	{object}	map[string]string "Невалидный запрос"
 //		@Failure		404                               "Пространства не существует"
 //		@Failure		500	{object}	map[string]string "Внутренняя ошибка"
@@ -108,9 +107,9 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	if fullUser {
 		notes, err := s.space.GetAllNotesBySpaceIDFull(c.Request().Context(), spaceID)
 		if err != nil {
-			// у пользователя нет заметок - отдаем 204
+			// у пользователя нет заметок - отдаем 404
 			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-				return c.NoContent(http.StatusNoContent)
+				return c.NoContent(http.StatusNotFound)
 			}
 
 			// пространство не существует - отдаем 404
@@ -127,9 +126,9 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	// получение заметок в кратком режиме
 	notes, err := s.space.GetAllNotesBySpaceID(c.Request().Context(), spaceID)
 	if err != nil {
-		// у пользователя нет заметок - отдаем 204
+		// у пользователя нет заметок - отдаем 404
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-			return c.NoContent(http.StatusNoContent)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		// пространство не существует - отдаем 404
@@ -213,7 +212,7 @@ func (s *server) updateNote(c echo.Context) error {
 //	@Description	Получить список всех типов заметок и их количество
 //	@Param          id   path      string  true  "ID пространства"//
 //	@Success		200 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
-//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		404	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/{id}/notes/types [get]
@@ -230,7 +229,7 @@ func (s *server) getNoteTypes(c echo.Context) error {
 	types, err := s.space.GetNotesTypes(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-			return c.NoContent(http.StatusNoContent)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -244,7 +243,7 @@ func (s *server) getNoteTypes(c echo.Context) error {
 //	@Param          id   path      string  true  "ID пространства"
 //	@Param          type   path      string  true  "тип заметки: текст, фото, етс"
 //	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
-//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		404	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/{id}/notes/{type} [get]
@@ -269,7 +268,7 @@ func (s *server) getNotesByType(c echo.Context) error {
 	notes, err := s.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByType) {
-			return c.NoContent(http.StatusNoContent)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -282,7 +281,7 @@ func (s *server) getNotesByType(c echo.Context) error {
 //	@Description	Получить все заметки с текстом среди указанного типа (по умолчанию: текстовые)
 //	@Param          type   body      model.SearchNoteByTextRequest  true  "запрос на поиск по тексту"
 //	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
-//	@Failure		204	{object}	nil "Нет заметок"
+//	@Failure		404	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
 //	@Router			/spaces/notes/search/text [post]
@@ -308,7 +307,7 @@ func (s *server) searchNoteByText(c echo.Context) error {
 	notes, err := s.space.SearchNoteByText(c.Request().Context(), req)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByText) {
-			return c.NoContent(http.StatusNoContent)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

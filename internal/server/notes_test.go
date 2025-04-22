@@ -801,7 +801,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 			name:         "space does not have any notes",
 			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
-			expectedCode: http.StatusNoContent,
+			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
 		},
 		{
@@ -911,7 +911,7 @@ func TestNotesBySpaceID(t *testing.T) {
 			name:         "space does not have any notes",
 			spaceID:      uuid.New().String(),
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
-			expectedCode: http.StatusNoContent,
+			expectedCode: http.StatusNotFound,
 			expectedErr:  nil,
 		},
 		{
@@ -1011,7 +1011,7 @@ func TestGetNoteTypes(t *testing.T) {
 		{
 			name:         "no notes in space",
 			spaceID:      uuid.NewString(),
-			expectedCode: http.StatusNoContent,
+			expectedCode: http.StatusNotFound,
 			dbErr:        api_errors.ErrNoNotesFoundBySpaceID,
 		},
 		{
@@ -1105,7 +1105,7 @@ func TestGetNotesByType(t *testing.T) {
 		{
 			name:         "no notes in space by type",
 			spaceID:      uuid.NewString(),
-			expectedCode: http.StatusNoContent,
+			expectedCode: http.StatusNotFound,
 			dbErr:        api_errors.ErrNoNotesFoundByType,
 			noteType:     string(model.TextNoteType),
 		},
@@ -1242,7 +1242,7 @@ func TestSearchNotesByText(t *testing.T) {
 		{
 			name:         "notes not found",
 			spaceID:      uuid.NewString(),
-			expectedCode: http.StatusNoContent,
+			expectedCode: http.StatusNotFound,
 			dbErr:        api_errors.ErrNoNotesFoundByText,
 			req: model.SearchNoteByTextRequest{
 				SpaceID: uuid.New(),

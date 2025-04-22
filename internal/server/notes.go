@@ -107,7 +107,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	if fullUser {
 		notes, err := s.space.GetAllNotesBySpaceIDFull(c.Request().Context(), spaceID)
 		if err != nil {
-			// у пользователя нет заметок - отдаем 204
+			// у пользователя нет заметок - отдаем 404
 			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
 				return c.NoContent(http.StatusNotFound)
 			}
@@ -126,7 +126,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	// получение заметок в кратком режиме
 	notes, err := s.space.GetAllNotesBySpaceID(c.Request().Context(), spaceID)
 	if err != nil {
-		// у пользователя нет заметок - отдаем 204
+		// у пользователя нет заметок - отдаем 404
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
 			return c.NoContent(http.StatusNotFound)
 		}

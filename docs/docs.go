@@ -94,9 +94,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "204": {
-                        "description": "Нет заметок"
-                    },
                     "400": {
                         "description": "Невалидный запрос",
                         "schema": {
@@ -105,6 +102,9 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -175,9 +175,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "204": {
-                        "description": "В пространстве отсутствют заметки"
-                    },
                     "400": {
                         "description": "Невалидный запрос",
                         "schema": {
@@ -225,9 +222,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "204": {
-                        "description": "Нет заметок"
-                    },
                     "400": {
                         "description": "Невалидный запрос",
                         "schema": {
@@ -236,6 +230,9 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -279,9 +276,6 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "204": {
-                        "description": "Нет заметок"
-                    },
                     "400": {
                         "description": "Невалидный запрос",
                         "schema": {
@@ -290,6 +284,9 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
                     },
                     "500": {
                         "description": "Внутренняя ошибка",

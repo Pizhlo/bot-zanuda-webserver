@@ -177,8 +177,6 @@ paths:
             items:
               $ref: '#/definitions/model.GetNote'
             type: array
-        "204":
-          description: В пространстве отсутствют заметки
         "400":
           description: Невалидный запрос
           schema:
@@ -215,14 +213,14 @@ paths:
             items:
               $ref: '#/definitions/model.GetNote'
             type: array
-        "204":
-          description: Нет заметок
         "400":
           description: Невалидный запрос
           schema:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Нет заметок
         "500":
           description: Внутренняя ошибка
           schema:
@@ -246,14 +244,14 @@ paths:
             items:
               $ref: '#/definitions/model.NoteTypeResponse'
             type: array
-        "204":
-          description: Нет заметок
         "400":
           description: Невалидный запрос
           schema:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Нет заметок
         "500":
           description: Внутренняя ошибка
           schema:
@@ -312,14 +310,14 @@ paths:
             items:
               $ref: '#/definitions/model.GetNote'
             type: array
-        "204":
-          description: Нет заметок
         "400":
           description: Невалидный запрос
           schema:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Нет заметок
         "500":
           description: Внутренняя ошибка
           schema:

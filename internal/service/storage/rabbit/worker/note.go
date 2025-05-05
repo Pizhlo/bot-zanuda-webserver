@@ -1,24 +1,34 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"webserver/internal/model"
 )
 
-func (s *worker) CreateNote(req model.CreateNoteRequest) error {
+func (s *worker) CreateNote(ctx context.Context, req model.CreateNoteRequest) error {
 	bodyJSON, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
 
-	return s.publish(s.cfg.CreateNoteQueueName, bodyJSON)
+	return s.publish(ctx, s.cfg.CreateNoteQueueName, bodyJSON)
 }
 
-func (s *worker) UpdateNote(req model.UpdateNoteRequest) error {
+func (s *worker) UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error {
 	bodyJSON, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
 
-	return s.publish(s.cfg.UpdateNoteQueueName, bodyJSON)
+	return s.publish(ctx, s.cfg.UpdateNoteQueueName, bodyJSON)
+}
+
+func (s *worker) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+	bodyJSON, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	return s.publish(ctx, s.cfg.DeleteNoteQueueName, bodyJSON)
 }

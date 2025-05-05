@@ -154,7 +154,7 @@ func TestCreateNote(t *testing.T) {
 			}, nil)
 
 			if !tt.err {
-				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -378,7 +378,7 @@ func TestUpdateNote(t *testing.T) {
 
 				tt.expectedResponse = map[string]string{"request_id": uuid.New().String()}
 
-				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -548,7 +548,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -724,7 +724,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}

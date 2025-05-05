@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 
@@ -164,6 +165,8 @@ func (s *server) updateNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	req.Created = time.Now().In(time.UTC).Unix()
+
 	// валидируем данные
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
@@ -176,6 +179,9 @@ func (s *server) updateNote(c echo.Context) error {
 		if errorsIn(err, errs) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
+
+		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
@@ -317,8 +323,54 @@ func (s *server) searchNoteByText(c echo.Context) error {
 }
 
 func (s *server) deleteNote(c echo.Context) error {
-	// spaceIDStr := c.Param("space_id")
-	// noteIdStr := c.Param("note_id")
+	spaceIDStr := c.Param("space_id")
+	noteIDStr := c.Param("note_id")
 
-	return nil
+	spaceID, err := uuid.Parse(spaceIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
+	}
+
+	noteID, err := uuid.Parse(noteIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note id parameter: %+v", err)})
+	}
+
+	req := model.DeleteNoteRequest{
+		ID:      uuid.New(),
+		SpaceID: spaceID,
+		NoteID:  noteID,
+		Created: time.Now().In(time.UTC).Unix(),
+	}
+
+	// проверяем, что пространство существует
+	_, err = s.space.GetSpaceByID(c.Request().Context(), req.SpaceID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// проверяем, что в пространстве есть заметка с таким айди
+	note, err := s.space.GetNoteByID(c.Request().Context(), req.NoteID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoteNotFound) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	if note.ID != req.SpaceID {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
+	}
+
+	err = s.space.DeleteNote(c.Request().Context(), req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
 }

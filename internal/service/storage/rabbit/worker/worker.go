@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -72,6 +73,7 @@ func New(cfg Config) (*worker, error) {
 	}
 
 	return &worker{
+		cfg:             cfg,
 		conn:            conn,
 		channel:         ch,
 		createNoteQueue: createNoteQueue,
@@ -89,10 +91,11 @@ func (s *worker) Close() error {
 	return s.conn.Close()
 }
 
-func (s *worker) publish(queue string, body []byte) error {
+func (s *worker) publish(ctx context.Context, queue string, body []byte) error {
 	logrus.Debugf("rabbit: publishing message to queue '%s': %+v", queue, string(body))
 
-	return s.channel.Publish(
+	return s.channel.PublishWithContext(
+		ctx,
 		"",    // exchange
 		queue, // routing key
 		false, // mandatory

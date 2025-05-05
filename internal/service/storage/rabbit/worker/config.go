@@ -45,12 +45,12 @@ func NewConfig(queuesNames map[string]string, addr string) (Config, error) {
 
 	cfg.UpdateNoteQueueName, ok = queuesNames[UpdateNoteQueueNameKey]
 	if !ok {
-		return Config{}, fmt.Errorf("create note queue name not provided")
+		return Config{}, fmt.Errorf("update note queue name not provided")
 	}
 
 	cfg.DeleteNoteQueueName, ok = queuesNames[DeleteNoteQueueNameKey]
 	if !ok {
-		return Config{}, fmt.Errorf("create note queue name not provided")
+		return Config{}, fmt.Errorf("delete note queue name not provided")
 	}
 
 	return cfg, nil

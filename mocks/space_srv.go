@@ -217,29 +217,43 @@ func (m *MockdbWorker) EXPECT() *MockdbWorkerMockRecorder {
 }
 
 // CreateNote mocks base method.
-func (m *MockdbWorker) CreateNote(req model.CreateNoteRequest) error {
+func (m *MockdbWorker) CreateNote(ctx context.Context, req model.CreateNoteRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNote", req)
+	ret := m.ctrl.Call(m, "CreateNote", ctx, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateNote indicates an expected call of CreateNote.
-func (mr *MockdbWorkerMockRecorder) CreateNote(req interface{}) *gomock.Call {
+func (mr *MockdbWorkerMockRecorder) CreateNote(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*MockdbWorker)(nil).CreateNote), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*MockdbWorker)(nil).CreateNote), ctx, req)
+}
+
+// DeleteNote mocks base method.
+func (m *MockdbWorker) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteNote", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteNote indicates an expected call of DeleteNote.
+func (mr *MockdbWorkerMockRecorder) DeleteNote(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNote", reflect.TypeOf((*MockdbWorker)(nil).DeleteNote), ctx, req)
 }
 
 // UpdateNote mocks base method.
-func (m *MockdbWorker) UpdateNote(req model.UpdateNoteRequest) error {
+func (m *MockdbWorker) UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNote", req)
+	ret := m.ctrl.Call(m, "UpdateNote", ctx, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateNote indicates an expected call of UpdateNote.
-func (mr *MockdbWorkerMockRecorder) UpdateNote(req interface{}) *gomock.Call {
+func (mr *MockdbWorkerMockRecorder) UpdateNote(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNote", reflect.TypeOf((*MockdbWorker)(nil).UpdateNote), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNote", reflect.TypeOf((*MockdbWorker)(nil).UpdateNote), ctx, req)
 }

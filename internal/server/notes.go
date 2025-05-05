@@ -37,6 +37,8 @@ func (s *server) createNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	req.Created = time.Now().In(time.UTC).Unix()
+
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
 		errs := []error{

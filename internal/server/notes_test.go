@@ -43,6 +43,10 @@ func TestCreateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "positive test",
@@ -58,6 +62,7 @@ func TestCreateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -154,7 +159,7 @@ func TestCreateNote(t *testing.T) {
 			}, nil)
 
 			if !tt.err {
-				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -197,6 +202,10 @@ func TestUpdateNote(t *testing.T) {
 	generatedID := uuid.New()
 	newID := uuid.New() // для случая, когда айди должен отличаться (заметка не принадлежит пространству)
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "positive test",
@@ -219,6 +228,7 @@ func TestUpdateNote(t *testing.T) {
 				ID:      generatedID,
 				Text:    "new note",
 				SpaceID: generatedID,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -378,7 +388,7 @@ func TestUpdateNote(t *testing.T) {
 
 				tt.expectedResponse = map[string]string{"request_id": uuid.New().String()}
 
-				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -426,6 +436,10 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "create note",
@@ -441,6 +455,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -548,7 +563,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -596,6 +611,10 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "update note",
@@ -618,6 +637,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: generatedID,
 				NoteID:  generatedID,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -724,7 +744,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}

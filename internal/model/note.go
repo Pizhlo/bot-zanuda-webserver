@@ -51,6 +51,7 @@ type CreateNoteRequest struct {
 	Text    string    `json:"text"`     // текст заметки
 	Type    NoteType  `json:"type"`     // тип заметки: текстовая, фото, видео, етс
 	File    string    `json:"file"`     // название файла в Minio (если есть)
+	Created int64     `json:"created"`  // дата обращения в Unix в UTC
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -70,6 +71,10 @@ func (s *CreateNoteRequest) Validate() error {
 
 	if len(s.Type) == 0 {
 		return ErrFieldTypeNotFilled
+	}
+
+	if s.Created == 0 {
+		return ErrFieldCreatedNotFilled
 	}
 
 	return nil

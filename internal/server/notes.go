@@ -298,7 +298,7 @@ func (s *server) searchNoteByText(c echo.Context) error {
 	if len(req.Type) > 0 {
 		// валидируем запрос: тип должен быть одним из перечисленных
 		switch req.Type {
-		case string(model.TextNoteType), string(model.PhotoNoteType):
+		case model.TextNoteType, model.PhotoNoteType:
 		default:
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note type: %s", req.Type)})
 		}

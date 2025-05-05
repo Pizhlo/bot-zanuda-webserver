@@ -199,5 +199,5 @@ type NoteTypeResponse struct {
 type SearchNoteByTextRequest struct {
 	SpaceID uuid.UUID `json:"space_id"`
 	Text    string    `json:"text"`
-	Type    string    `json:"type"` // тип заметок, для которого осуществлять поиск
+	Type    NoteType  `json:"type"` // тип заметок, для которого осуществлять поиск
 }

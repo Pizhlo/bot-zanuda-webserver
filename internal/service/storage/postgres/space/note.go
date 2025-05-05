@@ -269,7 +269,7 @@ func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteB
 		Model: &elastic.Note{
 			SpaceID: req.SpaceID,
 			Text:    req.Text,
-			Type:    req.Type,
+			Type:    string(req.Type),
 		},
 	}
 

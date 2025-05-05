@@ -446,7 +446,11 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "тип заметок, для которого осуществлять поиск",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NoteType"
+                        }
+                    ]
                 }
             }
         },

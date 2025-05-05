@@ -90,8 +90,9 @@ definitions:
       text:
         type: string
       type:
+        allOf:
+        - $ref: '#/definitions/model.NoteType'
         description: тип заметок, для которого осуществлять поиск
-        type: string
     type: object
   model.Space:
     properties:

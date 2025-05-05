@@ -315,3 +315,10 @@ func (s *server) searchNoteByText(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, notes)
 }
+
+func (s *server) deleteNote(c echo.Context) error {
+	// spaceIDStr := c.Param("space_id")
+	// noteIdStr := c.Param("note_id")
+
+	return nil
+}

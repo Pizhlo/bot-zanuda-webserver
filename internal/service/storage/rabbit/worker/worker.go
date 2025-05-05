@@ -8,21 +8,24 @@ import (
 )
 
 type worker struct {
+	cfg Config
+
 	conn    *amqp.Connection
 	channel *amqp.Channel
 
 	// queues
 	createNoteQueue amqp.Queue
 	updateNoteQueue amqp.Queue
+	deleteNoteQueue amqp.Queue
 }
 
-const (
-	createNoteQueueName = "create_note"
-	updateNoteQueueName = "update_note"
-)
+// const (
+// 	createNoteQueueName = "create_note"
+// 	updateNoteQueueName = "update_note"
+// )
 
-func New(addr string) (*worker, error) {
-	conn, err := amqp.Dial(addr)
+func New(cfg Config) (*worker, error) {
+	conn, err := amqp.Dial(cfg.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -33,27 +36,39 @@ func New(addr string) (*worker, error) {
 	}
 
 	createNoteQueue, err := ch.QueueDeclare(
-		createNoteQueueName, // name
-		true,                // durable
-		false,               // delete when unused
-		false,               // exclusive
-		false,               // no-wait
-		nil,                 // arguments
+		cfg.CreateNoteQueueName, // name
+		true,                    // durable
+		false,                   // delete when unused
+		false,                   // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating queue %s: %+v", createNoteQueueName, err)
+		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.CreateNoteQueueName, err)
 	}
 
 	updateNoteQueue, err := ch.QueueDeclare(
-		updateNoteQueueName, // name
-		true,                // durable
-		false,               // delete when unused
-		false,               // exclusive
-		false,               // no-wait
-		nil,                 // arguments
+		cfg.UpdateNoteQueueName, // name
+		true,                    // durable
+		false,                   // delete when unused
+		false,                   // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating queue %s: %+v", updateNoteQueueName, err)
+		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.UpdateNoteQueueName, err)
+	}
+
+	deleteNoteQueue, err := ch.QueueDeclare(
+		cfg.DeleteNoteQueueName, // name
+		true,                    // durable
+		false,                   // delete when unused
+		false,                   // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.DeleteNoteQueueName, err)
 	}
 
 	return &worker{
@@ -61,6 +76,7 @@ func New(addr string) (*worker, error) {
 		channel:         ch,
 		createNoteQueue: createNoteQueue,
 		updateNoteQueue: updateNoteQueue,
+		deleteNoteQueue: deleteNoteQueue,
 	}, nil
 }
 

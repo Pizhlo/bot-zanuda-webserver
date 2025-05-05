@@ -11,7 +11,7 @@ func (s *worker) CreateNote(req model.CreateNoteRequest) error {
 		return err
 	}
 
-	return s.publish(createNoteQueueName, bodyJSON)
+	return s.publish(s.cfg.CreateNoteQueueName, bodyJSON)
 }
 
 func (s *worker) UpdateNote(req model.UpdateNoteRequest) error {
@@ -20,5 +20,5 @@ func (s *worker) UpdateNote(req model.UpdateNoteRequest) error {
 		return err
 	}
 
-	return s.publish(updateNoteQueueName, bodyJSON)
+	return s.publish(s.cfg.UpdateNoteQueueName, bodyJSON)
 }

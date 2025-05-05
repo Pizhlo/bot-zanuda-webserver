@@ -50,6 +50,7 @@ func (s *server) Serve() error {
 	// создание, обновление, удаление
 	spaces.POST("/notes/create", s.createNote, s.validateNoteRequest)
 	spaces.PATCH("/notes/update", s.updateNote, s.validateNoteRequest)
+	spaces.DELETE("/:space_id/notes/:note_id/delete", s.deleteNote)
 
 	// типы заметок
 	spaces.GET("/:id/notes/types", s.getNoteTypes)   // получить, какие есть типы заметок

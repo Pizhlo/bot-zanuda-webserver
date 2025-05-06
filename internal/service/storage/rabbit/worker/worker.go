@@ -25,61 +25,70 @@ type worker struct {
 // 	updateNoteQueueName = "update_note"
 // )
 
-func New(cfg Config) (*worker, error) {
-	conn, err := amqp.Dial(cfg.Address)
-	if err != nil {
-		return nil, err
+func New(cfg Config) *worker {
+	return &worker{
+		cfg: cfg,
 	}
+}
+
+func (s *worker) Connect() error {
+	conn, err := amqp.Dial(s.cfg.Address)
+	if err != nil {
+		return err
+	}
+
+	s.conn = conn
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	s.channel = ch
 
 	createNoteQueue, err := ch.QueueDeclare(
-		cfg.CreateNoteQueueName, // name
-		true,                    // durable
-		false,                   // delete when unused
-		false,                   // exclusive
-		false,                   // no-wait
-		nil,                     // arguments
+		s.cfg.CreateNoteQueueName, // name
+		true,                      // durable
+		false,                     // delete when unused
+		false,                     // exclusive
+		false,                     // no-wait
+		nil,                       // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.CreateNoteQueueName, err)
+		return fmt.Errorf("error creating queue %s: %+v", s.cfg.CreateNoteQueueName, err)
 	}
+
+	s.createNoteQueue = createNoteQueue
 
 	updateNoteQueue, err := ch.QueueDeclare(
-		cfg.UpdateNoteQueueName, // name
-		true,                    // durable
-		false,                   // delete when unused
-		false,                   // exclusive
-		false,                   // no-wait
-		nil,                     // arguments
+		s.cfg.UpdateNoteQueueName, // name
+		true,                      // durable
+		false,                     // delete when unused
+		false,                     // exclusive
+		false,                     // no-wait
+		nil,                       // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.UpdateNoteQueueName, err)
+		return fmt.Errorf("error creating queue %s: %+v", s.cfg.UpdateNoteQueueName, err)
 	}
+
+	s.updateNoteQueue = updateNoteQueue
 
 	deleteNoteQueue, err := ch.QueueDeclare(
-		cfg.DeleteNoteQueueName, // name
-		true,                    // durable
-		false,                   // delete when unused
-		false,                   // exclusive
-		false,                   // no-wait
-		nil,                     // arguments
+		s.cfg.DeleteNoteQueueName, // name
+		true,                      // durable
+		false,                     // delete when unused
+		false,                     // exclusive
+		false,                     // no-wait
+		nil,                       // arguments
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating queue %s: %+v", cfg.DeleteNoteQueueName, err)
+		return fmt.Errorf("error creating queue %s: %+v", s.cfg.DeleteNoteQueueName, err)
 	}
 
-	return &worker{
-		cfg:             cfg,
-		conn:            conn,
-		channel:         ch,
-		createNoteQueue: createNoteQueue,
-		updateNoteQueue: updateNoteQueue,
-		deleteNoteQueue: deleteNoteQueue,
-	}, nil
+	s.deleteNoteQueue = deleteNoteQueue
+
+	return nil
 }
 
 func (s *worker) Close() error {

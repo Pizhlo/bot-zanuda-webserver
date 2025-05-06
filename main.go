@@ -142,7 +142,9 @@ func main() {
 
 	logrus.Infof("connecting rabbit on %s", rabbitAddr)
 
-	rabbit, err := worker.New(rabbitCfg)
+	rabbit := worker.New(rabbitCfg)
+
+	err = rabbit.Connect()
 	if err != nil {
 		logrus.Fatalf("error connecting rabbit: %+v", err)
 	}

@@ -33,7 +33,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp
 }
 
-func runTestServer(h *Handler) (*echo.Echo, error) {
+func runTestServer(h *handler) (*echo.Echo, error) {
 	e := echo.New()
 
 	e.GET("/health", h.Health)

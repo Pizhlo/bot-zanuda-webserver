@@ -14,7 +14,7 @@ import (
 
 // ValidateNoteRequest производит валидацию запросов на создание и обновление заметки.
 // Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
-func (h *Handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var note model.UpdateNoteRequest
 

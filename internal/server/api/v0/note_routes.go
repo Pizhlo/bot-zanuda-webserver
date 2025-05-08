@@ -25,7 +25,7 @@ import (
 //	@Router			/spaces/notes/create [post]
 //
 // ручка для создания заметки
-func (h *Handler) CreateNote(c echo.Context) error {
+func (h *handler) CreateNote(c echo.Context) error {
 	var req model.CreateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -86,7 +86,7 @@ func errorsIn(target error, errs []error) bool {
 //		@Router			/spaces/{id}/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
-func (h *Handler) NotesBySpaceID(c echo.Context) error {
+func (h *handler) NotesBySpaceID(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
 	spaceID, err := uuid.Parse(spaceIDStr)
@@ -155,7 +155,7 @@ func (h *Handler) NotesBySpaceID(c echo.Context) error {
 //	@Router			/spaces/notes/update [patch]
 //
 // ручка для обновления заметки
-func (h *Handler) UpdateNote(c echo.Context) error {
+func (h *handler) UpdateNote(c echo.Context) error {
 	var req model.UpdateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -227,7 +227,7 @@ func (h *Handler) UpdateNote(c echo.Context) error {
 //	@Router			/spaces/{id}/notes/types [get]
 //
 // ручка для получения типов заметок
-func (h *Handler) GetNoteTypes(c echo.Context) error {
+func (h *handler) GetNoteTypes(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
 	spaceID, err := uuid.Parse(spaceIDStr)
@@ -258,7 +258,7 @@ func (h *Handler) GetNoteTypes(c echo.Context) error {
 //	@Router			/spaces/{id}/notes/{type} [get]
 //
 // ручка для заметок по типу
-func (h *Handler) GetNotesByType(c echo.Context) error {
+func (h *handler) GetNotesByType(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 	noteType := c.Param("type")
 
@@ -296,7 +296,7 @@ func (h *Handler) GetNotesByType(c echo.Context) error {
 //	@Router			/spaces/notes/search/text [post]
 //
 // ручка для поиска заметок по тексту
-func (h *Handler) SearchNoteByText(c echo.Context) error {
+func (h *handler) SearchNoteByText(c echo.Context) error {
 	var req model.SearchNoteByTextRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
@@ -335,7 +335,7 @@ func (h *Handler) SearchNoteByText(c echo.Context) error {
 //	@Router			/spaces/{space_id}/notes/{note_id}/delete [delete]
 //
 // ручка для удаления заметки по id
-func (h *Handler) DeleteNote(c echo.Context) error {
+func (h *handler) DeleteNote(c echo.Context) error {
 	spaceIDStr := c.Param("space_id")
 	noteIDStr := c.Param("note_id")
 

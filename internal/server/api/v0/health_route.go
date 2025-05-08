@@ -15,6 +15,6 @@ import (
 //	@Description	Проверить состояние сервера и соединения
 //	@Success		200
 //	@Router			/health [get]
-func (s *Handler) Health(c echo.Context) error {
+func (s *handler) Health(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }

@@ -5,11 +5,11 @@ import (
 	"webserver/internal/service/user"
 )
 
-type Handler struct {
+type handler struct {
 	space *space.Space
 	user  *user.User
 }
 
-func New(space *space.Space, user *user.User) *Handler {
-	return &Handler{space: space, user: user}
+func New(space *space.Space, user *user.User) *handler {
+	return &handler{space: space, user: user}
 }

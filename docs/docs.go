@@ -299,12 +299,75 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/spaces/{space_id}/notes/{note_id}/delete": {
+            "delete": {
+                "summary": "Удалить заметку по айди",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "айди пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "айди заметки",
+                        "name": "note_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Айди запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Пространства не существует / в пространстве нет такой заметки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Заметка не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
         "model.CreateNoteRequest": {
             "type": "object",
             "properties": {
+                "created": {
+                    "description": "дата обращения в Unix в UTC",
+                    "type": "integer"
+                },
                 "file": {
                     "description": "название файла в Minio (если есть)",
                     "type": "string"
@@ -480,11 +543,19 @@ const docTemplate = `{
         "model.UpdateNoteRequest": {
             "type": "object",
             "properties": {
+                "created": {
+                    "description": "дата обращения в Unix в UTC",
+                    "type": "integer"
+                },
                 "file": {
                     "description": "название файла в Minio (если есть)",
                     "type": "string"
                 },
                 "id": {
+                    "description": "айди запроса, генерируется в процессе обработки",
+                    "type": "string"
+                },
+                "note_id": {
                     "description": "айди заметки",
                     "type": "string"
                 },

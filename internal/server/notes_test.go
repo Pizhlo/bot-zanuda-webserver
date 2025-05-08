@@ -1488,7 +1488,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 			spaceID:      spaceID.String(),
 			noteID:       noteID.String(),
 			expectedErr:  map[string]string{"bad request": api_errors.ErrNoteNotFound.Error()},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusNotFound,
 			methodErrors: map[string]error{"GetNoteByID": api_errors.ErrNoteNotFound},
 		},
 		{

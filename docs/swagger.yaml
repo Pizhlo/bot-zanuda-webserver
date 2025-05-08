@@ -1,6 +1,9 @@
 definitions:
   model.CreateNoteRequest:
     properties:
+      created:
+        description: дата обращения в Unix в UTC
+        type: integer
       file:
         description: название файла в Minio (если есть)
         type: string
@@ -112,10 +115,16 @@ definitions:
     type: object
   model.UpdateNoteRequest:
     properties:
+      created:
+        description: дата обращения в Unix в UTC
+        type: integer
       file:
         description: название файла в Minio (если есть)
         type: string
       id:
+        description: айди запроса, генерируется в процессе обработки
+        type: string
+      note_id:
         description: айди заметки
         type: string
       space_id:
@@ -260,6 +269,45 @@ paths:
               type: string
             type: object
       summary: Получить все типы заметок
+  /spaces/{space_id}/notes/{note_id}/delete:
+    delete:
+      parameters:
+      - description: айди пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: айди заметки
+        in: path
+        name: note_id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Айди запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Пространства не существует / в пространстве нет такой заметки
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Заметка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить заметку по айди
   /spaces/notes/create:
     post:
       description: Запрос на создание заметки с текстом. Создается в указанном пространстве

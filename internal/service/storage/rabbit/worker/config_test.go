@@ -97,7 +97,7 @@ func TestNewConfig(t *testing.T) {
 				UpdateNoteQueueNameKey: "q3",
 			},
 			addr: "amqps://addr",
-			err:  fmt.Errorf("update note queue name not provided"),
+			err:  fmt.Errorf("delete note queue name not provided"),
 		},
 	}
 

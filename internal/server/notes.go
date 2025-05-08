@@ -338,15 +338,8 @@ func (s *server) deleteNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note id parameter: %+v", err)})
 	}
 
-	req := model.DeleteNoteRequest{
-		ID:      uuid.New(),
-		SpaceID: spaceID,
-		NoteID:  noteID,
-		Created: time.Now().In(time.UTC).Unix(),
-	}
-
 	// проверяем, что пространство существует
-	_, err = s.space.GetSpaceByID(c.Request().Context(), req.SpaceID)
+	_, err = s.space.GetSpaceByID(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrSpaceNotExists) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
@@ -356,7 +349,7 @@ func (s *server) deleteNote(c echo.Context) error {
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
-	note, err := s.space.GetNoteByID(c.Request().Context(), req.NoteID)
+	note, err := s.space.GetNoteByID(c.Request().Context(), noteID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoteNotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
@@ -365,8 +358,15 @@ func (s *server) deleteNote(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	if note.ID != req.SpaceID {
+	if note.SpaceID != spaceID {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
+	}
+
+	req := model.DeleteNoteRequest{
+		ID:      uuid.New(),
+		SpaceID: spaceID,
+		NoteID:  noteID,
+		Created: time.Now().In(time.UTC).Unix(),
 	}
 
 	err = s.space.DeleteNote(c.Request().Context(), req)

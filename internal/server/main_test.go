@@ -48,6 +48,7 @@ func runTestServer(server *server) (*echo.Echo, error) {
 	spaces.GET("/:id/notes/types", server.getNoteTypes)
 	spaces.GET("/:id/notes/:type", server.getNotesByType)
 	spaces.POST("/notes/search/text", server.searchNoteByText)
+	spaces.DELETE("/:space_id/notes/:note_id/delete", server.deleteNote)
 
 	return e, nil
 }

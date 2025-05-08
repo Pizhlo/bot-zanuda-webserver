@@ -43,6 +43,10 @@ func TestCreateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "positive test",
@@ -58,6 +62,7 @@ func TestCreateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -154,7 +159,7 @@ func TestCreateNote(t *testing.T) {
 			}, nil)
 
 			if !tt.err {
-				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -197,6 +202,10 @@ func TestUpdateNote(t *testing.T) {
 	generatedID := uuid.New()
 	newID := uuid.New() // для случая, когда айди должен отличаться (заметка не принадлежит пространству)
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "positive test",
@@ -219,6 +228,7 @@ func TestUpdateNote(t *testing.T) {
 				ID:      generatedID,
 				Text:    "new note",
 				SpaceID: generatedID,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -378,7 +388,7 @@ func TestUpdateNote(t *testing.T) {
 
 				tt.expectedResponse = map[string]string{"request_id": uuid.New().String()}
 
-				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -426,6 +436,10 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "create note",
@@ -441,6 +455,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -548,7 +563,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().CreateNote(gomock.Any()).Return(nil).Do(func(actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -596,6 +611,10 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 	defer uuidPatch.Unpatch()
 
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
 	tests := []test{
 		{
 			name: "update note",
@@ -618,6 +637,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: generatedID,
 				NoteID:  generatedID,
+				Created: time.Now().Unix(),
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -724,7 +744,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().UpdateNote(gomock.Any()).Return(nil).Do(func(actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -1305,6 +1325,266 @@ func TestSearchNotesByText(t *testing.T) {
 				assert.Equal(t, tt.expectedCode, resp.StatusCode)
 			}
 
+		})
+	}
+}
+
+func TestDeleteNote(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	type test struct {
+		name            string
+		spaceID, noteID string
+		dbNote          model.GetNote           // заметка, возвращаемая базой
+		expectedReq     model.DeleteNoteRequest // ожидаемое сообщение для воркера
+		expectedCode    int
+		expectedErr     map[string]string
+	}
+
+	// для валидных тестов
+	spaceID := uuid.New()
+	noteID := uuid.New()
+
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
+	uuidPatch := monkey.Patch(uuid.New, func() uuid.UUID { return noteID })
+	defer uuidPatch.Unpatch()
+
+	tests := []test{
+		{
+			name:    "positive case",
+			spaceID: spaceID.String(),
+			noteID:  noteID.String(),
+			dbNote: model.GetNote{
+				ID:      noteID,
+				SpaceID: spaceID,
+			},
+			expectedReq: model.DeleteNoteRequest{
+				ID:      uuid.New(),
+				SpaceID: spaceID,
+				NoteID:  noteID,
+				Created: time.Now().Unix(),
+			},
+			expectedCode: http.StatusAccepted,
+		},
+		{
+			name:         "invalid space ID",
+			spaceID:      "abc",
+			noteID:       noteID.String(),
+			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 3"},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "invalid note ID",
+			spaceID:      spaceID.String(),
+			noteID:       "abc",
+			expectedErr:  map[string]string{"bad request": "invalid note id parameter: invalid UUID length: 3"},
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockspaceRepo(ctrl)
+	cache := mocks.NewMockspaceCache(ctrl)
+	worker := mocks.NewMockdbWorker(ctrl)
+
+	spaceSrv := space.New(repo, cache, worker)
+
+	server := New("", spaceSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	urlFmt := "/spaces/%s/notes/%s/delete"
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			url := fmt.Sprintf(urlFmt, tt.spaceID, tt.noteID)
+
+			// happy case
+			if tt.expectedErr == nil {
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{ID: spaceID}, nil).Do(func(ctx any, actualSpaceID uuid.UUID) {
+					assert.Equal(t, spaceID, actualSpaceID)
+				})
+				repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil).Do(func(ctx any, actualNoteID uuid.UUID) {
+					assert.Equal(t, noteID, actualNoteID)
+				})
+				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req model.DeleteNoteRequest) {
+					assert.Equal(t, tt.expectedReq, req)
+				})
+			}
+
+			resp := testRequest(t, ts, http.MethodDelete, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusAccepted {
+				var result map[string]string // проверяем, что возвращается валидный uuid
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				idStr, ok := result["req_id"]
+				assert.True(t, ok)
+
+				_, err = uuid.Parse(idStr)
+				require.NoError(t, err)
+			} else {
+				var result map[string]string
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
+			}
+		})
+	}
+}
+
+func TestDeleteNote_Invalid(t *testing.T) {
+	type test struct {
+		name            string
+		spaceID, noteID string
+		dbNote          model.GetNote           // заметка, возвращаемая базой
+		expectedReq     model.DeleteNoteRequest // ожидаемое сообщение для воркера
+		expectedCode    int
+		expectedErr     map[string]string
+		methodErrors    map[string]error // название метода : ошибка
+	}
+
+	// для валидных тестов
+	spaceID := uuid.New()
+	noteID := uuid.New()
+
+	wayback := time.Now()
+	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
+	defer timePatch.Unpatch()
+
+	uuidPatch := monkey.Patch(uuid.New, func() uuid.UUID { return noteID })
+	defer uuidPatch.Unpatch()
+
+	tests := []test{
+		{
+			name:         "space does not exist",
+			spaceID:      spaceID.String(),
+			noteID:       noteID.String(),
+			expectedErr:  map[string]string{"bad request": api_errors.ErrSpaceNotExists.Error()},
+			expectedCode: http.StatusBadRequest,
+			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
+		},
+		{
+			name:         "note not found",
+			spaceID:      spaceID.String(),
+			noteID:       noteID.String(),
+			expectedErr:  map[string]string{"bad request": api_errors.ErrNoteNotFound.Error()},
+			expectedCode: http.StatusNotFound,
+			methodErrors: map[string]error{"GetNoteByID": api_errors.ErrNoteNotFound},
+		},
+		{
+			name:    "note does not belong space",
+			spaceID: spaceID.String(),
+			noteID:  noteID.String(),
+			dbNote: model.GetNote{
+				SpaceID: uuid.New(),
+			},
+			expectedErr:  map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()},
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockspaceRepo(ctrl)
+	cache := mocks.NewMockspaceCache(ctrl)
+	worker := mocks.NewMockdbWorker(ctrl)
+
+	spaceSrv := space.New(repo, cache, worker)
+
+	server := New("", spaceSrv, nil)
+
+	r, err := runTestServer(server)
+	require.NoError(t, err)
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	urlFmt := "/spaces/%s/notes/%s/delete"
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			url := fmt.Sprintf(urlFmt, tt.spaceID, tt.noteID)
+
+			if err, ok := tt.methodErrors["GetSpaceByID"]; ok {
+
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err).Do(func(ctx any, actualSpaceID uuid.UUID) {
+					assert.Equal(t, spaceID, actualSpaceID)
+				})
+				repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err).Do(func(ctx any, actualSpaceID uuid.UUID) {
+					assert.Equal(t, spaceID, actualSpaceID)
+				})
+			} else {
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{ID: spaceID}, nil).Do(func(ctx any, actualSpaceID uuid.UUID) {
+					assert.Equal(t, spaceID, actualSpaceID)
+				})
+
+				if err, ok := tt.methodErrors["GetNoteByID"]; ok {
+					repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{}, err).Do(func(ctx any, actualNoteID uuid.UUID) {
+						assert.Equal(t, noteID, actualNoteID)
+					})
+				} else {
+					repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil).Do(func(ctx any, actualNoteID uuid.UUID) {
+						assert.Equal(t, noteID, actualNoteID)
+					})
+				}
+
+			}
+
+			// happy case
+			if tt.expectedErr == nil {
+				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req model.DeleteNoteRequest) {
+					assert.Equal(t, tt.expectedReq, req)
+				})
+			}
+
+			resp := testRequest(t, ts, http.MethodDelete, url, nil)
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+
+			if tt.expectedCode == http.StatusAccepted {
+				var result map[string]string // проверяем, что возвращается валидный uuid
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				idStr, ok := result["req_id"]
+				assert.True(t, ok)
+
+				_, err = uuid.Parse(idStr)
+				require.NoError(t, err)
+			} else {
+				var result map[string]string
+
+				dec := json.NewDecoder(resp.Body)
+				err = dec.Decode(&result)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expectedErr, result)
+			}
 		})
 	}
 }

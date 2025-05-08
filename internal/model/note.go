@@ -51,6 +51,7 @@ type CreateNoteRequest struct {
 	Text    string    `json:"text"`     // текст заметки
 	Type    NoteType  `json:"type"`     // тип заметки: текстовая, фото, видео, етс
 	File    string    `json:"file"`     // название файла в Minio (если есть)
+	Created int64     `json:"created"`  // дата обращения в Unix в UTC
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -70,6 +71,10 @@ func (s *CreateNoteRequest) Validate() error {
 
 	if len(s.Type) == 0 {
 		return ErrFieldTypeNotFilled
+	}
+
+	if s.Created == 0 {
+		return ErrFieldCreatedNotFilled
 	}
 
 	return nil
@@ -164,12 +169,13 @@ func (s *GetNote) Validate() error {
 //		“text”: “new note text"
 //	  }
 type UpdateNoteRequest struct {
-	ID      uuid.UUID `json:"-"` // айди запроса, генерируется в процессе обработки
+	ID      uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
 	SpaceID uuid.UUID `json:"space_id"`
 	UserID  int64     `json:"user_id"`
-	NoteID  uuid.UUID `json:"id"`   // айди заметки
-	Text    string    `json:"text"` // новый текст
-	File    string    `json:"file"` // название файла в Minio (если есть)
+	NoteID  uuid.UUID `json:"note_id"` // айди заметки
+	Text    string    `json:"text"`    // новый текст
+	File    string    `json:"file"`    // название файла в Minio (если есть)
+	Created int64     `json:"created"` // дата обращения в Unix в UTC
 }
 
 func (s *UpdateNoteRequest) Validate() error {
@@ -186,6 +192,10 @@ func (s *UpdateNoteRequest) Validate() error {
 		return ErrInvalidSpaceID
 	}
 
+	if s.Created == 0 {
+		return ErrFieldCreatedNotFilled
+	}
+
 	return nil
 }
 
@@ -200,4 +210,11 @@ type SearchNoteByTextRequest struct {
 	SpaceID uuid.UUID `json:"space_id"`
 	Text    string    `json:"text"`
 	Type    NoteType  `json:"type"` // тип заметок, для которого осуществлять поиск
+}
+
+type DeleteNoteRequest struct {
+	ID      uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
+	SpaceID uuid.UUID `json:"space_id"`
+	NoteID  uuid.UUID `json:"note_id"`
+	Created int64     `json:"created"` // дата обращения в Unix в UTC
 }

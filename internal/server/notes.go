@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 
@@ -35,6 +36,8 @@ func (s *server) createNote(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
+
+	req.Created = time.Now().In(time.UTC).Unix()
 
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
@@ -164,6 +167,8 @@ func (s *server) updateNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	req.Created = time.Now().In(time.UTC).Unix()
+
 	// валидируем данные
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
@@ -176,6 +181,9 @@ func (s *server) updateNote(c echo.Context) error {
 		if errorsIn(err, errs) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
+
+		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
@@ -314,4 +322,69 @@ func (s *server) searchNoteByText(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, notes)
+}
+
+//	@Summary		Удалить заметку по айди
+//	@Param          space_id   path      string  true  "айди пространства"
+//	@Param          note_id   path      string  true  "айди заметки"
+//	@Success		202 {object}    map[string]string "Айди запроса"
+//	@Failure		400	{object}	map[string]string "Пространства не существует / в пространстве нет такой заметки"
+//	@Failure		404	{object}	map[string]string "Заметка не найдена"
+//	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
+//	@Router			/spaces/{space_id}/notes/{note_id}/delete [delete]
+//
+// ручка для удаления заметки по id
+func (s *server) deleteNote(c echo.Context) error {
+	spaceIDStr := c.Param("space_id")
+	noteIDStr := c.Param("note_id")
+
+	spaceID, err := uuid.Parse(spaceIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
+	}
+
+	noteID, err := uuid.Parse(noteIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note id parameter: %+v", err)})
+	}
+
+	// проверяем, что пространство существует
+	_, err = s.space.GetSpaceByID(c.Request().Context(), spaceID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// проверяем, что в пространстве есть заметка с таким айди
+	note, err := s.space.GetNoteByID(c.Request().Context(), noteID)
+	if err != nil {
+		// заметки не существует в принципе
+		if errors.Is(err, api_errors.ErrNoteNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// заметка не из этого пространства
+	if note.SpaceID != spaceID {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
+	}
+
+	req := model.DeleteNoteRequest{
+		ID:      uuid.New(),
+		SpaceID: spaceID,
+		NoteID:  noteID,
+		Created: time.Now().In(time.UTC).Unix(),
+	}
+
+	err = s.space.DeleteNote(c.Request().Context(), req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
 }

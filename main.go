@@ -114,9 +114,37 @@ func main() {
 		logrus.Fatalf("RABBIT_ADDR not set")
 	}
 
+	createNoteQueueName := os.Getenv("CREATE_NOTE_QUEUE")
+	if len(rabbitAddr) == 0 {
+		logrus.Fatalf("CREATE_NOTE_QUEUE not set")
+	}
+
+	updateNoteQueueName := os.Getenv("UPDATE_NOTE_QUEUE")
+	if len(rabbitAddr) == 0 {
+		logrus.Fatalf("UPDATE_NOTE_QUEUE not set")
+	}
+
+	deleteNoteQueueName := os.Getenv("DELETE_NOTE_QUEUE")
+	if len(rabbitAddr) == 0 {
+		logrus.Fatalf("DELETE_NOTE_QUEUE not set")
+	}
+
+	params := map[string]string{
+		worker.CreateNoteQueueNameKey: createNoteQueueName,
+		worker.DeleteNoteQueueNameKey: deleteNoteQueueName,
+		worker.UpdateNoteQueueNameKey: updateNoteQueueName,
+	}
+
+	rabbitCfg, err := worker.NewConfig(params, rabbitAddr)
+	if err != nil {
+		logrus.Fatalf("error creating rabbit config: %+v", err)
+	}
+
 	logrus.Infof("connecting rabbit on %s", rabbitAddr)
 
-	rabbit, err := worker.New(rabbitAddr)
+	rabbit := worker.New(rabbitCfg)
+
+	err = rabbit.Connect()
 	if err != nil {
 		logrus.Fatalf("error connecting rabbit: %+v", err)
 	}

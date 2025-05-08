@@ -10,9 +10,9 @@ import (
 )
 
 type Space struct {
-	repo  spaceRepo
-	cache spaceCache
-	saver dbWorker // создание / обновление записей
+	repo   spaceRepo
+	cache  spaceCache
+	worker dbWorker // создание / обновление записей
 }
 
 //go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
@@ -39,12 +39,13 @@ type spaceCache interface {
 
 // dbWorker работает на создание / обновление записей
 type dbWorker interface {
-	CreateNote(req model.CreateNoteRequest) error
-	UpdateNote(req model.UpdateNoteRequest) error
+	CreateNote(ctx context.Context, req model.CreateNoteRequest) error
+	UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error
+	DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error
 }
 
 func New(repo spaceRepo, cache spaceCache, saver dbWorker) *Space {
-	return &Space{repo: repo, cache: cache, saver: saver}
+	return &Space{repo: repo, cache: cache, worker: saver}
 }
 
 func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
@@ -64,7 +65,7 @@ func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 
 // Create создает новую заметку в личном пространстве пользователя
 func (s *Space) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
-	return s.saver.CreateNote(note)
+	return s.worker.CreateNote(ctx, note)
 }
 
 // GetAllNotesBySpaceIDFull возвращает все заметки пространства.
@@ -80,7 +81,7 @@ func (s *Space) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]
 
 // UpdateNote отправляет запрос на обновление заметки в db-worker
 func (s *Space) UpdateNote(ctx context.Context, update model.UpdateNoteRequest) error {
-	return s.saver.UpdateNote(update)
+	return s.worker.UpdateNote(ctx, update)
 }
 
 // GetNoteByID возвращает заметку по айди, либо ошибку о том, что такой заметки не существует
@@ -109,4 +110,8 @@ func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 	}
 
 	return s.repo.SearchNoteByText(ctx, req)
+}
+
+func (s *Space) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+	return s.worker.DeleteNote(ctx, req)
 }

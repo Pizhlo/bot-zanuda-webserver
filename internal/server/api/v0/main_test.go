@@ -1,4 +1,4 @@
-package server
+package v0
 
 import (
 	"io"
@@ -33,22 +33,20 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp
 }
 
-func runTestServer(server *server) (*echo.Echo, error) {
+func runTestServer(h *Handler) (*echo.Echo, error) {
 	e := echo.New()
 
-	server.e = e
-
-	e.GET("/health", server.health)
+	e.GET("/health", h.Health)
 	spaces := e.Group("spaces")
 
 	// notes
-	spaces.GET("/:id/notes", server.notesBySpaceID)
-	spaces.POST("/notes/create", server.createNote, server.validateNoteRequest)
-	spaces.PATCH("/notes/update", server.updateNote, server.validateNoteRequest)
-	spaces.GET("/:id/notes/types", server.getNoteTypes)
-	spaces.GET("/:id/notes/:type", server.getNotesByType)
-	spaces.POST("/notes/search/text", server.searchNoteByText)
-	spaces.DELETE("/:space_id/notes/:note_id/delete", server.deleteNote)
+	spaces.GET("/:id/notes", h.NotesBySpaceID)
+	spaces.POST("/notes/create", h.CreateNote, h.ValidateNoteRequest)
+	spaces.PATCH("/notes/update", h.UpdateNote, h.ValidateNoteRequest)
+	spaces.GET("/:id/notes/types", h.GetNoteTypes)
+	spaces.GET("/:id/notes/:type", h.GetNotesByType)
+	spaces.POST("/notes/search/text", h.SearchNoteByText)
+	spaces.DELETE("/:space_id/notes/:note_id/delete", h.DeleteNote)
 
 	return e, nil
 }

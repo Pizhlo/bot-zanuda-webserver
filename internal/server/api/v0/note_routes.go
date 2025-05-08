@@ -1,4 +1,4 @@
-package server
+package v0
 
 import (
 	"encoding/json"
@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+
+	api_errors "webserver/internal/errors"
 )
 
 //	@Summary		Запрос на создание заметки
@@ -24,7 +25,7 @@ import (
 //	@Router			/spaces/notes/create [post]
 //
 // ручка для создания заметки
-func (s *server) createNote(c echo.Context) error {
+func (h *Handler) CreateNote(c echo.Context) error {
 	var req model.CreateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -56,7 +57,7 @@ func (s *server) createNote(c echo.Context) error {
 
 	req.ID = uuid.New()
 
-	err = s.space.CreateNote(c.Request().Context(), req)
+	err = h.space.CreateNote(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -85,7 +86,7 @@ func errorsIn(target error, errs []error) bool {
 //		@Router			/spaces/{id}/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
-func (s *server) notesBySpaceID(c echo.Context) error {
+func (h *Handler) NotesBySpaceID(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
 	spaceID, err := uuid.Parse(spaceIDStr)
@@ -108,7 +109,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 
 	// получение заметок в полном режиме
 	if fullUser {
-		notes, err := s.space.GetAllNotesBySpaceIDFull(c.Request().Context(), spaceID)
+		notes, err := h.space.GetAllNotesBySpaceIDFull(c.Request().Context(), spaceID)
 		if err != nil {
 			// у пользователя нет заметок - отдаем 404
 			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
@@ -127,7 +128,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 	}
 
 	// получение заметок в кратком режиме
-	notes, err := s.space.GetAllNotesBySpaceID(c.Request().Context(), spaceID)
+	notes, err := h.space.GetAllNotesBySpaceID(c.Request().Context(), spaceID)
 	if err != nil {
 		// у пользователя нет заметок - отдаем 404
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
@@ -154,7 +155,7 @@ func (s *server) notesBySpaceID(c echo.Context) error {
 //	@Router			/spaces/notes/update [patch]
 //
 // ручка для обновления заметки
-func (s *server) updateNote(c echo.Context) error {
+func (h *Handler) UpdateNote(c echo.Context) error {
 	var req model.UpdateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -187,7 +188,7 @@ func (s *server) updateNote(c echo.Context) error {
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
-	note, err := s.space.GetNoteByID(c.Request().Context(), req.NoteID)
+	note, err := h.space.GetNoteByID(c.Request().Context(), req.NoteID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoteNotFound) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
@@ -207,7 +208,7 @@ func (s *server) updateNote(c echo.Context) error {
 
 	req.ID = uuid.New()
 
-	if err := s.space.UpdateNote(c.Request().Context(), req); err != nil {
+	if err := h.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -226,7 +227,7 @@ func (s *server) updateNote(c echo.Context) error {
 //	@Router			/spaces/{id}/notes/types [get]
 //
 // ручка для получения типов заметок
-func (s *server) getNoteTypes(c echo.Context) error {
+func (h *Handler) GetNoteTypes(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 
 	spaceID, err := uuid.Parse(spaceIDStr)
@@ -234,7 +235,7 @@ func (s *server) getNoteTypes(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
 
-	types, err := s.space.GetNotesTypes(c.Request().Context(), spaceID)
+	types, err := h.space.GetNotesTypes(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
 			return c.NoContent(http.StatusNotFound)
@@ -257,7 +258,7 @@ func (s *server) getNoteTypes(c echo.Context) error {
 //	@Router			/spaces/{id}/notes/{type} [get]
 //
 // ручка для заметок по типу
-func (s *server) getNotesByType(c echo.Context) error {
+func (h *Handler) GetNotesByType(c echo.Context) error {
 	spaceIDStr := c.Param("id")
 	noteType := c.Param("type")
 
@@ -273,7 +274,7 @@ func (s *server) getNotesByType(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
 
-	notes, err := s.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
+	notes, err := h.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByType) {
 			return c.NoContent(http.StatusNotFound)
@@ -295,7 +296,7 @@ func (s *server) getNotesByType(c echo.Context) error {
 //	@Router			/spaces/notes/search/text [post]
 //
 // ручка для поиска заметок по тексту
-func (s *server) searchNoteByText(c echo.Context) error {
+func (h *Handler) SearchNoteByText(c echo.Context) error {
 	var req model.SearchNoteByTextRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
@@ -312,7 +313,7 @@ func (s *server) searchNoteByText(c echo.Context) error {
 		}
 	}
 
-	notes, err := s.space.SearchNoteByText(c.Request().Context(), req)
+	notes, err := h.space.SearchNoteByText(c.Request().Context(), req)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByText) {
 			return c.NoContent(http.StatusNotFound)
@@ -334,7 +335,7 @@ func (s *server) searchNoteByText(c echo.Context) error {
 //	@Router			/spaces/{space_id}/notes/{note_id}/delete [delete]
 //
 // ручка для удаления заметки по id
-func (s *server) deleteNote(c echo.Context) error {
+func (h *Handler) DeleteNote(c echo.Context) error {
 	spaceIDStr := c.Param("space_id")
 	noteIDStr := c.Param("note_id")
 
@@ -349,7 +350,7 @@ func (s *server) deleteNote(c echo.Context) error {
 	}
 
 	// проверяем, что пространство существует
-	_, err = s.space.GetSpaceByID(c.Request().Context(), spaceID)
+	_, err = h.space.GetSpaceByID(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrSpaceNotExists) {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
@@ -359,7 +360,7 @@ func (s *server) deleteNote(c echo.Context) error {
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
-	note, err := s.space.GetNoteByID(c.Request().Context(), noteID)
+	note, err := h.space.GetNoteByID(c.Request().Context(), noteID)
 	if err != nil {
 		// заметки не существует в принципе
 		if errors.Is(err, api_errors.ErrNoteNotFound) {
@@ -381,7 +382,7 @@ func (s *server) deleteNote(c echo.Context) error {
 		Created: time.Now().In(time.UTC).Unix(),
 	}
 
-	err = s.space.DeleteNote(c.Request().Context(), req)
+	err = h.space.DeleteNote(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

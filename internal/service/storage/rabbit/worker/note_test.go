@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 	"webserver/mocks"
 
 	"github.com/golang/mock/gomock"
@@ -17,25 +18,26 @@ import (
 func TestCreateNote(t *testing.T) {
 	type test struct {
 		name string
-		req  model.CreateNoteRequest
+		req  rabbit.CreateNoteRequest
 		err  error
 	}
 
 	tests := []test{
 		{
 			name: "positive case",
-			req: model.CreateNoteRequest{
-				ID:      uuid.New(),
-				UserID:  1234,
-				SpaceID: uuid.New(),
-				Text:    "test note",
-				Type:    model.TextNoteType,
-				Created: 5678,
+			req: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1234,
+				SpaceID:   uuid.New(),
+				Text:      "test note",
+				Type:      model.TextNoteType,
+				Created:   5678,
+				Operation: rabbit.CreateOp,
 			},
 		},
 		{
 			name: "invalid note",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				ID:      uuid.New(),
 				SpaceID: uuid.New(),
 				Text:    "test note",
@@ -90,24 +92,25 @@ func TestCreateNote(t *testing.T) {
 func TestUpdateNote(t *testing.T) {
 	type test struct {
 		name string
-		req  model.UpdateNoteRequest
+		req  rabbit.UpdateNoteRequest
 		err  error
 	}
 
 	tests := []test{
 		{
 			name: "positive case",
-			req: model.UpdateNoteRequest{
-				ID:      uuid.New(),
-				UserID:  1234,
-				SpaceID: uuid.New(),
-				Text:    "test note",
-				Created: 5678,
+			req: rabbit.UpdateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1234,
+				SpaceID:   uuid.New(),
+				Text:      "test note",
+				Created:   5678,
+				Operation: rabbit.UpdateOp,
 			},
 		},
 		{
 			name: "invalid note",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				ID:      uuid.New(),
 				SpaceID: uuid.New(),
 				Text:    "test note",
@@ -161,23 +164,24 @@ func TestUpdateNote(t *testing.T) {
 func TestDeleteNote(t *testing.T) {
 	type test struct {
 		name string
-		req  model.DeleteNoteRequest
+		req  rabbit.DeleteNoteRequest
 		err  error
 	}
 
 	tests := []test{
 		{
 			name: "positive case",
-			req: model.DeleteNoteRequest{
-				ID:      uuid.New(),
-				NoteID:  uuid.New(),
-				SpaceID: uuid.New(),
-				Created: 5678,
+			req: rabbit.DeleteNoteRequest{
+				ID:        uuid.New(),
+				NoteID:    uuid.New(),
+				SpaceID:   uuid.New(),
+				Created:   5678,
+				Operation: rabbit.DeleteOp,
 			},
 		},
 		{
 			name: "invalid note",
-			req: model.DeleteNoteRequest{
+			req: rabbit.DeleteNoteRequest{
 				ID:      uuid.New(),
 				SpaceID: uuid.New(),
 				Created: 5678,

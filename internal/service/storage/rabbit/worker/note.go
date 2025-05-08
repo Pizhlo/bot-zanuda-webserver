@@ -3,10 +3,10 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 )
 
-func (s *worker) CreateNote(ctx context.Context, req model.CreateNoteRequest) error {
+func (s *worker) CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func (s *worker) CreateNote(ctx context.Context, req model.CreateNoteRequest) er
 	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
 }
 
-func (s *worker) UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error {
+func (s *worker) UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (s *worker) UpdateNote(ctx context.Context, req model.UpdateNoteRequest) er
 	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
 }
 
-func (s *worker) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+func (s *worker) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}

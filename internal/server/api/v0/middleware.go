@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	api_errors "webserver/internal/errors"
-	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,7 +16,7 @@ import (
 // Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
 func (h *handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var note model.UpdateNoteRequest
+		var note rabbit.UpdateNoteRequest
 
 		// нам нужно сохранить тело запроса для последующей обработки в хендлерах
 		body, err := io.ReadAll(c.Request().Body)

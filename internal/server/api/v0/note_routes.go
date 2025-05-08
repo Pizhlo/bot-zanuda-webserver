@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -26,7 +27,7 @@ import (
 //
 // ручка для создания заметки
 func (h *handler) CreateNote(c echo.Context) error {
-	var req model.CreateNoteRequest
+	var req rabbit.CreateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
@@ -39,12 +40,14 @@ func (h *handler) CreateNote(c echo.Context) error {
 	}
 
 	req.Created = time.Now().In(time.UTC).Unix()
+	req.Operation = rabbit.CreateOp
 
 	if err := req.Validate(); err != nil {
 		// ошибки запроса
 		errs := []error{
 			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
 			model.ErrFieldUserNotFilled, model.ErrFieldTypeNotFilled,
+			rabbit.ErrInvalidOperation,
 		}
 
 		if errorsIn(err, errs) {
@@ -156,7 +159,7 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 //
 // ручка для обновления заметки
 func (h *handler) UpdateNote(c echo.Context) error {
-	var req model.UpdateNoteRequest
+	var req rabbit.UpdateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
@@ -169,6 +172,7 @@ func (h *handler) UpdateNote(c echo.Context) error {
 	}
 
 	req.Created = time.Now().In(time.UTC).Unix()
+	req.Operation = rabbit.UpdateOp
 
 	// валидируем данные
 	if err := req.Validate(); err != nil {
@@ -177,6 +181,7 @@ func (h *handler) UpdateNote(c echo.Context) error {
 			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
 			model.ErrNoteIdNotFilled, model.ErrFieldUserNotFilled,
 			model.ErrFieldTypeNotFilled, model.ErrUpdateNotTextNote,
+			rabbit.ErrInvalidOperation,
 		}
 
 		if errorsIn(err, errs) {
@@ -375,11 +380,12 @@ func (h *handler) DeleteNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
 	}
 
-	req := model.DeleteNoteRequest{
-		ID:      uuid.New(),
-		SpaceID: spaceID,
-		NoteID:  noteID,
-		Created: time.Now().In(time.UTC).Unix(),
+	req := rabbit.DeleteNoteRequest{
+		ID:        uuid.New(),
+		SpaceID:   spaceID,
+		NoteID:    noteID,
+		Created:   time.Now().In(time.UTC).Unix(),
+		Operation: rabbit.DeleteOp,
 	}
 
 	err = h.space.DeleteNote(c.Request().Context(), req)

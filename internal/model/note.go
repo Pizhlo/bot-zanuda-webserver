@@ -218,3 +218,23 @@ type DeleteNoteRequest struct {
 	NoteID  uuid.UUID `json:"note_id"`
 	Created int64     `json:"created"` // дата обращения в Unix в UTC
 }
+
+func (s *DeleteNoteRequest) Validate() error {
+	if s.ID == uuid.Nil {
+		return ErrFieldIDNotFilled
+	}
+
+	if s.SpaceID == uuid.Nil {
+		return ErrInvalidSpaceID
+	}
+
+	if s.NoteID == uuid.Nil {
+		return ErrNoteIdNotFilled
+	}
+
+	if s.Created == 0 {
+		return ErrFieldCreatedNotFilled
+	}
+
+	return nil
+}

@@ -462,3 +462,70 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteNoteRequestValidate(t *testing.T) {
+	type test struct {
+		name  string
+		model DeleteNoteRequest
+		err   error
+	}
+
+	tests := []test{
+		{
+			name: "positive case",
+			model: DeleteNoteRequest{
+				ID:      uuid.New(),
+				SpaceID: uuid.New(),
+				NoteID:  uuid.New(),
+				Created: 123,
+			},
+		},
+		{
+			name: "SpaceID not filled",
+			model: DeleteNoteRequest{
+				ID:      uuid.New(),
+				NoteID:  uuid.New(),
+				Created: 123,
+			},
+			err: ErrInvalidSpaceID,
+		},
+		{
+			name: "ID not filled",
+			model: DeleteNoteRequest{
+				SpaceID: uuid.New(),
+				NoteID:  uuid.New(),
+				Created: 123,
+			},
+			err: ErrFieldIDNotFilled,
+		},
+		{
+			name: "NoteID not filled",
+			model: DeleteNoteRequest{
+				ID:      uuid.New(),
+				SpaceID: uuid.New(),
+				Created: 123,
+			},
+			err: ErrNoteIdNotFilled,
+		},
+		{
+			name: "Created field not filled",
+			model: DeleteNoteRequest{
+				ID:      uuid.New(),
+				SpaceID: uuid.New(),
+				NoteID:  uuid.New(),
+			},
+			err: ErrFieldCreatedNotFilled,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.model.Validate()
+			if tt.err != nil {
+				assert.EqualError(t, tt.err, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

@@ -115,25 +115,13 @@ func main() {
 		logrus.Fatalf("RABBIT_ADDR not set")
 	}
 
-	createNoteQueueName := os.Getenv("CREATE_NOTE_QUEUE")
-	if len(rabbitAddr) == 0 {
-		logrus.Fatalf("CREATE_NOTE_QUEUE not set")
-	}
-
-	updateNoteQueueName := os.Getenv("UPDATE_NOTE_QUEUE")
-	if len(rabbitAddr) == 0 {
-		logrus.Fatalf("UPDATE_NOTE_QUEUE not set")
-	}
-
-	deleteNoteQueueName := os.Getenv("DELETE_NOTE_QUEUE")
-	if len(rabbitAddr) == 0 {
-		logrus.Fatalf("DELETE_NOTE_QUEUE not set")
+	notesTopicName := os.Getenv("NOTES_TOPIC")
+	if len(notesTopicName) == 0 {
+		logrus.Fatalf("NOTES_TOPIC not set")
 	}
 
 	params := map[string]string{
-		worker.CreateNoteQueueNameKey: createNoteQueueName,
-		worker.DeleteNoteQueueNameKey: deleteNoteQueueName,
-		worker.UpdateNoteQueueNameKey: updateNoteQueueName,
+		worker.NotesTopicName: notesTopicName,
 	}
 
 	rabbitCfg, err := worker.NewConfig(params, rabbitAddr)

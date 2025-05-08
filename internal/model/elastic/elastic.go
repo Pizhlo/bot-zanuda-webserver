@@ -27,7 +27,7 @@ type Data struct {
 
 type model interface {
 	validate() error
-	getVal() interface{}
+	getVal() any
 	searchByIDQuery() (*search.Request, error)
 	searchByTextQuery() (*search.Request, error)
 	deleteByQuery() (*deletebyquery.Request, error)

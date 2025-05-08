@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 	"webserver/internal/server"
+	v0 "webserver/internal/server/api/v0"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
@@ -172,7 +173,14 @@ func main() {
 
 	logrus.Infof("starting server on %s", serverAddr)
 
-	s := server.New(serverAddr, spaceSrv, userSrv)
+	handler := v0.New(spaceSrv, userSrv)
+
+	serverCfg, err := server.NewConfig(serverAddr, handler)
+	if err != nil {
+		logrus.Fatalf("error creating server config: %+v", err)
+	}
+
+	s := server.New(serverCfg)
 
 	err = s.Serve()
 	if err != nil {

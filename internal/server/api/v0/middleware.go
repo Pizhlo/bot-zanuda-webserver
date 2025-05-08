@@ -1,4 +1,4 @@
-package server
+package v0
 
 import (
 	"bytes"
@@ -12,9 +12,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// validateNoteRequest производит валидацию запросов на создание и обновление заметки.
+// ValidateNoteRequest производит валидацию запросов на создание и обновление заметки.
 // Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
-func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var note model.UpdateNoteRequest
 
@@ -30,7 +30,7 @@ func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// проверяем, что пользователь существует
-		if err := s.user.CheckUser(c.Request().Context(), note.UserID); err != nil {
+		if err := h.user.CheckUser(c.Request().Context(), note.UserID); err != nil {
 			if errors.Is(err, api_errors.ErrUnknownUser) {
 				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 			}
@@ -39,7 +39,7 @@ func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// проверяем, что пространство существует
-		if _, err := s.space.GetSpaceByID(c.Request().Context(), note.SpaceID); err != nil {
+		if _, err := h.space.GetSpaceByID(c.Request().Context(), note.SpaceID); err != nil {
 			if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
 				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 			}
@@ -48,7 +48,7 @@ func (s *server) validateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		// проверяем, что пользователь состоит в пространстве (сюда потом еще добавится проверка на права)
-		if err := s.space.IsUserInSpace(c.Request().Context(), note.UserID, note.SpaceID); err != nil {
+		if err := h.space.IsUserInSpace(c.Request().Context(), note.UserID, note.SpaceID); err != nil {
 			if errors.Is(err, api_errors.ErrSpaceNotBelongsUser) || errors.Is(err, api_errors.ErrSpaceNotExists) {
 				return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 			}

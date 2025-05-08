@@ -1,4 +1,4 @@
-package server
+package v0
 
 import (
 	"net/http"
@@ -10,8 +10,8 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	server := New("", nil, nil)
-	r, err := runTestServer(server)
+	handler := New(nil, nil)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)

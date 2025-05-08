@@ -1,4 +1,4 @@
-package server
+package v0
 
 import (
 	"bytes"
@@ -138,9 +138,9 @@ func TestCreateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	server := New("", spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -350,9 +350,9 @@ func TestUpdateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	server := New("", spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -520,9 +520,9 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	server := New("", spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -699,9 +699,9 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	server := New("", spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -795,7 +795,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 						ID:       1,
 						TgID:     1234,
 						Username: "test user",
-						PersonalSpace: model.Space{
+						PersonalSpace: &model.Space{
 							ID:       uuid.New(),
 							Name:     "personal space for user 1234",
 							Created:  time.Now(),
@@ -846,9 +846,9 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -956,9 +956,9 @@ func TestNotesBySpaceID(t *testing.T) {
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -1049,9 +1049,9 @@ func TestGetNoteTypes(t *testing.T) {
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -1152,9 +1152,9 @@ func TestGetNotesByType(t *testing.T) {
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -1279,9 +1279,9 @@ func TestSearchNotesByText(t *testing.T) {
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -1394,9 +1394,9 @@ func TestDeleteNote(t *testing.T) {
 
 	spaceSrv := space.New(repo, cache, worker)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -1512,9 +1512,9 @@ func TestDeleteNote_Invalid(t *testing.T) {
 
 	spaceSrv := space.New(repo, cache, worker)
 
-	server := New("", spaceSrv, nil)
+	handler := New(spaceSrv, nil)
 
-	r, err := runTestServer(server)
+	r, err := runTestServer(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)

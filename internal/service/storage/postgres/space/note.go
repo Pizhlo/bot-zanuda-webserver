@@ -52,7 +52,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 			return nil, fmt.Errorf("error scanning note: %+v", err)
 		}
 
-		note.User.PersonalSpace = *note.Space
+		note.User.PersonalSpace = note.Space
 
 		res = append(res, note)
 	}
@@ -269,7 +269,7 @@ func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteB
 		Model: &elastic.Note{
 			SpaceID: req.SpaceID,
 			Text:    req.Text,
-			Type:    string(req.Type),
+			Type:    req.Type,
 		},
 	}
 

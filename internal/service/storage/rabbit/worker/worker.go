@@ -9,23 +9,22 @@ import (
 )
 
 type worker struct {
-	cfg Config
+	cfg config
 
 	conn    *amqp.Connection
-	channel *amqp.Channel
+	channel channel
 
 	// queues
-	createNoteQueue amqp.Queue
-	updateNoteQueue amqp.Queue
-	deleteNoteQueue amqp.Queue
+	notesTopicName amqp.Queue
 }
 
-// const (
-// 	createNoteQueueName = "create_note"
-// 	updateNoteQueueName = "update_note"
-// )
+//go:generate mockgen -source ./worker.go -destination=../../../../../mocks/rabbit.go -package=mocks
+type channel interface {
+	PublishWithContext(_ context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error
+	Close() error
+}
 
-func New(cfg Config) *worker {
+func New(cfg config) *worker {
 	return &worker{
 		cfg: cfg,
 	}
@@ -46,47 +45,19 @@ func (s *worker) Connect() error {
 
 	s.channel = ch
 
-	createNoteQueue, err := ch.QueueDeclare(
-		s.cfg.CreateNoteQueueName, // name
-		true,                      // durable
-		false,                     // delete when unused
-		false,                     // exclusive
-		false,                     // no-wait
-		nil,                       // arguments
+	notesTopic, err := ch.QueueDeclare(
+		s.cfg.NotesTopicName, // name
+		true,                 // durable
+		false,                // delete when unused
+		false,                // exclusive
+		false,                // no-wait
+		nil,                  // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.cfg.CreateNoteQueueName, err)
+		return fmt.Errorf("error creating queue %s: %+v", s.cfg.NotesTopicName, err)
 	}
 
-	s.createNoteQueue = createNoteQueue
-
-	updateNoteQueue, err := ch.QueueDeclare(
-		s.cfg.UpdateNoteQueueName, // name
-		true,                      // durable
-		false,                     // delete when unused
-		false,                     // exclusive
-		false,                     // no-wait
-		nil,                       // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.cfg.UpdateNoteQueueName, err)
-	}
-
-	s.updateNoteQueue = updateNoteQueue
-
-	deleteNoteQueue, err := ch.QueueDeclare(
-		s.cfg.DeleteNoteQueueName, // name
-		true,                      // durable
-		false,                     // delete when unused
-		false,                     // exclusive
-		false,                     // no-wait
-		nil,                       // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.cfg.DeleteNoteQueueName, err)
-	}
-
-	s.deleteNoteQueue = deleteNoteQueue
+	s.notesTopicName = notesTopic
 
 	return nil
 }

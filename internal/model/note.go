@@ -36,50 +36,6 @@ const (
 	PhotoNoteType NoteType = "photo"
 )
 
-//	{
-//	  "user_id": 12345678,
-//	  "text": "new note",
-//	  “space_id” :1,
-//	  "created": 1739264640
-//	}
-//
-// Запрос на создание заметки
-type CreateNoteRequest struct {
-	ID      uuid.UUID `json:"-"`        // айди запроса
-	UserID  int64     `json:"user_id"`  // кто создал заметку
-	SpaceID uuid.UUID `json:"space_id"` // айди пространства, куда сохранить заметку
-	Text    string    `json:"text"`     // текст заметки
-	Type    NoteType  `json:"type"`     // тип заметки: текстовая, фото, видео, етс
-	File    string    `json:"file"`     // название файла в Minio (если есть)
-	Created int64     `json:"created"`  // дата обращения в Unix в UTC
-}
-
-func (s *CreateNoteRequest) Validate() error {
-	// проверяем не все поля, т.к. не все поля заполнены из запроса
-	if s.UserID == 0 {
-		return ErrFieldUserNotFilled
-	}
-
-	if s.Text == "" {
-		return ErrFieldTextNotFilled
-	}
-
-	// можем не валидировать uuid, т.к. если он будет invalid, то структура просто не спарсится
-	if s.SpaceID == uuid.Nil {
-		return ErrInvalidSpaceID
-	}
-
-	if len(s.Type) == 0 {
-		return ErrFieldTypeNotFilled
-	}
-
-	if s.Created == 0 {
-		return ErrFieldCreatedNotFilled
-	}
-
-	return nil
-}
-
 type Note struct {
 	ID       uuid.UUID    `json:"id"`
 	User     *User        `json:"user"`    // кто создал заметку
@@ -159,46 +115,6 @@ func (s *GetNote) Validate() error {
 	return nil
 }
 
-// структура для запроса на обновление заметки.
-// обновляются текст и last_update
-//
-//	{
-//		"space_id": "ed3a5b3a-b81e-4cad-acea-178e230a9b93”,
-//		"user_id": 12354,
-//		"id": “ed3a5b3a-b81e-4cad-acea-178e230a9b93”,
-//		“text”: “new note text"
-//	  }
-type UpdateNoteRequest struct {
-	ID      uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
-	SpaceID uuid.UUID `json:"space_id"`
-	UserID  int64     `json:"user_id"`
-	NoteID  uuid.UUID `json:"note_id"` // айди заметки
-	Text    string    `json:"text"`    // новый текст
-	File    string    `json:"file"`    // название файла в Minio (если есть)
-	Created int64     `json:"created"` // дата обращения в Unix в UTC
-}
-
-func (s *UpdateNoteRequest) Validate() error {
-	if s.UserID == 0 {
-		return ErrFieldUserNotFilled
-	}
-
-	if s.Text == "" {
-		return ErrFieldTextNotFilled
-	}
-
-	// можем не валидировать uuid, т.к. если он будет invalid, то структура просто не спарсится
-	if s.SpaceID == uuid.Nil {
-		return ErrInvalidSpaceID
-	}
-
-	if s.Created == 0 {
-		return ErrFieldCreatedNotFilled
-	}
-
-	return nil
-}
-
 // структура для ответа на запрос всех типов заметок
 type NoteTypeResponse struct {
 	Type  NoteType `json:"type"`
@@ -210,11 +126,4 @@ type SearchNoteByTextRequest struct {
 	SpaceID uuid.UUID `json:"space_id"`
 	Text    string    `json:"text"`
 	Type    NoteType  `json:"type"` // тип заметок, для которого осуществлять поиск
-}
-
-type DeleteNoteRequest struct {
-	ID      uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
-	SpaceID uuid.UUID `json:"space_id"`
-	NoteID  uuid.UUID `json:"note_id"`
-	Created int64     `json:"created"` // дата обращения в Unix в UTC
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 
 	"github.com/google/uuid"
 )
@@ -39,9 +40,9 @@ type spaceCache interface {
 
 // dbWorker работает на создание / обновление записей
 type dbWorker interface {
-	CreateNote(ctx context.Context, req model.CreateNoteRequest) error
-	UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error
-	DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error
+	CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error
+	UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error
+	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
 }
 
 func New(repo spaceRepo, cache spaceCache, saver dbWorker) *Space {
@@ -64,7 +65,7 @@ func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 }
 
 // Create создает новую заметку в личном пространстве пользователя
-func (s *Space) CreateNote(ctx context.Context, note model.CreateNoteRequest) error {
+func (s *Space) CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error {
 	return s.worker.CreateNote(ctx, note)
 }
 
@@ -80,7 +81,7 @@ func (s *Space) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]
 }
 
 // UpdateNote отправляет запрос на обновление заметки в db-worker
-func (s *Space) UpdateNote(ctx context.Context, update model.UpdateNoteRequest) error {
+func (s *Space) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error {
 	return s.worker.UpdateNote(ctx, update)
 }
 
@@ -112,6 +113,6 @@ func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 	return s.repo.SearchNoteByText(ctx, req)
 }
 
-func (s *Space) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+func (s *Space) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
 	return s.worker.DeleteNote(ctx, req)
 }

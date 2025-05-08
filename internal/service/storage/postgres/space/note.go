@@ -8,6 +8,7 @@ import (
 	"strings"
 	"webserver/internal/model"
 	"webserver/internal/model/elastic"
+	"webserver/internal/model/rabbit"
 
 	api_errors "webserver/internal/errors"
 	"webserver/internal/service/storage/elasticsearch"
@@ -102,7 +103,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	return res, nil
 }
 
-func (db *spaceRepo) UpdateNote(ctx context.Context, update model.UpdateNoteRequest) error {
+func (db *spaceRepo) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error {
 	tx, err := db.tx(ctx)
 	if err != nil {
 		return err

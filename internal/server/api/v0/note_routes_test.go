@@ -11,6 +11,7 @@ import (
 	"time"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
 	"webserver/internal/service/space"
 	"webserver/internal/service/user"
 	"webserver/mocks"
@@ -29,8 +30,8 @@ func TestCreateNote(t *testing.T) {
 
 	type test struct {
 		name             string
-		req              model.CreateNoteRequest
-		expectedNote     model.CreateNoteRequest
+		req              rabbit.CreateNoteRequest
+		expectedNote     rabbit.CreateNoteRequest
 		err              bool
 		expectedCode     int
 		expectedResponse map[string]string
@@ -50,19 +51,20 @@ func TestCreateNote(t *testing.T) {
 	tests := []test{
 		{
 			name: "positive test",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
 			},
-			expectedNote: model.CreateNoteRequest{
-				ID:      uuid.New(),
-				UserID:  1,
-				Text:    "new note",
-				SpaceID: uuid.New(),
-				Type:    model.TextNoteType,
-				Created: time.Now().Unix(),
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1,
+				Text:      "new note",
+				SpaceID:   uuid.New(),
+				Type:      model.TextNoteType,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -71,7 +73,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name: "user ID not filled",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
@@ -84,7 +86,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name: "text not filled",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
@@ -97,7 +99,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name: "invalid space ID",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.Nil,
@@ -111,7 +113,7 @@ func TestCreateNote(t *testing.T) {
 		},
 		{
 			name: "field type not filled",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -159,7 +161,7 @@ func TestCreateNote(t *testing.T) {
 			}, nil)
 
 			if !tt.err {
-				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -189,8 +191,8 @@ func TestUpdateNote(t *testing.T) {
 
 	type test struct {
 		name             string
-		req              model.UpdateNoteRequest
-		expectedNote     model.UpdateNoteRequest
+		req              rabbit.UpdateNoteRequest
+		expectedNote     rabbit.UpdateNoteRequest
 		dbNote           model.GetNote // что возвращает база при вызове GetNote
 		dbErr            error
 		err              bool
@@ -209,7 +211,7 @@ func TestUpdateNote(t *testing.T) {
 	tests := []test{
 		{
 			name: "positive test",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: generatedID,
@@ -223,12 +225,13 @@ func TestUpdateNote(t *testing.T) {
 				Type:    model.TextNoteType,
 				Created: time.Now(),
 			},
-			expectedNote: model.UpdateNoteRequest{
-				UserID:  1,
-				ID:      generatedID,
-				Text:    "new note",
-				SpaceID: generatedID,
-				Created: time.Now().Unix(),
+			expectedNote: rabbit.UpdateNoteRequest{
+				UserID:    1,
+				ID:        generatedID,
+				Text:      "new note",
+				SpaceID:   generatedID,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.UpdateOp,
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -237,7 +240,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "user ID not filled",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				Text:    "new note",
 				SpaceID: uuid.New(),
 			},
@@ -249,7 +252,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "text not filled",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				SpaceID: uuid.New(),
 			},
@@ -261,7 +264,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "invalid space ID",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "invalid space ID",
 				SpaceID: uuid.Nil,
@@ -275,7 +278,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "note not belongs space",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "note not belongs space REQ",
 				SpaceID: generatedID,
@@ -298,7 +301,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "note type is not text",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "note type is not text REQ",
 				SpaceID: generatedID,
@@ -321,7 +324,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 		{
 			name: "note not found",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "note not found REQ",
 				SpaceID: generatedID,
@@ -388,7 +391,7 @@ func TestUpdateNote(t *testing.T) {
 
 				tt.expectedResponse = map[string]string{"request_id": uuid.New().String()}
 
-				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -419,8 +422,8 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	type test struct {
 		name         string
-		req          model.CreateNoteRequest
-		expectedNote model.CreateNoteRequest
+		req          rabbit.CreateNoteRequest
+		expectedNote rabbit.CreateNoteRequest
 		dbErr        bool // должна ли база вернуть ошибку
 		// ошибки разных репозиториев
 		err              error            // ошибки валидации и т.п.
@@ -443,19 +446,20 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 	tests := []test{
 		{
 			name: "create note",
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
 			},
-			expectedNote: model.CreateNoteRequest{
-				ID:      uuid.New(),
-				UserID:  1,
-				Text:    "new note",
-				SpaceID: uuid.New(),
-				Type:    model.TextNoteType,
-				Created: time.Now().Unix(),
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1,
+				Text:      "new note",
+				SpaceID:   uuid.New(),
+				Type:      model.TextNoteType,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -467,7 +471,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrUnknownUser,
 			methodErrors: map[string]error{"CheckUser": api_errors.ErrUnknownUser},
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -481,7 +485,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrSpaceNotExists,
 			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -495,7 +499,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrSpaceNotBelongsUser,
 			methodErrors: map[string]error{"IsUserInSpace": api_errors.ErrSpaceNotBelongsUser},
-			req: model.CreateNoteRequest{
+			req: rabbit.CreateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -563,7 +567,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.CreateNoteRequest) {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -593,8 +597,8 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 	type test struct {
 		name         string
-		req          model.UpdateNoteRequest
-		expectedNote model.UpdateNoteRequest
+		req          rabbit.UpdateNoteRequest
+		expectedNote rabbit.UpdateNoteRequest
 		dbNote       model.GetNote // что возвращает база
 		dbErr        bool          // должна ли база вернуть ошибку
 		// ошибки разных репозиториев
@@ -618,7 +622,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 	tests := []test{
 		{
 			name: "update note",
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: generatedID,
@@ -631,13 +635,14 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 				ID:      generatedID,
 				Type:    model.TextNoteType,
 			},
-			expectedNote: model.UpdateNoteRequest{
-				ID:      generatedID,
-				UserID:  1,
-				Text:    "new note",
-				SpaceID: generatedID,
-				NoteID:  generatedID,
-				Created: time.Now().Unix(),
+			expectedNote: rabbit.UpdateNoteRequest{
+				ID:        generatedID,
+				UserID:    1,
+				Text:      "new note",
+				SpaceID:   generatedID,
+				NoteID:    generatedID,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.UpdateOp,
 			},
 			expectedCode: http.StatusAccepted,
 			expectedResponse: map[string]string{
@@ -649,7 +654,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrUnknownUser,
 			methodErrors: map[string]error{"CheckUser": api_errors.ErrUnknownUser},
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -662,7 +667,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrSpaceNotExists,
 			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -675,7 +680,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 			dbErr:        true,
 			err:          api_errors.ErrSpaceNotBelongsUser,
 			methodErrors: map[string]error{"IsUserInSpace": api_errors.ErrSpaceNotBelongsUser},
-			req: model.UpdateNoteRequest{
+			req: rabbit.UpdateNoteRequest{
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: uuid.New(),
@@ -744,7 +749,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 					ID: generatedID,
 				}, nil)
 
-				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq model.UpdateNoteRequest) {
+				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -1335,8 +1340,8 @@ func TestDeleteNote(t *testing.T) {
 	type test struct {
 		name            string
 		spaceID, noteID string
-		dbNote          model.GetNote           // заметка, возвращаемая базой
-		expectedReq     model.DeleteNoteRequest // ожидаемое сообщение для воркера
+		dbNote          model.GetNote            // заметка, возвращаемая базой
+		expectedReq     rabbit.DeleteNoteRequest // ожидаемое сообщение для воркера
 		expectedCode    int
 		expectedErr     map[string]string
 	}
@@ -1361,11 +1366,12 @@ func TestDeleteNote(t *testing.T) {
 				ID:      noteID,
 				SpaceID: spaceID,
 			},
-			expectedReq: model.DeleteNoteRequest{
-				ID:      uuid.New(),
-				SpaceID: spaceID,
-				NoteID:  noteID,
-				Created: time.Now().Unix(),
+			expectedReq: rabbit.DeleteNoteRequest{
+				ID:        uuid.New(),
+				SpaceID:   spaceID,
+				NoteID:    noteID,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.DeleteOp,
 			},
 			expectedCode: http.StatusAccepted,
 		},
@@ -1417,7 +1423,7 @@ func TestDeleteNote(t *testing.T) {
 				repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil).Do(func(ctx any, actualNoteID uuid.UUID) {
 					assert.Equal(t, noteID, actualNoteID)
 				})
-				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req model.DeleteNoteRequest) {
+				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req rabbit.DeleteNoteRequest) {
 					assert.Equal(t, tt.expectedReq, req)
 				})
 			}
@@ -1456,8 +1462,8 @@ func TestDeleteNote_Invalid(t *testing.T) {
 	type test struct {
 		name            string
 		spaceID, noteID string
-		dbNote          model.GetNote           // заметка, возвращаемая базой
-		expectedReq     model.DeleteNoteRequest // ожидаемое сообщение для воркера
+		dbNote          model.GetNote            // заметка, возвращаемая базой
+		expectedReq     rabbit.DeleteNoteRequest // ожидаемое сообщение для воркера
 		expectedCode    int
 		expectedErr     map[string]string
 		methodErrors    map[string]error // название метода : ошибка
@@ -1554,7 +1560,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 
 			// happy case
 			if tt.expectedErr == nil {
-				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req model.DeleteNoteRequest) {
+				worker.EXPECT().DeleteNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, req rabbit.DeleteNoteRequest) {
 					assert.Equal(t, tt.expectedReq, req)
 				})
 			}

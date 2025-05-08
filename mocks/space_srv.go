@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 	model "webserver/internal/model"
+	rabbit "webserver/internal/model/rabbit"
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
@@ -217,7 +218,7 @@ func (m *MockdbWorker) EXPECT() *MockdbWorkerMockRecorder {
 }
 
 // CreateNote mocks base method.
-func (m *MockdbWorker) CreateNote(ctx context.Context, req model.CreateNoteRequest) error {
+func (m *MockdbWorker) CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNote", ctx, req)
 	ret0, _ := ret[0].(error)
@@ -231,7 +232,7 @@ func (mr *MockdbWorkerMockRecorder) CreateNote(ctx, req interface{}) *gomock.Cal
 }
 
 // DeleteNote mocks base method.
-func (m *MockdbWorker) DeleteNote(ctx context.Context, req model.DeleteNoteRequest) error {
+func (m *MockdbWorker) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteNote", ctx, req)
 	ret0, _ := ret[0].(error)
@@ -245,7 +246,7 @@ func (mr *MockdbWorkerMockRecorder) DeleteNote(ctx, req interface{}) *gomock.Cal
 }
 
 // UpdateNote mocks base method.
-func (m *MockdbWorker) UpdateNote(ctx context.Context, req model.UpdateNoteRequest) error {
+func (m *MockdbWorker) UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateNote", ctx, req)
 	ret0, _ := ret[0].(error)

@@ -13,7 +13,7 @@ func TestNewConfig(t *testing.T) {
 		name        string
 		queuesNames map[string]string
 		addr        string
-		expected    Config
+		expected    config
 		err         error
 	}
 
@@ -21,39 +21,29 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "positive case",
 			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q1",
-				UpdateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
+				NotesTopicName: "q1",
 			},
 			addr: "amqp://addr",
-			expected: Config{
-				CreateNoteQueueName: "q1",
-				UpdateNoteQueueName: "q2",
-				DeleteNoteQueueName: "q3",
-				Address:             "amqp://addr",
+			expected: config{
+				NotesTopicName: "q1",
+				Address:        "amqp://addr",
 			},
 		},
 		{
 			name: "addr with prefix amqps",
 			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q1",
-				UpdateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
+				NotesTopicName: "q1",
 			},
 			addr: "amqps://addr",
-			expected: Config{
-				CreateNoteQueueName: "q1",
-				UpdateNoteQueueName: "q2",
-				DeleteNoteQueueName: "q3",
-				Address:             "amqps://addr",
+			expected: config{
+				NotesTopicName: "q1",
+				Address:        "amqps://addr",
 			},
 		},
 		{
 			name: "empty address",
 			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q1",
-				UpdateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
+				NotesTopicName: "q1",
 			},
 			err: errors.New("address not provided"),
 		},
@@ -66,38 +56,17 @@ func TestNewConfig(t *testing.T) {
 			name: "invalid address",
 			addr: "addr",
 			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q1",
-				UpdateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
+				NotesTopicName: "q1",
 			},
 			err: errors.New("invalid rabbitMQ address: addr"),
 		},
 		{
-			name: "create note queue name not provided",
+			name: "notes queue name not provided",
 			queuesNames: map[string]string{
-				UpdateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
+				"another key": "q2",
 			},
 			addr: "amqps://addr",
-			err:  fmt.Errorf("create note queue name not provided"),
-		},
-		{
-			name: "update note queue name not provided",
-			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q2",
-				DeleteNoteQueueNameKey: "q3",
-			},
-			addr: "amqps://addr",
-			err:  fmt.Errorf("update note queue name not provided"),
-		},
-		{
-			name: "delete note queue name not provided",
-			queuesNames: map[string]string{
-				CreateNoteQueueNameKey: "q2",
-				UpdateNoteQueueNameKey: "q3",
-			},
-			addr: "amqps://addr",
-			err:  fmt.Errorf("delete note queue name not provided"),
+			err:  fmt.Errorf("notes queue name not provided"),
 		},
 	}
 
@@ -107,7 +76,7 @@ func TestNewConfig(t *testing.T) {
 			assert.Equal(t, tt.expected, actual)
 
 			if tt.err != nil {
-				assert.EqualError(t, tt.err, err.Error())
+				assert.EqualError(t, err, tt.err.Error())
 			} else {
 				assert.NoError(t, err)
 			}

@@ -63,7 +63,9 @@ func (s *server) Serve() error {
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	apiv0 := e.Group("v0")
+	api := e.Group("api/")
+
+	apiv0 := api.Group("v0/")
 
 	apiv0.GET("/health", s.api.h0.Health)
 

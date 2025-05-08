@@ -92,7 +92,7 @@ func parseUser(res map[string]string) (model.User, error) {
 		ID:       id,
 		TgID:     int64(tgID),
 		Username: res[usernameKey],
-		PersonalSpace: model.Space{
+		PersonalSpace: &model.Space{
 			ID: personalSpaceID,
 		},
 		Timezone: res[timezoneKey],

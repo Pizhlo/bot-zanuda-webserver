@@ -20,8 +20,8 @@ type server struct {
 	}
 }
 
-func New(addr string, h handler) *server {
-	return &server{addr: addr, api: struct{ h0 handler }{h0: h}}
+func New(cfg *Config) *server {
+	return &server{addr: cfg.Address, api: struct{ h0 handler }{h0: cfg.HandlerV0}}
 }
 
 type handler interface {

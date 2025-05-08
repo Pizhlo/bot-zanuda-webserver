@@ -2,7 +2,10 @@ package elastic
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+
+	model_package "webserver/internal/model"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/deletebyquery"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
@@ -19,11 +22,35 @@ type Note struct {
 	TgID      int64
 	Text      string
 	SpaceID   uuid.UUID
-	Type      string // тип заметки
+	Type      model_package.NoteType // тип заметки
 }
+
+var (
+	ErrFieldIDNotFilled        = errors.New("field `id` not filled")
+	ErrFieldElasticIDNotFilled = errors.New("field `elastic_id` not filled")
+	ErrTgIDNotFilled           = errors.New("field `TgID` not filled")
+	ErrFieldTextNotFilled      = errors.New("field `text` not filled")
+)
 
 // ValidateNote проверяет поля структуры elastic.Data на правильность и возвращает заметку
 func (n Note) validate() error {
+	if n.ID == uuid.Nil {
+		return ErrFieldIDNotFilled
+	}
+
+	if len(n.ElasticID) == 0 {
+		return ErrFieldElasticIDNotFilled
+	}
+
+	if n.TgID == 0 {
+		return ErrTgIDNotFilled
+	}
+
+	// у не-текстовых заметок поле текст может быть пустым
+	if n.Type == model_package.TextNoteType && len(n.Text) == 0 {
+		return ErrFieldTextNotFilled
+	}
+
 	return nil
 }
 
@@ -76,7 +103,7 @@ func (n Note) searchByTextQuery() (*search.Request, error) {
 					{
 						Match: map[string]types.MatchQuery{
 							"Type": {
-								Query: n.Type,
+								Query: string(n.Type),
 							},
 						},
 					},

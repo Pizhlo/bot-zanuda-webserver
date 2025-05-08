@@ -1,9 +1,10 @@
 package model
 
 import (
-	"fmt"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,24 +18,64 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 
 	tests := []test{
 		{
-			name:  "user ID not filled",
-			model: CreateNoteRequest{},
-			err:   fmt.Errorf("field `user_id` not filled"),
+			name: "positive case",
+			model: CreateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: 123,
+			},
+		},
+		{
+			name: "user ID not filled",
+			model: CreateNoteRequest{
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: 123,
+			},
+			err: ErrFieldUserNotFilled,
 		},
 		{
 			name: "text not filled",
 			model: CreateNoteRequest{
-				UserID: 1,
+				UserID:  1,
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: 123,
 			},
-			err: fmt.Errorf("field `text` not filled"),
+			err: ErrFieldTextNotFilled,
 		},
 		{
 			name: "SpaceID not filled",
 			model: CreateNoteRequest{
-				UserID: 1,
-				Text:   "test",
+				UserID:  1,
+				Text:    "test",
+				Type:    TextNoteType,
+				Created: 123,
 			},
-			err: fmt.Errorf("invalid space id"),
+			err: ErrInvalidSpaceID,
+		},
+		{
+			name: "Type field not filled",
+			model: CreateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Created: 123,
+			},
+			err: ErrFieldTypeNotFilled,
+		},
+		{
+			name: "Created field not filled",
+			model: CreateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+			},
+			err: ErrFieldCreatedNotFilled,
 		},
 	}
 
@@ -59,16 +100,74 @@ func TestNoteValidate(t *testing.T) {
 
 	tests := []test{
 		{
-			name:  "field `User` is nil",
-			model: Note{},
-			err:   ErrFieldUserNotFilled,
+			name: "positive case",
+			model: Note{
+				User: &User{
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
+				},
+				ID:   uuid.New(),
+				Text: "text",
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Creator:  234,
+					Personal: true,
+				},
+				Type: TextNoteType,
+			},
+		},
+		{
+			name: "field `User` is nil",
+			model: Note{
+				ID:   uuid.New(),
+				Text: "text",
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Creator:  234,
+					Personal: true,
+				},
+				Type: TextNoteType,
+			},
+			err: ErrFieldUserNotFilled,
 		},
 		{
 			name: "text not filled",
 			model: Note{
 				User: &User{
-					TgID: 1,
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
 				},
+				ID: uuid.New(),
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Creator:  234,
+					Personal: true,
+				},
+				Type: TextNoteType,
 			},
 			err: ErrFieldTextNotFilled,
 		},
@@ -76,9 +175,21 @@ func TestNoteValidate(t *testing.T) {
 			name: "Space not filled",
 			model: Note{
 				User: &User{
-					TgID: 1,
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
 				},
-				Text: "test",
+				ID:   uuid.New(),
+				Text: "text",
+				Type: TextNoteType,
 			},
 			err: ErrSpaceIsNil,
 		},
@@ -86,10 +197,27 @@ func TestNoteValidate(t *testing.T) {
 			name: "Type not filled",
 			model: Note{
 				User: &User{
-					TgID: 1,
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
 				},
-				Space: &Space{},
-				Text:  "test",
+				ID:   uuid.New(),
+				Text: "text",
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Creator:  234,
+					Personal: true,
+				},
 			},
 			err: ErrFieldTypeNotFilled,
 		},
@@ -97,13 +225,229 @@ func TestNoteValidate(t *testing.T) {
 			name: "Space filled",
 			model: Note{
 				User: &User{
-					TgID: 1,
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
 				},
-				Text:  "test",
-				Space: &Space{},
-				Type:  TextNoteType,
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Personal: true,
+					Creator:  123,
+				},
+				ID:   uuid.New(),
+				Text: "text",
+				Type: TextNoteType,
 			},
 			err: nil,
+		},
+		{
+			name: "invalid space",
+			model: Note{
+				User: &User{
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					PersonalSpace: &Space{
+						ID:       uuid.New(),
+						Name:     "space1",
+						Created:  time.Now(),
+						Creator:  123,
+						Personal: true,
+					},
+					Timezone: "Europe/Moscow",
+				},
+				ID:   uuid.New(),
+				Text: "text",
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Personal: true,
+				},
+				Type: TextNoteType,
+			},
+			err: ErrFieldCreatorNotFilled,
+		},
+		{
+			name: "invalid user",
+			model: Note{
+				User: &User{
+					ID:       1,
+					TgID:     123,
+					Username: "username",
+					Timezone: "Europe/Moscow",
+				},
+				ID:   uuid.New(),
+				Text: "text",
+				Space: &Space{
+					ID:       uuid.New(),
+					Name:     "space2",
+					Created:  time.Now(),
+					Creator:  234,
+					Personal: true,
+				},
+				Type: TextNoteType,
+			},
+			err: ErrSpaceIsNil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.model.Validate()
+			if tt.err != nil {
+				assert.EqualError(t, tt.err, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestGetNoteValidate(t *testing.T) {
+	type test struct {
+		name  string
+		model GetNote
+		err   error
+	}
+
+	tests := []test{
+		{
+			name: "positive case",
+			model: GetNote{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: time.Now(),
+			},
+		},
+		{
+			name: "user ID not filled",
+			model: GetNote{
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: time.Now(),
+			},
+			err: ErrFieldUserNotFilled,
+		},
+		{
+			name: "text not filled",
+			model: GetNote{
+				UserID:  1,
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+				Created: time.Now(),
+			},
+			err: ErrFieldTextNotFilled,
+		},
+		{
+			name: "SpaceID not filled",
+			model: GetNote{
+				UserID:  1,
+				Text:    "test",
+				Type:    TextNoteType,
+				Created: time.Now(),
+			},
+			err: ErrInvalidSpaceID,
+		},
+		{
+			name: "Type field not filled",
+			model: GetNote{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Created: time.Now(),
+			},
+			err: ErrFieldTypeNotFilled,
+		},
+		{
+			name: "Created field not filled",
+			model: GetNote{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Type:    TextNoteType,
+			},
+			err: ErrFieldCreatedNotFilled,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.model.Validate()
+			if tt.err != nil {
+				assert.EqualError(t, tt.err, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestUpdateNoteRequestValidate(t *testing.T) {
+	type test struct {
+		name  string
+		model UpdateNoteRequest
+		err   error
+	}
+
+	tests := []test{
+		{
+			name: "positive case",
+			model: UpdateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Created: 123,
+			},
+		},
+		{
+			name: "user ID not filled",
+			model: UpdateNoteRequest{
+				Text:    "test",
+				SpaceID: uuid.New(),
+				Created: 123,
+			},
+			err: ErrFieldUserNotFilled,
+		},
+		{
+			name: "text not filled",
+			model: UpdateNoteRequest{
+				UserID:  1,
+				SpaceID: uuid.New(),
+				Created: 123,
+			},
+			err: ErrFieldTextNotFilled,
+		},
+		{
+			name: "SpaceID not filled",
+			model: UpdateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				Created: 123,
+			},
+			err: ErrInvalidSpaceID,
+		},
+		{
+			name: "Created field not filled",
+			model: UpdateNoteRequest{
+				UserID:  1,
+				Text:    "test",
+				SpaceID: uuid.New(),
+			},
+			err: ErrFieldCreatedNotFilled,
 		},
 	}
 

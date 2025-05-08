@@ -795,7 +795,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 						ID:       1,
 						TgID:     1234,
 						Username: "test user",
-						PersonalSpace: model.Space{
+						PersonalSpace: &model.Space{
 							ID:       uuid.New(),
 							Name:     "personal space for user 1234",
 							Created:  time.Now(),

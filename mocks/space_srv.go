@@ -231,6 +231,20 @@ func (mr *MockdbWorkerMockRecorder) CreateNote(ctx, req interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*MockdbWorker)(nil).CreateNote), ctx, req)
 }
 
+// DeleteAllNotes mocks base method.
+func (m *MockdbWorker) DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAllNotes", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAllNotes indicates an expected call of DeleteAllNotes.
+func (mr *MockdbWorkerMockRecorder) DeleteAllNotes(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllNotes", reflect.TypeOf((*MockdbWorker)(nil).DeleteAllNotes), ctx, req)
+}
+
 // DeleteNote mocks base method.
 func (m *MockdbWorker) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
 	m.ctrl.T.Helper()

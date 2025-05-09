@@ -80,19 +80,17 @@ func errorsIn(target error, errs []error) bool {
 
 //		@Summary		Запрос на получение всех заметок
 //		@Description	Запрос на получение всех заметок из личного пространства пользователя
-//	    @Param        id   path      uuid  true  "ID пространства"
+//	    @Param        space_id   path      uuid  true  "ID пространства"
 //		@Success		200 {object}    []model.Note
 //		@Success		200 {object}    []model.GetNote
 //		@Failure		400	{object}	map[string]string "Невалидный запрос"
 //		@Failure		404                               "Пространства не существует"
 //		@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//		@Router			/spaces/{id}/notes [get]
+//		@Router			/spaces/{space_id}/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
 func (h *handler) NotesBySpaceID(c echo.Context) error {
-	spaceIDStr := c.Param("id")
-
-	spaceID, err := uuid.Parse(spaceIDStr)
+	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
@@ -224,18 +222,16 @@ func (h *handler) UpdateNote(c echo.Context) error {
 
 //	@Summary		Получить все типы заметок
 //	@Description	Получить список всех типов заметок и их количество
-//	@Param          id   path      string  true  "ID пространства"//
+//	@Param          space_id   path      string  true  "ID пространства"//
 //	@Success		200 {object}    []model.NoteTypeResponse   массив с типами заметок и их количеством
 //	@Failure		404	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/spaces/{id}/notes/types [get]
+//	@Router			/spaces/{space_id}/notes/types [get]
 //
 // ручка для получения типов заметок
 func (h *handler) GetNoteTypes(c echo.Context) error {
-	spaceIDStr := c.Param("id")
-
-	spaceID, err := uuid.Parse(spaceIDStr)
+	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
@@ -254,17 +250,16 @@ func (h *handler) GetNoteTypes(c echo.Context) error {
 
 //	@Summary		Получить все заметки одного типа
 //	@Description	Получить все заметки определенного типа: текстовые, фото, етс
-//	@Param          id   path      string  true  "ID пространства"
+//	@Param          space_id   path      string  true  "ID пространства"
 //	@Param          type   path      string  true  "тип заметки: текст, фото, етс"
 //	@Success		200 {object}    []model.GetNote   массив с типами заметок и их количеством
 //	@Failure		404	{object}	nil "Нет заметок"
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
-//	@Router			/spaces/{id}/notes/{type} [get]
+//	@Router			/spaces/{space_id}/notes/{type} [get]
 //
 // ручка для заметок по типу
 func (h *handler) GetNotesByType(c echo.Context) error {
-	spaceIDStr := c.Param("id")
 	noteType := c.Param("type")
 
 	// валидируем запрос: тип должен быть одним из перечисленных
@@ -274,7 +269,7 @@ func (h *handler) GetNotesByType(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note type: %s", noteType)})
 	}
 
-	spaceID, err := uuid.Parse(spaceIDStr)
+	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
@@ -341,15 +336,12 @@ func (h *handler) SearchNoteByText(c echo.Context) error {
 //
 // ручка для удаления заметки по id
 func (h *handler) DeleteNote(c echo.Context) error {
-	spaceIDStr := c.Param("space_id")
-	noteIDStr := c.Param("note_id")
-
-	spaceID, err := uuid.Parse(spaceIDStr)
+	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
 
-	noteID, err := uuid.Parse(noteIDStr)
+	noteID, err := getNoteIDFromPath(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid note id parameter: %+v", err)})
 	}
@@ -397,5 +389,33 @@ func (h *handler) DeleteNote(c echo.Context) error {
 }
 
 func (h *handler) DeleteAllNotes(c echo.Context) error {
-	return nil
+	spaceID, err := getSpaceIDFromPath(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
+	}
+
+	req := rabbit.DeleteAllNotesRequest{
+		ID:        uuid.New(),
+		SpaceID:   spaceID,
+		Created:   time.Now().In(time.UTC).Unix(),
+		Operation: rabbit.DeleteAllOp,
+	}
+
+	if err := h.space.DeleteAllNotes(c.Request().Context(), req); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
+}
+
+func getSpaceIDFromPath(c echo.Context) (uuid.UUID, error) {
+	spaceIDStr := c.Param("space_id")
+
+	return uuid.Parse(spaceIDStr)
+}
+
+func getNoteIDFromPath(c echo.Context) (uuid.UUID, error) {
+	noteIDStr := c.Param("note_id")
+
+	return uuid.Parse(noteIDStr)
 }

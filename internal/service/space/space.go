@@ -43,6 +43,7 @@ type dbWorker interface {
 	CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error
 	UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error
 	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
+	DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error
 }
 
 func New(repo spaceRepo, cache spaceCache, saver dbWorker) *Space {
@@ -115,4 +116,8 @@ func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 
 func (s *Space) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
 	return s.worker.DeleteNote(ctx, req)
+}
+
+func (s *Space) DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error {
+	return s.worker.DeleteAllNotes(ctx, req)
 }

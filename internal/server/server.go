@@ -84,7 +84,7 @@ func (s *server) CreateRoutes() error {
 	spaces := apiv0.Group("spaces")
 
 	// notes
-	spaces.GET("/:id/notes", s.api.h0.NotesBySpaceID)
+	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID)
 
 	// создание, обновление, удаление
 	spaces.POST("/notes/create", s.api.h0.CreateNote, s.api.h0.ValidateNoteRequest)
@@ -93,8 +93,8 @@ func (s *server) CreateRoutes() error {
 	spaces.DELETE("/:space_id/notes/delete_all", s.api.h0.DeleteAllNotes) // удалить все заметки
 
 	// типы заметок
-	spaces.GET("/:id/notes/types", s.api.h0.GetNoteTypes)   // получить, какие есть типы заметок
-	spaces.GET("/:id/notes/:type", s.api.h0.GetNotesByType) // получить все заметки одного типа
+	spaces.GET("/:space_id/notes/types", s.api.h0.GetNoteTypes)   // получить, какие есть типы заметок
+	spaces.GET("/:space_id/notes/:type", s.api.h0.GetNotesByType) // получить все заметки одного типа
 
 	// поиск
 	spaces.POST("/notes/search/text", s.api.h0.SearchNoteByText) // по тексту

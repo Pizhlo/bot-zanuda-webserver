@@ -36,17 +36,30 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 func runTestServer(h *handler) (*echo.Echo, error) {
 	e := echo.New()
 
-	e.GET("/health", h.Health)
-	spaces := e.Group("spaces")
+	api := e.Group("api/")
+
+	// v0
+	apiv0 := api.Group("v0/")
+
+	apiv0.GET("health", h.Health)
+
+	spaces := apiv0.Group("spaces")
 
 	// notes
-	spaces.GET("/:id/notes", h.NotesBySpaceID)
+	spaces.GET("/:space_id/notes", h.NotesBySpaceID)
+
+	// создание, обновление, удаление
 	spaces.POST("/notes/create", h.CreateNote, h.ValidateNoteRequest)
 	spaces.PATCH("/notes/update", h.UpdateNote, h.ValidateNoteRequest)
-	spaces.GET("/:id/notes/types", h.GetNoteTypes)
-	spaces.GET("/:id/notes/:type", h.GetNotesByType)
-	spaces.POST("/notes/search/text", h.SearchNoteByText)
 	spaces.DELETE("/:space_id/notes/:note_id/delete", h.DeleteNote)
+	spaces.DELETE("/:space_id/notes/delete_all", h.DeleteAllNotes) // удалить все заметки
+
+	// типы заметок
+	spaces.GET("/:space_id/notes/types", h.GetNoteTypes)   // получить, какие есть типы заметок
+	spaces.GET("/:space_id/notes/:type", h.GetNotesByType) // получить все заметки одного типа
+
+	// поиск
+	spaces.POST("/notes/search/text", h.SearchNoteByText) // по тексту
 
 	return e, nil
 }

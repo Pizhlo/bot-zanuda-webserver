@@ -170,12 +170,17 @@ func main() {
 
 	s := server.New(serverCfg)
 
-	err = s.Serve()
+	err = s.CreateRoutes()
 	if err != nil {
-		logrus.Fatalf("error starting server: %+v", err)
+		logrus.Fatalf("error creating routes for server: %+v", err)
 	}
 
 	logrus.Infof("started server on %s", serverAddr)
+
+	err = s.Start()
+	if err != nil {
+		logrus.Fatalf("error starting server: %+v", err)
+	}
 
 	notifyCtx, notify := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer notify()

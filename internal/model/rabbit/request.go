@@ -10,9 +10,10 @@ import (
 type Operation string
 
 var (
-	CreateOp Operation = "create"
-	UpdateOp Operation = "update"
-	DeleteOp Operation = "delete"
+	CreateOp    Operation = "create"
+	UpdateOp    Operation = "update"
+	DeleteOp    Operation = "delete"
+	DeleteAllOp Operation = "delete_all"
 )
 
 var (
@@ -139,6 +140,33 @@ func (s *DeleteNoteRequest) Validate() error {
 	}
 
 	if s.Operation != DeleteOp {
+		return ErrInvalidOperation
+	}
+
+	return nil
+}
+
+type DeleteAllNotesRequest struct {
+	ID        uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
+	SpaceID   uuid.UUID `json:"space_id"`
+	Operation Operation `json:"operation"` // какое действие сделать: создать, удалить, редактировать
+	Created   int64     `json:"created"`   // дата обращения в Unix в UTC
+}
+
+func (s *DeleteAllNotesRequest) Validate() error {
+	if s.ID == uuid.Nil {
+		return model.ErrFieldIDNotFilled
+	}
+
+	if s.SpaceID == uuid.Nil {
+		return model.ErrInvalidSpaceID
+	}
+
+	if s.Created == 0 {
+		return model.ErrFieldCreatedNotFilled
+	}
+
+	if s.Operation != DeleteAllOp {
 		return ErrInvalidOperation
 	}
 

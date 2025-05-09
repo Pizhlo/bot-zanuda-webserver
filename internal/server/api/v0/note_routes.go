@@ -395,3 +395,7 @@ func (h *handler) DeleteNote(c echo.Context) error {
 
 	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
 }
+
+func (h *handler) DeleteAllNotes(c echo.Context) error {
+	return nil
+}

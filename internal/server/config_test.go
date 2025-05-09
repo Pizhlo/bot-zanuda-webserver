@@ -3,8 +3,9 @@ package server
 import (
 	"fmt"
 	"testing"
-	v0 "webserver/internal/server/api/v0"
+	"webserver/mocks"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +23,11 @@ func TestNewConfig(t *testing.T) {
 		}
 	}
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	h := mocks.NewMockhandler(ctrl)
+
 	tests := []test{
 		{
 			name: "positive case",
@@ -30,7 +36,7 @@ func TestNewConfig(t *testing.T) {
 				h0   handler
 			}{
 				addr: "addr",
-				h0:   v0.New(nil, nil),
+				h0:   h,
 			},
 			result: struct {
 				config *Config
@@ -38,7 +44,7 @@ func TestNewConfig(t *testing.T) {
 			}{
 				config: &Config{
 					Address:   "addr",
-					HandlerV0: v0.New(nil, nil),
+					HandlerV0: h,
 				},
 			},
 		},
@@ -48,7 +54,7 @@ func TestNewConfig(t *testing.T) {
 				addr string
 				h0   handler
 			}{
-				h0: v0.New(nil, nil),
+				h0: h,
 			},
 			result: struct {
 				config *Config

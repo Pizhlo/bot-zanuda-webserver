@@ -45,7 +45,7 @@ func runTestServer(h *handler) (*echo.Echo, error) {
 	spaces.PATCH("/notes/update", h.UpdateNote, h.ValidateNoteRequest)
 	spaces.GET("/:id/notes/types", h.GetNoteTypes)
 	spaces.GET("/:id/notes/:type", h.GetNotesByType)
-	spaces.POST("/notes/search/text", h.SearchNoteByText)
+	spaces.POST("/notes/search", h.SearchNotes)
 	spaces.DELETE("/:space_id/notes/:note_id/delete", h.DeleteNote)
 
 	return e, nil

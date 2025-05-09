@@ -9,14 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// Search производит поиск по переданным данным. Возвращает ID подходящих записей
-func (c *client) SearchByText(ctx context.Context, data elastic.Data) ([]uuid.UUID, error) {
+// SearchQuery производит поиск по переданным данным. Возвращает ID подходящих записей
+func (c *client) SearchQuery(ctx context.Context, data elastic.Data) ([]uuid.UUID, error) {
 	_, err := data.ValidateNote()
 	if err != nil {
 		return nil, err
 	}
 
-	query, err := data.SearchByTextQuery()
+	query, err := data.SearchQuery()
 	if err != nil {
 		return nil, fmt.Errorf("error while creating query for search note: %+v", err)
 	}

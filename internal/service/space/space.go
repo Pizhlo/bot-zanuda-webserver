@@ -31,7 +31,7 @@ type spaceRepo interface {
 	GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error)
 	// GetNotesByType возвращает все заметки указанного типа из пространства
 	GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error)
-	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
+	SearchQuery(ctx context.Context, req model.SearchNotesRequest) ([]model.GetNote, error)
 }
 
 type spaceCache interface {
@@ -105,12 +105,12 @@ func (s *Space) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType 
 	return s.repo.GetNotesByType(ctx, spaceID, noteType)
 }
 
-func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+func (s *Space) SearchNote(ctx context.Context, req model.SearchNotesRequest) ([]model.GetNote, error) {
 	if len(req.Type) == 0 { // по умолчанию, если не указано, ищем среди текстовых
 		req.Type = model.TextNoteType
 	}
 
-	return s.repo.SearchNoteByText(ctx, req)
+	return s.repo.SearchQuery(ctx, req)
 }
 
 func (s *Space) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {

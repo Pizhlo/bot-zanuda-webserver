@@ -1208,7 +1208,7 @@ func TestSearchNotesByText(t *testing.T) {
 	type test struct {
 		name             string
 		spaceID          string
-		req              model.SearchNoteByTextRequest
+		req              model.SearchNotesRequest
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.GetNote
@@ -1220,7 +1220,7 @@ func TestSearchNotesByText(t *testing.T) {
 			name:         "positive test: without parameter",
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusOK,
-			req: model.SearchNoteByTextRequest{
+			req: model.SearchNotesRequest{
 				SpaceID: uuid.New(),
 				Text:    "positive test",
 			},
@@ -1238,7 +1238,7 @@ func TestSearchNotesByText(t *testing.T) {
 			name:         "positive test: with parameter",
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusOK,
-			req: model.SearchNoteByTextRequest{
+			req: model.SearchNotesRequest{
 				SpaceID: uuid.New(),
 				Text:    "positive test",
 				Type:    "text",
@@ -1257,7 +1257,7 @@ func TestSearchNotesByText(t *testing.T) {
 			name:         "invalid note type",
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusBadRequest,
-			req: model.SearchNoteByTextRequest{
+			req: model.SearchNotesRequest{
 				SpaceID: uuid.New(),
 				Text:    "positive test",
 				Type:    "video",
@@ -1269,7 +1269,7 @@ func TestSearchNotesByText(t *testing.T) {
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusNotFound,
 			dbErr:        api_errors.ErrNoNotesFoundByText,
-			req: model.SearchNoteByTextRequest{
+			req: model.SearchNotesRequest{
 				SpaceID: uuid.New(),
 				Text:    "positive test",
 				Type:    "text",

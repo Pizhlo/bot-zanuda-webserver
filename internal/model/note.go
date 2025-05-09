@@ -24,6 +24,7 @@ var (
 	ErrInvalidSpaceID = errors.New("invalid space id")
 	// ошибка о том, что не заполнено поле id у заметки
 	ErrNoteIdNotFilled = errors.New("field `id` not filled")
+	ErrViewIDNotFilled = errors.New("field `view_id` not filled")
 )
 
 // тип заметки
@@ -38,6 +39,7 @@ const (
 
 type Note struct {
 	ID       uuid.UUID    `json:"id"`
+	ViewID   int          `json:"view_id"`
 	User     *User        `json:"user"`    // кто создал заметку
 	Text     string       `json:"text"`    // текст заметки
 	Space    *Space       `json:"space"`   // айди пространства, куда сохранить заметку
@@ -74,6 +76,10 @@ func (s *Note) Validate() error {
 		return ErrFieldTypeNotFilled
 	}
 
+	if s.ViewID == 0 {
+		return ErrViewIDNotFilled
+	}
+
 	return nil
 }
 
@@ -81,6 +87,7 @@ func (s *Note) Validate() error {
 // У этой структуры поля пользователь и пространство заменены на айди
 type GetNote struct {
 	ID       uuid.UUID      `json:"id"`
+	ViewID   int            `json:"view_id"`
 	UserID   int            `json:"user_id"`
 	Text     string         `json:"text"`
 	SpaceID  uuid.UUID      `json:"space_id"`
@@ -112,6 +119,10 @@ func (s *GetNote) Validate() error {
 		return ErrFieldTypeNotFilled
 	}
 
+	if s.ViewID == 0 {
+		return ErrViewIDNotFilled
+	}
+
 	return nil
 }
 
@@ -122,8 +133,25 @@ type NoteTypeResponse struct {
 }
 
 // запрос на поиск заметок по тексту в пространстве
-type SearchNoteByTextRequest struct {
-	SpaceID uuid.UUID `json:"space_id"`
-	Text    string    `json:"text"`
-	Type    NoteType  `json:"type"` // тип заметок, для которого осуществлять поиск
+type SearchNotesRequest struct {
+	SpaceID  uuid.UUID `json:"space_id"`
+	Text     string    `json:"text"`
+	Type     NoteType  `json:"type"`      // тип заметок, для которого осуществлять поиск
+	DateFrom int64     `json:"date_from"` // левая граница поиска
+	DateTo   int64     `json:"date_to"`   // правая граница поиска. если не заполнено, проставится сегодня
+}
+
+func (s *SearchNotesRequest) Validate() error {
+	if s.SpaceID == uuid.Nil {
+		return ErrInvalidSpaceID
+	}
+
+	// не проверяем поле текст, потому что оно может быть не заполнено при поиске по датам
+	if len(s.Type) == 0 {
+		return ErrFieldTypeNotFilled
+	}
+
+	// не проверяем также поля по датам, т.к. поиск может быть только по тексту
+
+	return nil
 }

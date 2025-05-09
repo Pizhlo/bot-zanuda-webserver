@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	model_package "webserver/internal/model"
 
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/deletebyquery"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
@@ -15,93 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestNoteValidate(t *testing.T) {
-	type test struct {
-		name  string
-		model Note
-		err   error
-	}
-
-	tests := []test{
-		{
-			name: "positive case",
-			model: Note{
-				ID:        uuid.New(),
-				ElasticID: "12354",
-				TgID:      123,
-				Text:      "test",
-				SpaceID:   uuid.New(),
-				Type:      model_package.TextNoteType,
-			},
-		},
-		{
-			name: "empty ID",
-			model: Note{
-				ElasticID: "12354",
-				TgID:      123,
-				Text:      "test",
-				SpaceID:   uuid.New(),
-				Type:      model_package.TextNoteType,
-			},
-			err: ErrFieldIDNotFilled,
-		},
-		{
-			name: "empty tgID",
-			model: Note{
-				ID:        uuid.New(),
-				ElasticID: "12354",
-				Text:      "test",
-				SpaceID:   uuid.New(),
-				Type:      model_package.TextNoteType,
-			},
-			err: ErrTgIDNotFilled,
-		},
-		{
-			name: "empty elastic id",
-			model: Note{
-				ID:      uuid.New(),
-				TgID:    123,
-				Text:    "test",
-				SpaceID: uuid.New(),
-				Type:    model_package.TextNoteType,
-			},
-			err: ErrFieldElasticIDNotFilled,
-		},
-		{
-			name: "empty text: type text",
-			model: Note{
-				ID:        uuid.New(),
-				ElasticID: "12354",
-				TgID:      123,
-				SpaceID:   uuid.New(),
-				Type:      model_package.TextNoteType,
-			},
-			err: ErrFieldTextNotFilled,
-		},
-		{
-			name: "empty text: type photo",
-			model: Note{
-				ID:        uuid.New(),
-				ElasticID: "12354",
-				TgID:      123,
-				SpaceID:   uuid.New(),
-				Type:      model_package.PhotoNoteType,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.model.validate()
-			if tt.err != nil {
-				assert.EqualError(t, tt.err, err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
 
 func TestSearchByTextQuery(t *testing.T) {
 	n := Note{

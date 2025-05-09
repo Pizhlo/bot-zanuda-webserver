@@ -36,7 +36,7 @@ type noteHandler interface {
 	UpdateNote(c echo.Context) error
 	GetNoteTypes(c echo.Context) error
 	GetNotesByType(c echo.Context) error
-	SearchNoteByText(c echo.Context) error
+	SearchNotes(c echo.Context) error
 	DeleteNote(c echo.Context) error
 }
 
@@ -84,7 +84,7 @@ func (s *server) Serve() error {
 	spaces.GET("/:id/notes/:type", s.api.h0.GetNotesByType) // получить все заметки одного типа
 
 	// поиск
-	spaces.POST("/notes/search/text", s.api.h0.SearchNoteByText) // по тексту
+	spaces.POST("/notes/search", s.api.h0.SearchNotes)
 
 	s.e = e
 

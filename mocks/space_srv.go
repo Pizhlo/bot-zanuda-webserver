@@ -142,7 +142,7 @@ func (mr *MockspaceRepoMockRecorder) GetSpaceByID(ctx, id interface{}) *gomock.C
 }
 
 // SearchNoteByText mocks base method.
-func (m *MockspaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+func (m *MockspaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNotesRequest) ([]model.GetNote, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchNoteByText", ctx, req)
 	ret0, _ := ret[0].([]model.GetNote)

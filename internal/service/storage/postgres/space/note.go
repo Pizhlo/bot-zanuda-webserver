@@ -264,7 +264,24 @@ where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
 	return res, nil
 }
 
-func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+func (db *spaceRepo) SearchQuery(ctx context.Context, req model.SearchNotesRequest) ([]model.GetNote, error) {
+	if len(req.Text) > 0 {
+		ids, err := db.searchByText(ctx, req)
+		if err != nil {
+			if errors.Is(err, elasticsearch.ErrRecordsNotFound) {
+				return nil, api_errors.ErrNoNotesFoundByText
+			}
+
+			return nil, err
+		}
+
+		return db.getNotesByIDs(ids, req.SpaceID)
+	}
+
+	return nil, nil
+}
+
+func (db *spaceRepo) searchByText(ctx context.Context, req model.SearchNotesRequest) ([]uuid.UUID, error) {
 	search := elastic.Data{
 		Index: elastic.NoteIndex,
 		Model: &elastic.Note{
@@ -274,15 +291,10 @@ func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteB
 		},
 	}
 
-	ids, err := db.elasticClient.SearchByText(ctx, search)
-	if err != nil {
-		if errors.Is(err, elasticsearch.ErrRecordsNotFound) {
-			return nil, api_errors.ErrNoNotesFoundByText
-		}
+	return db.elasticClient.SearchByText(ctx, search)
+}
 
-		return nil, err
-	}
-
+func (db *spaceRepo) getNotesByIDs(ids []uuid.UUID, spaceID uuid.UUID) ([]model.GetNote, error) {
 	var notes []model.GetNote
 
 	q, args, err := sqlx.In(`select notes.notes.id, users.users.tg_id, text, created, last_edit, type, file from notes.notes
@@ -295,17 +307,17 @@ func (db *spaceRepo) SearchNoteByText(ctx context.Context, req model.SearchNoteB
 	q = sqlx.Rebind(sqlx.DOLLAR, q)
 	rows, err := db.db.Query(q, args...)
 	if err != nil {
-		return nil, fmt.Errorf("error while searching notes by text: %w", err)
+		return nil, fmt.Errorf("error while searching notes: %w", err)
 	}
 
 	for rows.Next() {
 		note := model.GetNote{
-			SpaceID: req.SpaceID,
+			SpaceID: spaceID,
 		}
 
 		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.LastEdit, &note.Type, &note.File)
 		if err != nil {
-			return nil, fmt.Errorf("error while scanning note (search by text): %w", err)
+			return nil, fmt.Errorf("error while scanning note (search): %w", err)
 		}
 
 		notes = append(notes, note)

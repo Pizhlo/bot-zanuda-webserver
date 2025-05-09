@@ -116,12 +116,12 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 		if err != nil {
 			// у пользователя нет заметок - отдаем 404
 			if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-				return c.NoContent(http.StatusNotFound)
+				return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 			}
 
 			// пространство не существует - отдаем 404
 			if errors.Is(err, api_errors.ErrSpaceNotExists) {
-				return c.NoContent(http.StatusNotFound)
+				return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 			}
 
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -135,12 +135,12 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 	if err != nil {
 		// у пользователя нет заметок - отдаем 404
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-			return c.NoContent(http.StatusNotFound)
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		// пространство не существует - отдаем 404
 		if errors.Is(err, api_errors.ErrSpaceNotExists) {
-			return c.NoContent(http.StatusNotFound)
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -243,7 +243,7 @@ func (h *handler) GetNoteTypes(c echo.Context) error {
 	types, err := h.space.GetNotesTypes(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundBySpaceID) {
-			return c.NoContent(http.StatusNotFound)
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -282,7 +282,7 @@ func (h *handler) GetNotesByType(c echo.Context) error {
 	notes, err := h.space.GetNotesByType(c.Request().Context(), spaceID, model.NoteType(noteType))
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByType) {
-			return c.NoContent(http.StatusNotFound)
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -301,8 +301,8 @@ func (h *handler) GetNotesByType(c echo.Context) error {
 //	@Router			/spaces/notes/search/text [post]
 //
 // ручка для поиска заметок по тексту
-func (h *handler) SearchNoteByText(c echo.Context) error {
-	var req model.SearchNoteByTextRequest
+func (h *handler) SearchNotes(c echo.Context) error {
+	var req model.SearchNotesRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
 	if err != nil {
@@ -318,10 +318,14 @@ func (h *handler) SearchNoteByText(c echo.Context) error {
 		}
 	}
 
-	notes, err := h.space.SearchNoteByText(c.Request().Context(), req)
+	if req.DateTo == 0 {
+		req.DateTo = time.Now().In(time.UTC).Unix()
+	}
+
+	notes, err := h.space.SearchNote(c.Request().Context(), req)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoNotesFoundByText) {
-			return c.NoContent(http.StatusNotFound)
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

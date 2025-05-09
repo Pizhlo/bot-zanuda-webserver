@@ -29,7 +29,7 @@ type model interface {
 	validate() error
 	getVal() any
 	searchByIDQuery() (*search.Request, error)
-	searchByTextQuery() (*search.Request, error)
+	searchQuery() (*search.Request, error)
 	deleteByQuery() (*deletebyquery.Request, error)
 	updateQuery() (*update.Request, error)
 	setElasticID(id string)
@@ -53,9 +53,9 @@ func (d *Data) UpdateQuery() (*update.Request, error) {
 	return d.Model.updateQuery()
 }
 
-// SearchByTextQuery возвращает готовый запрос для поиска по тексту
-func (d *Data) SearchByTextQuery() (*search.Request, error) {
-	return d.Model.searchByTextQuery()
+// SearchQuery возвращает готовый запрос для поиска по тексту
+func (d *Data) SearchQuery() (*search.Request, error) {
+	return d.Model.searchQuery()
 }
 
 func (d *Data) ValidateNote() (*Note, error) {

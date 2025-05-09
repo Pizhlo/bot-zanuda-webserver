@@ -23,6 +23,7 @@ type Note struct {
 	Text      string
 	SpaceID   uuid.UUID
 	Type      model_package.NoteType // тип заметки
+	Created   int64
 }
 
 var (
@@ -34,22 +35,7 @@ var (
 
 // ValidateNote проверяет поля структуры elastic.Data на правильность и возвращает заметку
 func (n Note) validate() error {
-	if n.ID == uuid.Nil {
-		return ErrFieldIDNotFilled
-	}
-
-	if len(n.ElasticID) == 0 {
-		return ErrFieldElasticIDNotFilled
-	}
-
-	if n.TgID == 0 {
-		return ErrTgIDNotFilled
-	}
-
-	// у не-текстовых заметок поле текст может быть пустым
-	if n.Type == model_package.TextNoteType && len(n.Text) == 0 {
-		return ErrFieldTextNotFilled
-	}
+	// не валидируем, т.к. используется для поиска, где поля неизвестны
 
 	return nil
 }
@@ -58,7 +44,7 @@ func (n Note) getVal() interface{} {
 	return n
 }
 
-func (n Note) searchByTextQuery() (*search.Request, error) {
+func (n Note) searchQuery() (*search.Request, error) {
 	must1 := []types.Query{
 		{
 			Bool: &types.BoolQuery{

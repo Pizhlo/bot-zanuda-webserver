@@ -120,8 +120,14 @@ func main() {
 		logrus.Fatalf("NOTES_TOPIC not set")
 	}
 
+	spacesTopicName := os.Getenv("SPACES_TOPIC")
+	if len(spacesTopicName) == 0 {
+		logrus.Fatalf("SPACES_TOPIC not set")
+	}
+
 	params := map[string]string{
-		worker.NotesTopicName: notesTopicName,
+		worker.NotesTopicNameKey:  notesTopicName,
+		worker.SpacesTopicNameKey: spacesTopicName,
 	}
 
 	rabbitCfg, err := worker.NewConfig(params, rabbitAddr)
@@ -158,8 +164,6 @@ func main() {
 	}
 
 	userSrv := user.New(userRepo, userCache)
-
-	logrus.Infof("starting server on %s", serverAddr)
 
 	handler := v0.New(spaceSrv, userSrv)
 

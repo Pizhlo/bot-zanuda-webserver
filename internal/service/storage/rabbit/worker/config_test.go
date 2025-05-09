@@ -21,7 +21,7 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "positive case",
 			queuesNames: map[string]string{
-				NotesTopicName: "q1",
+				NotesTopicNameKey: "q1",
 			},
 			addr: "amqp://addr",
 			expected: config{
@@ -32,7 +32,7 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "addr with prefix amqps",
 			queuesNames: map[string]string{
-				NotesTopicName: "q1",
+				NotesTopicNameKey: "q1",
 			},
 			addr: "amqps://addr",
 			expected: config{
@@ -43,7 +43,7 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "empty address",
 			queuesNames: map[string]string{
-				NotesTopicName: "q1",
+				NotesTopicNameKey: "q1",
 			},
 			err: errors.New("address not provided"),
 		},
@@ -56,7 +56,7 @@ func TestNewConfig(t *testing.T) {
 			name: "invalid address",
 			addr: "addr",
 			queuesNames: map[string]string{
-				NotesTopicName: "q1",
+				NotesTopicNameKey: "q1",
 			},
 			err: errors.New("invalid rabbitMQ address: addr"),
 		},

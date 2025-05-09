@@ -22,8 +22,8 @@ var (
 	ErrUpdateNotTextNote = errors.New("not possible to update a non-text note")
 	// ошибка о том, что поле space_id заполнено неправильно
 	ErrInvalidSpaceID = errors.New("invalid space id")
-	// ошибка о том, что не заполнено поле id у заметки
-	ErrNoteIdNotFilled = errors.New("field `id` not filled")
+	// ошибка о том, что не заполнено поле id
+	ErrIDNotFilled = errors.New("field `id` not filled")
 )
 
 // тип заметки

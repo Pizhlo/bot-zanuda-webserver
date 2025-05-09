@@ -186,7 +186,7 @@ func TestDeleteNote(t *testing.T) {
 				SpaceID: uuid.New(),
 				Created: 5678,
 			},
-			err: model.ErrNoteIdNotFilled,
+			err: model.ErrIDNotFilled,
 		},
 	}
 

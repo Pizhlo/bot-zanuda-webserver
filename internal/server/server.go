@@ -27,9 +27,14 @@ func New(cfg *Config) *server {
 
 //go:generate mockgen -source ./server.go -destination=../../mocks/server.go -package=mocks
 type handler interface {
+	spaceHandler
 	noteHandler
 	middlewareHandler
 	healthHandler
+}
+
+type spaceHandler interface {
+	CreateSpace(c echo.Context) error
 }
 
 type noteHandler interface {
@@ -82,6 +87,8 @@ func (s *server) CreateRoutes() error {
 	apiv0.GET("health", s.api.h0.Health)
 
 	spaces := apiv0.Group("spaces")
+
+	spaces.POST("/create", s.api.h0.CreateSpace)
 
 	// notes
 	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID)

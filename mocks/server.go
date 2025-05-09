@@ -48,6 +48,20 @@ func (mr *MockhandlerMockRecorder) CreateNote(c interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNote", reflect.TypeOf((*Mockhandler)(nil).CreateNote), c)
 }
 
+// CreateSpace mocks base method.
+func (m *Mockhandler) CreateSpace(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSpace", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSpace indicates an expected call of CreateSpace.
+func (mr *MockhandlerMockRecorder) CreateSpace(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSpace", reflect.TypeOf((*Mockhandler)(nil).CreateSpace), c)
+}
+
 // DeleteAllNotes mocks base method.
 func (m *Mockhandler) DeleteAllNotes(c echo.Context) error {
 	m.ctrl.T.Helper()
@@ -172,6 +186,43 @@ func (m *Mockhandler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFun
 func (mr *MockhandlerMockRecorder) ValidateNoteRequest(next interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateNoteRequest", reflect.TypeOf((*Mockhandler)(nil).ValidateNoteRequest), next)
+}
+
+// MockspaceHandler is a mock of spaceHandler interface.
+type MockspaceHandler struct {
+	ctrl     *gomock.Controller
+	recorder *MockspaceHandlerMockRecorder
+}
+
+// MockspaceHandlerMockRecorder is the mock recorder for MockspaceHandler.
+type MockspaceHandlerMockRecorder struct {
+	mock *MockspaceHandler
+}
+
+// NewMockspaceHandler creates a new mock instance.
+func NewMockspaceHandler(ctrl *gomock.Controller) *MockspaceHandler {
+	mock := &MockspaceHandler{ctrl: ctrl}
+	mock.recorder = &MockspaceHandlerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockspaceHandler) EXPECT() *MockspaceHandlerMockRecorder {
+	return m.recorder
+}
+
+// CreateSpace mocks base method.
+func (m *MockspaceHandler) CreateSpace(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSpace", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSpace indicates an expected call of CreateSpace.
+func (mr *MockspaceHandlerMockRecorder) CreateSpace(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSpace", reflect.TypeOf((*MockspaceHandler)(nil).CreateSpace), c)
 }
 
 // MocknoteHandler is a mock of noteHandler interface.

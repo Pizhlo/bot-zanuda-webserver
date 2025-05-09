@@ -251,10 +251,79 @@ func TestDeleteNoteRequestValidate(t *testing.T) {
 		{
 			name: "operation not filled",
 			model: DeleteNoteRequest{
-				ID:      uuid.New(),
-				SpaceID: uuid.New(),
-				NoteID:  uuid.New(),
-				Created: 123,
+				ID:        uuid.New(),
+				SpaceID:   uuid.New(),
+				NoteID:    uuid.New(),
+				Created:   123,
+				Operation: CreateOp,
+			},
+			err: ErrInvalidOperation,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.model.Validate()
+			if tt.err != nil {
+				assert.EqualError(t, tt.err, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestDeleteAllNotesRequestValidate(t *testing.T) {
+	type test struct {
+		name  string
+		model DeleteAllNotesRequest
+		err   error
+	}
+
+	tests := []test{
+		{
+			name: "positive case",
+			model: DeleteAllNotesRequest{
+				ID:        uuid.New(),
+				SpaceID:   uuid.New(),
+				Created:   123,
+				Operation: DeleteAllOp,
+			},
+		},
+		{
+			name: "SpaceID not filled",
+			model: DeleteAllNotesRequest{
+				ID:        uuid.New(),
+				Created:   123,
+				Operation: DeleteAllOp,
+			},
+			err: model.ErrInvalidSpaceID,
+		},
+		{
+			name: "ID not filled",
+			model: DeleteAllNotesRequest{
+				SpaceID:   uuid.New(),
+				Created:   123,
+				Operation: DeleteAllOp,
+			},
+			err: model.ErrFieldIDNotFilled,
+		},
+		{
+			name: "Created field not filled",
+			model: DeleteAllNotesRequest{
+				ID:        uuid.New(),
+				SpaceID:   uuid.New(),
+				Operation: DeleteAllOp,
+			},
+			err: model.ErrFieldCreatedNotFilled,
+		},
+		{
+			name: "operation not filled",
+			model: DeleteAllNotesRequest{
+				ID:        uuid.New(),
+				SpaceID:   uuid.New(),
+				Created:   123,
+				Operation: CreateOp,
 			},
 			err: ErrInvalidOperation,
 		},

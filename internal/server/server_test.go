@@ -56,7 +56,7 @@ func TestCreateRoutes(t *testing.T) {
 		},
 		{
 			Method: http.MethodGet,
-			Path:   "/api/v0/spaces/:id/notes",
+			Path:   "/api/v0/spaces/:space_id/notes",
 			Name:   "webserver/internal/server.handler.NotesBySpaceID-fm",
 		},
 		{
@@ -81,12 +81,12 @@ func TestCreateRoutes(t *testing.T) {
 		},
 		{
 			Method: http.MethodGet,
-			Path:   "/api/v0/spaces/:id/notes/types",
+			Path:   "/api/v0/spaces/:space_id/notes/types",
 			Name:   "webserver/internal/server.handler.GetNoteTypes-fm",
 		},
 		{
 			Method: http.MethodGet,
-			Path:   "/api/v0/spaces/:id/notes/:type",
+			Path:   "/api/v0/spaces/:space_id/notes/:type",
 			Name:   "webserver/internal/server.handler.GetNotesByType-fm",
 		},
 		{

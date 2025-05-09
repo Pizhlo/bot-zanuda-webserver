@@ -382,6 +382,7 @@ func (h *handler) DeleteNote(c echo.Context) error {
 
 	err = h.space.DeleteNote(c.Request().Context(), req)
 	if err != nil {
+		// внутренняя ошибка / ошибка валидации
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
@@ -394,6 +395,16 @@ func (h *handler) DeleteAllNotes(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("invalid space id parameter: %+v", err)})
 	}
 
+	// проверяем, что пространство существует
+	_, err = h.space.GetSpaceByID(c.Request().Context(), spaceID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		}
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
 	req := rabbit.DeleteAllNotesRequest{
 		ID:        uuid.New(),
 		SpaceID:   spaceID,
@@ -402,6 +413,7 @@ func (h *handler) DeleteAllNotes(c echo.Context) error {
 	}
 
 	if err := h.space.DeleteAllNotes(c.Request().Context(), req); err != nil {
+		// внутренняя ошибка / ошибка валидации
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 

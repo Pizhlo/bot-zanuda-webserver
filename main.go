@@ -10,6 +10,7 @@ import (
 	"time"
 	"webserver/internal/server"
 	v0 "webserver/internal/server/api/v0"
+	"webserver/internal/service/auth"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
@@ -165,7 +166,19 @@ func main() {
 
 	userSrv := user.New(userRepo, userCache)
 
-	handler := v0.New(spaceSrv, userSrv)
+	secretKey := os.Getenv("SECRET_KEY")
+	if len(secretKey) == 0 {
+		logrus.Fatalf("SECRET_KEY not set")
+	}
+
+	authCfg, err := auth.NewConfig([]byte(secretKey))
+	if err != nil {
+		logrus.Fatalf("error creating config for auth service: %+v", err)
+	}
+
+	authSrv := auth.New(authCfg)
+
+	handler := v0.New(spaceSrv, userSrv, authSrv)
 
 	serverCfg, err := server.NewConfig(serverAddr, handler)
 	if err != nil {

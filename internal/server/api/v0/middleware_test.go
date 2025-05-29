@@ -120,7 +120,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceRepo := mocks.NewMockrepo(ctrl)
 	spaceCache := mocks.NewMockspaceCache(ctrl)
 	saver := mocks.NewMockdbWorker(ctrl)
 
@@ -131,7 +131,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	handler := New(spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -300,7 +300,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceRepo := mocks.NewMockrepo(ctrl)
 	spaceCache := mocks.NewMockspaceCache(ctrl)
 	saver := mocks.NewMockdbWorker(ctrl)
 
@@ -311,7 +311,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	handler := New(spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)

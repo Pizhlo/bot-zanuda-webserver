@@ -94,6 +94,11 @@ func TestCreateRoutes(t *testing.T) {
 			Path:   "/api/v0/spaces/notes/search/text",
 			Name:   "webserver/internal/server.handler.SearchNoteByText-fm",
 		},
+		{
+			Method: http.MethodPost,
+			Path:   "/api/v0/spaces/create",
+			Name:   "webserver/internal/server.handler.CreateSpace-fm",
+		},
 	}
 
 	assert.Equal(t, len(expectedRoutes), len(routes))

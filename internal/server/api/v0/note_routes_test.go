@@ -32,7 +32,7 @@ func TestCreateNote(t *testing.T) {
 		name             string
 		req              rabbit.CreateNoteRequest
 		expectedNote     rabbit.CreateNoteRequest
-		err              bool
+		expectedErr      error
 		expectedCode     int
 		expectedResponse map[string]string
 	}
@@ -78,7 +78,15 @@ func TestCreateNote(t *testing.T) {
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
 			},
-			err:          true,
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				Text:      "new note",
+				SpaceID:   uuid.New(),
+				Type:      model.TextNoteType,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
+			},
+			expectedErr:  model.ErrFieldUserNotFilled,
 			expectedCode: http.StatusBadRequest,
 			expectedResponse: map[string]string{
 				"bad request": model.ErrFieldUserNotFilled.Error(),
@@ -91,7 +99,15 @@ func TestCreateNote(t *testing.T) {
 				SpaceID: uuid.New(),
 				Type:    model.TextNoteType,
 			},
-			err:          true,
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1,
+				SpaceID:   uuid.New(),
+				Type:      model.TextNoteType,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
+			},
+			expectedErr:  model.ErrFieldTextNotFilled,
 			expectedCode: http.StatusBadRequest,
 			expectedResponse: map[string]string{
 				"bad request": model.ErrFieldTextNotFilled.Error(),
@@ -105,7 +121,16 @@ func TestCreateNote(t *testing.T) {
 				SpaceID: uuid.Nil,
 				Type:    model.TextNoteType,
 			},
-			err:          true,
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1,
+				Text:      "new note",
+				SpaceID:   uuid.Nil,
+				Type:      model.TextNoteType,
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
+			},
+			expectedErr:  model.ErrInvalidSpaceID,
 			expectedCode: http.StatusBadRequest,
 			expectedResponse: map[string]string{
 				"bad request": model.ErrInvalidSpaceID.Error(),
@@ -118,7 +143,15 @@ func TestCreateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: uuid.New(),
 			},
-			err:          true,
+			expectedNote: rabbit.CreateNoteRequest{
+				ID:        uuid.New(),
+				UserID:    1,
+				Text:      "new note",
+				SpaceID:   uuid.New(),
+				Created:   time.Now().Unix(),
+				Operation: rabbit.CreateOp,
+			},
+			expectedErr:  model.ErrFieldTypeNotFilled,
 			expectedCode: http.StatusBadRequest,
 			expectedResponse: map[string]string{
 				"bad request": model.ErrFieldTypeNotFilled.Error(),
@@ -129,7 +162,7 @@ func TestCreateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceRepo := mocks.NewMockrepo(ctrl)
 	spaceCache := mocks.NewMockspaceCache(ctrl)
 	saver := mocks.NewMockdbWorker(ctrl)
 
@@ -140,7 +173,7 @@ func TestCreateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	handler := New(spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -160,7 +193,11 @@ func TestCreateNote(t *testing.T) {
 				ID: generatedID,
 			}, nil)
 
-			if !tt.err {
+			if tt.expectedErr != nil {
+				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(tt.expectedErr).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
+					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
+				})
+			} else {
 				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
@@ -215,6 +252,7 @@ func TestUpdateNote(t *testing.T) {
 				UserID:  1,
 				Text:    "new note",
 				SpaceID: generatedID,
+				NoteID:  generatedID,
 			},
 			getNote: true,
 			dbNote: model.GetNote{
@@ -230,6 +268,7 @@ func TestUpdateNote(t *testing.T) {
 				ID:        generatedID,
 				Text:      "new note",
 				SpaceID:   generatedID,
+				NoteID:    generatedID,
 				Created:   time.Now().Unix(),
 				Operation: rabbit.UpdateOp,
 			},
@@ -342,7 +381,7 @@ func TestUpdateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
+	spaceRepo := mocks.NewMockrepo(ctrl)
 	spaceCache := mocks.NewMockspaceCache(ctrl)
 	saver := mocks.NewMockdbWorker(ctrl)
 
@@ -353,7 +392,7 @@ func TestUpdateNote(t *testing.T) {
 
 	userSrv := user.New(userRepo, userCache)
 
-	handler := New(spaceSrv, userSrv)
+	handler := New(spaceSrv, userSrv, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -489,11 +528,11 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -599,11 +638,11 @@ func TestNotesBySpaceID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -692,11 +731,11 @@ func TestGetNoteTypes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -795,11 +834,11 @@ func TestGetNotesByType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -922,11 +961,11 @@ func TestSearchNotesByText(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 
 	spaceSrv := space.New(repo, nil, nil)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -1036,13 +1075,13 @@ func TestDeleteNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 	cache := mocks.NewMockspaceCache(ctrl)
 	worker := mocks.NewMockdbWorker(ctrl)
 
 	spaceSrv := space.New(repo, cache, worker)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -1154,13 +1193,13 @@ func TestDeleteNote_Invalid(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 	cache := mocks.NewMockspaceCache(ctrl)
 	worker := mocks.NewMockdbWorker(ctrl)
 
 	spaceSrv := space.New(repo, cache, worker)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
@@ -1293,13 +1332,13 @@ func TestDeleteAllNotes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	repo := mocks.NewMockspaceRepo(ctrl)
+	repo := mocks.NewMockrepo(ctrl)
 	cache := mocks.NewMockspaceCache(ctrl)
 	worker := mocks.NewMockdbWorker(ctrl)
 
 	spaceSrv := space.New(repo, cache, worker)
 
-	handler := New(spaceSrv, nil)
+	handler := New(spaceSrv, nil, nil)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)

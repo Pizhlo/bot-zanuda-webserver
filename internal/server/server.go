@@ -88,6 +88,7 @@ func (s *server) CreateRoutes() error {
 
 	spaces := apiv0.Group("spaces")
 
+	// spaces
 	spaces.POST("/create", s.api.h0.CreateSpace)
 
 	// notes

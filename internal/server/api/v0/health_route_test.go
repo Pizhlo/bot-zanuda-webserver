@@ -10,7 +10,7 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	handler := New(nil, nil)
+	handler := New(nil, nil, nil)
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
 

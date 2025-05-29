@@ -21,29 +21,34 @@ func TestNewConfig(t *testing.T) {
 		{
 			name: "positive case",
 			queuesNames: map[string]string{
-				NotesTopicNameKey: "q1",
+				NotesTopicNameKey:  "q1",
+				SpacesTopicNameKey: "q2",
 			},
 			addr: "amqp://addr",
 			expected: config{
-				NotesTopicName: "q1",
-				Address:        "amqp://addr",
+				NotesTopicName:  "q1",
+				SpacesTopicName: "q2",
+				Address:         "amqp://addr",
 			},
 		},
 		{
 			name: "addr with prefix amqps",
 			queuesNames: map[string]string{
-				NotesTopicNameKey: "q1",
+				NotesTopicNameKey:  "q1",
+				SpacesTopicNameKey: "q2",
 			},
 			addr: "amqps://addr",
 			expected: config{
-				NotesTopicName: "q1",
-				Address:        "amqps://addr",
+				NotesTopicName:  "q1",
+				SpacesTopicName: "q2",
+				Address:         "amqps://addr",
 			},
 		},
 		{
 			name: "empty address",
 			queuesNames: map[string]string{
-				NotesTopicNameKey: "q1",
+				NotesTopicNameKey:  "q1",
+				SpacesTopicNameKey: "q2",
 			},
 			err: errors.New("address not provided"),
 		},
@@ -56,17 +61,27 @@ func TestNewConfig(t *testing.T) {
 			name: "invalid address",
 			addr: "addr",
 			queuesNames: map[string]string{
-				NotesTopicNameKey: "q1",
+				NotesTopicNameKey:  "q1",
+				SpacesTopicNameKey: "q2",
 			},
 			err: errors.New("invalid rabbitMQ address: addr"),
 		},
 		{
 			name: "notes queue name not provided",
 			queuesNames: map[string]string{
-				"another key": "q2",
+				"another key":      "q2",
+				SpacesTopicNameKey: "q2",
 			},
 			addr: "amqps://addr",
 			err:  fmt.Errorf("notes queue name not provided"),
+		},
+		{
+			name: "spaces queue name not provided",
+			queuesNames: map[string]string{
+				NotesTopicNameKey: "q2",
+			},
+			addr: "amqps://addr",
+			err:  fmt.Errorf("spaces queue name not provided"),
 		},
 	}
 

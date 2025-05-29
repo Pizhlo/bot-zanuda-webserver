@@ -26,7 +26,7 @@ func (h *handler) CreateSpace(c echo.Context) error {
 
 	payload, ok := h.auth.GetPayload(token)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "payload in token not found"})
 	}
 
 	userIDStr, ok := payload["user_id"]

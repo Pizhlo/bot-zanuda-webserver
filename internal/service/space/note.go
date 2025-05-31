@@ -10,7 +10,7 @@ import (
 
 // Create создает новую заметку в личном пространстве пользователя
 func (s *Space) CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error {
-	return s.worker.CreateNote(ctx, note)
+	return s.worker.CreateNote(ctx, &note)
 }
 
 // GetAllNotesBySpaceIDFull возвращает все заметки пространства.
@@ -26,7 +26,7 @@ func (s *Space) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]
 
 // UpdateNote отправляет запрос на обновление заметки в db-worker
 func (s *Space) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error {
-	return s.worker.UpdateNote(ctx, update)
+	return s.worker.UpdateNote(ctx, &update)
 }
 
 // GetNoteByID возвращает заметку по айди, либо ошибку о том, что такой заметки не существует
@@ -53,9 +53,9 @@ func (s *Space) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 }
 
 func (s *Space) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
-	return s.worker.DeleteNote(ctx, req)
+	return s.worker.DeleteNote(ctx, &req)
 }
 
 func (s *Space) DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error {
-	return s.worker.DeleteAllNotes(ctx, req)
+	return s.worker.DeleteAllNotes(ctx, &req)
 }

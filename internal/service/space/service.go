@@ -4,6 +4,7 @@ import (
 	"context"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
+	"webserver/internal/service/storage/rabbit/worker"
 
 	"github.com/google/uuid"
 )
@@ -58,10 +59,10 @@ type spaceEditor interface {
 }
 
 type noteEditor interface {
-	CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error
-	UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error
-	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
-	DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error
+	CreateNote(ctx context.Context, req worker.Model) error
+	UpdateNote(ctx context.Context, req worker.Model) error
+	DeleteNote(ctx context.Context, req worker.Model) error
+	DeleteAllNotes(ctx context.Context, req worker.Model) error
 }
 
 func New(repo repo, cache spaceCache, saver dbWorker) *Space {

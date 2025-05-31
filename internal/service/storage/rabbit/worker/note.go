@@ -3,10 +3,9 @@ package worker
 import (
 	"context"
 	"encoding/json"
-	"webserver/internal/model/rabbit"
 )
 
-func (s *worker) CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) error {
+func (s *worker) CreateNote(ctx context.Context, req Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -19,7 +18,7 @@ func (s *worker) CreateNote(ctx context.Context, req rabbit.CreateNoteRequest) e
 	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
 }
 
-func (s *worker) UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) error {
+func (s *worker) UpdateNote(ctx context.Context, req Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -32,7 +31,7 @@ func (s *worker) UpdateNote(ctx context.Context, req rabbit.UpdateNoteRequest) e
 	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
 }
 
-func (s *worker) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error {
+func (s *worker) DeleteNote(ctx context.Context, req Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -45,7 +44,7 @@ func (s *worker) DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) e
 	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
 }
 
-func (s *worker) DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error {
+func (s *worker) DeleteAllNotes(ctx context.Context, req Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}

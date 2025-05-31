@@ -181,7 +181,10 @@ func main() {
 		logrus.Fatalf("error creating auth service: %+v", err)
 	}
 
-	handler := v0.New(spaceSrv, userSrv, authSrv)
+	handler, err := v0.New(spaceSrv, userSrv, authSrv)
+	if err != nil {
+		logrus.Fatalf("error creating handler: %+v", err)
+	}
 
 	serverCfg, err := server.NewConfig(serverAddr, handler)
 	if err != nil {

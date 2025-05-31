@@ -55,7 +55,7 @@ type dbWorker interface {
 }
 
 type spaceEditor interface {
-	CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error
+	CreateSpace(ctx context.Context, req rabbit.Model) error
 }
 
 type noteEditor interface {

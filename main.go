@@ -147,7 +147,10 @@ func main() {
 
 	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
 
-	spaceSrv := space.New(spaceRepo, spaceCache, rabbit)
+	spaceSrv, err := space.New(spaceRepo, spaceCache, rabbit)
+	if err != nil {
+		logrus.Fatalf("error creating space service: %+v", err)
+	}
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {

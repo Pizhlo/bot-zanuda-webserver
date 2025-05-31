@@ -27,7 +27,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -38,7 +38,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  234,
 					Personal: true,
 				},
@@ -53,7 +53,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  234,
 					Personal: true,
 				},
@@ -71,7 +71,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -81,7 +81,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  234,
 					Personal: true,
 				},
@@ -99,7 +99,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -121,7 +121,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -132,7 +132,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  234,
 					Personal: true,
 				},
@@ -149,7 +149,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -158,7 +158,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Personal: true,
 					Creator:  123,
 				},
@@ -178,7 +178,7 @@ func TestNoteValidate(t *testing.T) {
 					PersonalSpace: &Space{
 						ID:       uuid.New(),
 						Name:     "space1",
-						Created:  time.Now(),
+						Created:  time.Now().Unix(),
 						Creator:  123,
 						Personal: true,
 					},
@@ -189,7 +189,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Personal: true,
 				},
 				Type: TextNoteType,
@@ -210,7 +210,7 @@ func TestNoteValidate(t *testing.T) {
 				Space: &Space{
 					ID:       uuid.New(),
 					Name:     "space2",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  234,
 					Personal: true,
 				},

@@ -397,7 +397,7 @@ func (mr *MockdbWorkerMockRecorder) CreateNote(ctx, req interface{}) *gomock.Cal
 }
 
 // CreateSpace mocks base method.
-func (m *MockdbWorker) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
+func (m *MockdbWorker) CreateSpace(ctx context.Context, req rabbit.Model) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSpace", ctx, req)
 	ret0, _ := ret[0].(error)
@@ -476,7 +476,7 @@ func (m *MockspaceEditor) EXPECT() *MockspaceEditorMockRecorder {
 }
 
 // CreateSpace mocks base method.
-func (m *MockspaceEditor) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
+func (m *MockspaceEditor) CreateSpace(ctx context.Context, req rabbit.Model) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSpace", ctx, req)
 	ret0, _ := ret[0].(error)

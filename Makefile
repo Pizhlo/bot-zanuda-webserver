@@ -4,4 +4,8 @@ mocks:
 swag:
 	swag init --md ./docs --parseInternal  --parseDependency --parseDepth 2 
 
-.PHONY: mocks swag
+lint:
+	go vet ./...
+	staticcheck ./...
+
+.PHONY: mocks swag lint

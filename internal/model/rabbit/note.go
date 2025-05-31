@@ -6,6 +6,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// интерфейс для всех моделей rabbit
+//
+//go:generate mockgen -source ./note.go -destination=../../../mocks/rabbit.go -package=mocks
+type Model interface {
+	Validate() error
+}
+
 //	{
 //	  "user_id": 12345678,
 //	  "text": "new note",

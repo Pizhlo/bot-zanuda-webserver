@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,11 +64,11 @@ func TestNew(t *testing.T) {
 			handler, err := New(tt.space, tt.user, tt.auth)
 			if tt.err != nil {
 				require.Error(t, err)
-				require.Equal(t, tt.err, err)
-				require.Nil(t, handler)
+				assert.EqualError(t, err, tt.err.Error())
+				assert.Nil(t, handler)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.want, handler)
+				assert.Equal(t, tt.want, handler)
 			}
 		})
 	}

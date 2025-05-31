@@ -6,7 +6,7 @@ import (
 	"webserver/internal/model/rabbit"
 )
 
-func (s *worker) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
+func (s *worker) CreateSpace(ctx context.Context, req rabbit.Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}

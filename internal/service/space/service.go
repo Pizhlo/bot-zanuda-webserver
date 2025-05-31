@@ -2,9 +2,9 @@ package space
 
 import (
 	"context"
+	"errors"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
-	"webserver/internal/service/storage/rabbit/worker"
 
 	"github.com/google/uuid"
 )
@@ -43,7 +43,7 @@ type noteRepo interface {
 	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
 }
 
-//go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
+//go:generate mockgen -source ./service.go -destination=../../../mocks/space_srv.go -package=mocks
 type spaceCache interface {
 	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 }
@@ -59,12 +59,24 @@ type spaceEditor interface {
 }
 
 type noteEditor interface {
-	CreateNote(ctx context.Context, req worker.Model) error
-	UpdateNote(ctx context.Context, req worker.Model) error
-	DeleteNote(ctx context.Context, req worker.Model) error
-	DeleteAllNotes(ctx context.Context, req worker.Model) error
+	CreateNote(ctx context.Context, req rabbit.Model) error
+	UpdateNote(ctx context.Context, req rabbit.Model) error
+	DeleteNote(ctx context.Context, req rabbit.Model) error
+	DeleteAllNotes(ctx context.Context, req rabbit.Model) error
 }
 
-func New(repo repo, cache spaceCache, saver dbWorker) *Space {
-	return &Space{repo: repo, cache: cache, worker: saver}
+func New(repo repo, cache spaceCache, worker dbWorker) (*Space, error) {
+	if repo == nil {
+		return nil, errors.New("repo is nil")
+	}
+
+	if cache == nil {
+		return nil, errors.New("cache is nil")
+	}
+
+	if worker == nil {
+		return nil, errors.New("worker is nil")
+	}
+
+	return &Space{repo: repo, cache: cache, worker: worker}, nil
 }

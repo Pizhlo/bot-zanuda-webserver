@@ -25,10 +25,6 @@ type channel interface {
 	Close() error
 }
 
-type Model interface {
-	Validate() error
-}
-
 func New(cfg config) *worker {
 	return &worker{
 		cfg: cfg,

@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"webserver/mocks"
 
+	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
@@ -62,4 +64,12 @@ func runTestServer(h *handler) (*echo.Echo, error) {
 	spaces.POST("/notes/search/text", h.SearchNoteByText) // по тексту
 
 	return e, nil
+}
+
+func createMockServices(ctrl *gomock.Controller) (*mocks.MockspaceService, *mocks.MockuserService, *mocks.MockauthService) {
+	spaceSrvMock := mocks.NewMockspaceService(ctrl)
+	userSrvMock := mocks.NewMockuserService(ctrl)
+	authSrvMock := mocks.NewMockauthService(ctrl)
+
+	return spaceSrvMock, userSrvMock, authSrvMock
 }

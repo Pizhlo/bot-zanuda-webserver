@@ -1,17 +1,62 @@
 package v0
 
 import (
-	"webserver/internal/service/auth"
-	"webserver/internal/service/space"
-	"webserver/internal/service/user"
+	"context"
+	"errors"
+	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type handler struct {
-	space *space.Space
-	user  *user.User
-	auth  *auth.AuthService
+	space spaceService
+	user  userService
+	auth  authService
 }
 
-func New(space *space.Space, user *user.User, auth *auth.AuthService) *handler {
-	return &handler{space: space, user: user, auth: auth}
+// интерфейс сервиса пространств. управляет пространствами, а также принадлежащими им записями: заметки, напоминания, етс
+//
+//go:generate mockgen -source ./handler.go -destination=../../../../mocks/handler.go -package=mocks
+type spaceService interface {
+	CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error
+	CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error
+	DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error
+	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
+	GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error)
+	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error)
+	GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error)
+	GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error)
+	GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error)
+	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
+	IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error
+	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
+	UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error
+}
+
+type userService interface {
+	CheckUser(ctx context.Context, tgID int64) error
+}
+
+type authService interface {
+	CheckToken(authHeader string) (*jwt.Token, error)
+	GetPayload(token *jwt.Token) (jwt.MapClaims, bool)
+	ParseToken(tokenString string) (*jwt.Token, error)
+}
+
+func New(space spaceService, user userService, auth authService) (*handler, error) {
+	if space == nil {
+		return nil, errors.New("space is nil")
+	}
+
+	if user == nil {
+		return nil, errors.New("user is nil")
+	}
+
+	if auth == nil {
+		return nil, errors.New("auth is nil")
+	}
+
+	return &handler{space: space, user: user, auth: auth}, nil
 }

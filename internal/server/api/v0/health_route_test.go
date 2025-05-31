@@ -5,12 +5,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHealth(t *testing.T) {
-	handler := New(nil, nil, nil)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(ctrl)
+
+	handler, err := New(spaceSrvMock, userSrvMock, authSrvMock)
+	require.NoError(t, err)
+
 	r, err := runTestServer(handler)
 	require.NoError(t, err)
 

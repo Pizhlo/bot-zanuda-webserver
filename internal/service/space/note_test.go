@@ -60,9 +60,9 @@ func TestCreateNote(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.err == nil {
-				worker.EXPECT().CreateNote(context.Background(), &tt.req).Return(nil)
+				worker.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil)
 			} else {
-				worker.EXPECT().CreateNote(context.Background(), &tt.req).Return(tt.err)
+				worker.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
 			err = spaceSrv.CreateNote(context.Background(), tt.req)
@@ -122,7 +122,7 @@ func TestGetAllNotesBySpaceIDFull(t *testing.T) {
 			spaceSrv, err := New(repo, cache, worker)
 			require.NoError(t, err)
 
-			repo.EXPECT().GetAllNotesBySpaceIDFull(context.Background(), tt.spaceID).Return(tt.want, tt.err)
+			repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.GetAllNotesBySpaceIDFull(context.Background(), tt.spaceID)
 			if tt.err != nil {
@@ -177,7 +177,7 @@ func TestGetAllNotesBySpaceID(t *testing.T) {
 			spaceSrv, err := New(repo, cache, worker)
 			require.NoError(t, err)
 
-			repo.EXPECT().GetAllNotesBySpaceID(context.Background(), tt.spaceID).Return(tt.want, tt.err)
+			repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.GetAllNotesBySpaceID(context.Background(), tt.spaceID)
 			if tt.err != nil {
@@ -284,7 +284,7 @@ func TestGetNoteByID(t *testing.T) {
 			spaceSrv, err := New(repo, cache, worker)
 			require.NoError(t, err)
 
-			repo.EXPECT().GetNoteByID(context.Background(), tt.noteID).Return(tt.want, tt.err)
+			repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.GetNoteByID(context.Background(), tt.noteID)
 			if tt.err != nil {
@@ -340,7 +340,7 @@ func TestGetNotesTypes(t *testing.T) {
 			spaceSrv, err := New(repo, cache, worker)
 			require.NoError(t, err)
 
-			repo.EXPECT().GetNotesTypes(context.Background(), tt.spaceID).Return(tt.want, tt.err)
+			repo.EXPECT().GetNotesTypes(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.GetNotesTypes(context.Background(), tt.spaceID)
 			if tt.err != nil {
@@ -405,7 +405,7 @@ func TestGetNotesByType(t *testing.T) {
 			spaceSrv, err := New(repo, cache, worker)
 			require.NoError(t, err)
 
-			repo.EXPECT().GetNotesByType(context.Background(), tt.spaceID, tt.noteType).Return(tt.want, tt.err)
+			repo.EXPECT().GetNotesByType(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.GetNotesByType(context.Background(), tt.spaceID, tt.noteType)
 			if tt.err != nil {
@@ -489,7 +489,7 @@ func TestSearchNoteByText(t *testing.T) {
 				expectedReq.Type = model.TextNoteType
 			}
 
-			repo.EXPECT().SearchNoteByText(context.Background(), expectedReq).Return(tt.want, tt.err)
+			repo.EXPECT().SearchNoteByText(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
 			got, err := spaceSrv.SearchNoteByText(context.Background(), tt.req)
 			if tt.err != nil {

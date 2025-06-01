@@ -20,8 +20,16 @@ type userCache interface {
 	GetUser(ctx context.Context, tgID int64) (model.User, error)
 }
 
-func New(repo userRepo, cache userCache) *User {
-	return &User{repo: repo, cache: cache}
+func New(repo userRepo, cache userCache) (*User, error) {
+	if repo == nil {
+		return nil, errors.New("repo is nil")
+	}
+
+	if cache == nil {
+		return nil, errors.New("cache is nil")
+	}
+
+	return &User{repo: repo, cache: cache}, nil
 }
 
 // CheckUser проверяет существование пользователя по tgID

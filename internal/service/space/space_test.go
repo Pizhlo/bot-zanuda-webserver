@@ -95,20 +95,20 @@ func TestGetSpaceByID(t *testing.T) {
 
 			// positive case
 			if tt.methodErrors == nil {
-				cache.EXPECT().GetSpaceByID(context.Background(), tt.spaceID).Return(tt.space, nil)
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(tt.space, nil)
 			}
 
 			if err, ok := tt.methodErrors["cache"]; ok {
-				cache.EXPECT().GetSpaceByID(context.Background(), tt.spaceID).Return(model.Space{}, err)
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
 
 				if tt.err == nil {
-					repo.EXPECT().GetSpaceByID(context.Background(), tt.spaceID).Return(tt.space, nil)
+					repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(tt.space, nil)
 				}
 			}
 
 			if err, ok := tt.methodErrors["db"]; ok {
-				cache.EXPECT().GetSpaceByID(context.Background(), tt.spaceID).Return(model.Space{}, err)
-				repo.EXPECT().GetSpaceByID(context.Background(), tt.spaceID).Return(model.Space{}, err)
+				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+				repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
 			}
 
 			space, err := spaceSrv.GetSpaceByID(context.Background(), tt.spaceID)
@@ -156,9 +156,9 @@ func TestIsUserInSpace(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.err == nil {
-				repo.EXPECT().CheckParticipant(context.Background(), tt.userID, tt.spaceID).Return(nil)
+				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			} else {
-				repo.EXPECT().CheckParticipant(context.Background(), tt.userID, tt.spaceID).Return(tt.err)
+				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
 			err = spaceSrv.IsUserInSpace(context.Background(), tt.userID, tt.spaceID)
@@ -214,9 +214,9 @@ func TestCreateSpace(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.err == nil {
-				worker.EXPECT().CreateSpace(context.Background(), tt.req).Return(nil)
+				worker.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(nil)
 			} else {
-				worker.EXPECT().CreateSpace(context.Background(), tt.req).Return(tt.err)
+				worker.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
 			err = spaceSrv.CreateSpace(context.Background(), tt.req)

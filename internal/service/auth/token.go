@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/sirupsen/logrus"
 )
 
 func (s *AuthService) CheckToken(authHeader string) (*jwt.Token, error) {
@@ -45,11 +44,12 @@ func (s *AuthService) ParseToken(tokenString string) (*jwt.Token, error) {
 }
 
 func (s *AuthService) GetPayload(token *jwt.Token) (jwt.MapClaims, bool) {
+	if token == nil {
+		return nil, false
+	}
+
 	payload, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		logrus.WithFields(logrus.Fields{
-			"jwt_token_claims": token.Claims,
-		}).Error("wrong type of JWT token claims")
 		return nil, false
 	}
 

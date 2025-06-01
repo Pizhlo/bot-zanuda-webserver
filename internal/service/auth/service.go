@@ -6,10 +6,24 @@ type AuthService struct {
 	secretKey []byte
 }
 
-func New(cfg *config) (*AuthService, error) {
-	if cfg == nil {
-		return nil, errors.New("config is nil")
+type AuthOption func(*AuthService)
+
+func WithSecretKey(secretKey []byte) AuthOption {
+	return func(a *AuthService) {
+		a.secretKey = secretKey
+	}
+}
+
+func New(opts ...AuthOption) (*AuthService, error) {
+	auth := &AuthService{}
+
+	for _, opt := range opts {
+		opt(auth)
 	}
 
-	return &AuthService{secretKey: cfg.secretKey}, nil
+	if len(auth.secretKey) == 0 {
+		return nil, errors.New("secret key is required")
+	}
+
+	return auth, nil
 }

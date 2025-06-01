@@ -184,12 +184,9 @@ func main() {
 		logrus.Fatalf("SECRET_KEY not set")
 	}
 
-	authCfg, err := auth.NewConfig([]byte(secretKey))
-	if err != nil {
-		logrus.Fatalf("error creating config for auth service: %+v", err)
-	}
-
-	authSrv, err := auth.New(authCfg)
+	authSrv, err := auth.New(
+		auth.WithSecretKey([]byte(secretKey)),
+	)
 	if err != nil {
 		logrus.Fatalf("error creating auth service: %+v", err)
 	}

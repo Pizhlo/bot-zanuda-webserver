@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/mocks"
 
@@ -50,7 +51,10 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			userSrv, err := New(tt.repo, tt.cache)
+			userSrv, err := New(
+				WithRepo(tt.repo),
+				WithCache(tt.cache),
+			)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -82,6 +86,22 @@ func TestCheckUser(t *testing.T) {
 			tgID: 123,
 			err:  nil,
 		},
+		{
+			name: "error case: cache error",
+			tgID: 123,
+			methodErrors: map[string]error{
+				"cache": errors.New("cache error"),
+			},
+			err: errors.New("cache error"),
+		},
+		{
+			name: "error case: repo error",
+			tgID: 123,
+			methodErrors: map[string]error{
+				"repo": errors.New("repo error"),
+			},
+			err: errors.New("repo error"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -92,17 +112,16 @@ func TestCheckUser(t *testing.T) {
 				}
 
 				if err, ok := tt.methodErrors["repo"]; ok {
+					cache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, api_errors.ErrUnknownUser)
 					repo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
 				}
 			} else {
 				cache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, nil)
-				repo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, nil)
 			}
 
-			userSrv, err := New(repo, cache)
-			require.NoError(t, err)
+			userSrv := createTestUserService(t, repo, cache)
 
-			err = userSrv.CheckUser(context.Background(), tt.tgID)
+			err := userSrv.CheckUser(context.Background(), tt.tgID)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -111,6 +130,16 @@ func TestCheckUser(t *testing.T) {
 			}
 		})
 	}
+}
+
+func createTestUserService(t *testing.T, repo *mocks.MockuserRepo, cache *mocks.MockuserCache) *User {
+	userSrv, err := New(
+		WithRepo(repo),
+		WithCache(cache),
+	)
+	require.NoError(t, err)
+
+	return userSrv
 }
 
 func createMockServices(ctrl *gomock.Controller) (*mocks.MockuserRepo, *mocks.MockuserCache) {

@@ -171,7 +171,10 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	userSrv, err := user.New(userRepo, userCache)
+	userSrv, err := user.New(
+		user.WithRepo(userRepo),
+		user.WithCache(userCache),
+	)
 	if err != nil {
 		logrus.Fatalf("error creating user service: %+v", err)
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -16,15 +17,55 @@ func TestNewServer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	h := mocks.NewMockhandler(ctrl)
+	tests := []struct {
+		name string
+		opts []ServerOption
+		want *server
+		err  error
+	}{
+		{
+			name: "positive case",
+			opts: []ServerOption{
+				WithAddr(":8080"),
+				WithHandler(mocks.NewMockhandler(ctrl)),
+			},
+			want: &server{
+				addr: ":8080",
+				api: struct {
+					h0 handler
+				}{h0: mocks.NewMockhandler(ctrl)},
+			},
+			err: nil,
+		},
+		{
+			name: "error case: addr is required",
+			opts: []ServerOption{
+				WithHandler(mocks.NewMockhandler(ctrl)),
+			},
+			err: errors.New("addr is required"),
+		},
+		{
+			name: "error case: handler is required",
+			opts: []ServerOption{
+				WithAddr(":8080"),
+			},
+			err: errors.New("handler is required"),
+		},
+	}
 
-	cfg, err := NewConfig("addr", h)
-	require.NoError(t, err)
-
-	server := New(cfg)
-	assert.NotNil(t, server)
-	assert.Equal(t, cfg.Address, server.addr)
-	assert.Equal(t, cfg.HandlerV0, server.api.h0)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server, err := New(tt.opts...)
+			if tt.err != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, tt.err.Error())
+				assert.Nil(t, server)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.want, server)
+			}
+		})
+	}
 }
 
 func TestCreateRoutes(t *testing.T) {
@@ -33,10 +74,11 @@ func TestCreateRoutes(t *testing.T) {
 
 	h := mocks.NewMockhandler(ctrl)
 
-	cfg, err := NewConfig(":8080", h)
+	server, err := New(
+		WithAddr(":8080"),
+		WithHandler(h),
+	)
 	require.NoError(t, err)
-
-	server := New(cfg)
 
 	err = server.CreateRoutes()
 	require.NoError(t, err)

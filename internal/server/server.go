@@ -21,8 +21,36 @@ type server struct {
 	}
 }
 
-func New(cfg *Config) *server {
-	return &server{addr: cfg.Address, api: struct{ h0 handler }{h0: cfg.HandlerV0}}
+type ServerOption func(*server)
+
+func WithAddr(addr string) ServerOption {
+	return func(s *server) {
+		s.addr = addr
+	}
+}
+
+func WithHandler(handler handler) ServerOption {
+	return func(s *server) {
+		s.api.h0 = handler
+	}
+}
+
+func New(opts ...ServerOption) (*server, error) {
+	server := &server{}
+
+	for _, opt := range opts {
+		opt(server)
+	}
+
+	if server.addr == "" {
+		return nil, errors.New("addr is required")
+	}
+
+	if server.api.h0 == nil {
+		return nil, errors.New("handler is required")
+	}
+
+	return server, nil
 }
 
 //go:generate mockgen -source ./server.go -destination=../../mocks/server.go -package=mocks

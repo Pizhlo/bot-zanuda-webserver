@@ -196,21 +196,22 @@ func main() {
 		logrus.Fatalf("error creating handler: %+v", err)
 	}
 
-	serverCfg, err := server.NewConfig(serverAddr, handler)
+	server, err := server.New(
+		server.WithAddr(serverAddr),
+		server.WithHandler(handler),
+	)
 	if err != nil {
 		logrus.Fatalf("error creating server config: %+v", err)
 	}
 
-	s := server.New(serverCfg)
-
-	err = s.CreateRoutes()
+	err = server.CreateRoutes()
 	if err != nil {
 		logrus.Fatalf("error creating routes for server: %+v", err)
 	}
 
 	logrus.Infof("started server on %s", serverAddr)
 
-	err = s.Start()
+	err = server.Start()
 	if err != nil {
 		logrus.Fatalf("error starting server: %+v", err)
 	}
@@ -230,7 +231,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(notifyCtx, 2*time.Second)
 		defer cancel()
 
-		err := s.Shutdown(ctx)
+		err := server.Shutdown(ctx)
 		if err != nil {
 			logrus.Errorf("error shutdown server: %+v", err)
 		}

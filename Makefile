@@ -11,4 +11,8 @@ lint:
 test:
 	go test -gcflags="-l" -race -v ./...
 
-.PHONY: mocks swag lint
+all:
+    make lint
+	make test
+
+.PHONY: mocks swag lint test all

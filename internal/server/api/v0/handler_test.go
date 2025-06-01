@@ -61,7 +61,7 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler, err := New(tt.space, tt.user, tt.auth)
+			handler, err := New(WithSpaceService(tt.space), WithUserService(tt.user), WithAuthService(tt.auth))
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())

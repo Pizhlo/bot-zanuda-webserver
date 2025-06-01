@@ -45,18 +45,44 @@ type authService interface {
 	ParseToken(tokenString string) (*jwt.Token, error)
 }
 
-func New(space spaceService, user userService, auth authService) (*handler, error) {
-	if space == nil {
+type handlerOption func(*handler)
+
+func WithSpaceService(space spaceService) handlerOption {
+	return func(h *handler) {
+		h.space = space
+	}
+}
+
+func WithUserService(user userService) handlerOption {
+	return func(h *handler) {
+		h.user = user
+	}
+}
+
+func WithAuthService(auth authService) handlerOption {
+	return func(h *handler) {
+		h.auth = auth
+	}
+}
+
+func New(opts ...handlerOption) (*handler, error) {
+	h := &handler{}
+
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	if h.space == nil {
 		return nil, errors.New("space is nil")
 	}
 
-	if user == nil {
+	if h.user == nil {
 		return nil, errors.New("user is nil")
 	}
 
-	if auth == nil {
+	if h.auth == nil {
 		return nil, errors.New("auth is nil")
 	}
 
-	return &handler{space: space, user: user, auth: auth}, nil
+	return h, nil
 }

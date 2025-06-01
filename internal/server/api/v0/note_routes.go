@@ -171,7 +171,7 @@ func (h *handler) UpdateNote(c echo.Context) error {
 	note, err := h.space.GetNoteByID(c.Request().Context(), req.NoteID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrNoteNotFound) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
 		}
 
 		// ошибки запроса
@@ -380,6 +380,13 @@ func (h *handler) DeleteNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
 }
 
+// @Summary		Удалить все заметки в пространстве
+// @Description	Удалить все заметки в пространстве
+// @Param          space_id   path      string  true  "айди пространства"
+// @Success		202 {object}    map[string]string "Айди запроса"
+// @Failure		400	{object}	map[string]string "Пространства не существует"
+// @Failure		500	{object}	map[string]string "Внутренняя ошибка"
+// @Router			/spaces/{space_id}/notes/delete [delete]
 func (h *handler) DeleteAllNotes(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
@@ -404,10 +411,6 @@ func (h *handler) DeleteAllNotes(c echo.Context) error {
 	}
 
 	if err := h.space.DeleteAllNotes(c.Request().Context(), req); err != nil {
-		if errors.Is(err, model.ErrInvalidSpaceID) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
-		}
-
 		// внутренняя ошибка / ошибка валидации
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

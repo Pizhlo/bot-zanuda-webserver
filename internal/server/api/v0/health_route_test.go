@@ -14,10 +14,7 @@ func TestHealth(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(ctrl)
-
-	handler, err := New(spaceSrvMock, userSrvMock, authSrvMock)
-	require.NoError(t, err)
+	handler := createTestHandler(t, ctrl)
 
 	r, err := runTestServer(handler)
 	require.NoError(t, err)

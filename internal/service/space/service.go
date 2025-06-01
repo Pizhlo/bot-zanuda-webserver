@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Space struct {
+type space struct {
 	repo   repo
 	cache  spaceCache
 	worker dbWorker // создание / обновление записей
@@ -65,18 +65,44 @@ type noteEditor interface {
 	DeleteAllNotes(ctx context.Context, req rabbit.Model) error
 }
 
-func New(repo repo, cache spaceCache, worker dbWorker) (*Space, error) {
-	if repo == nil {
+type SpaceOption func(*space)
+
+func WithRepo(repo repo) SpaceOption {
+	return func(s *space) {
+		s.repo = repo
+	}
+}
+
+func WithCache(cache spaceCache) SpaceOption {
+	return func(s *space) {
+		s.cache = cache
+	}
+}
+
+func WithWorker(worker dbWorker) SpaceOption {
+	return func(s *space) {
+		s.worker = worker
+	}
+}
+
+func New(opts ...SpaceOption) (*space, error) {
+	space := &space{}
+
+	for _, opt := range opts {
+		opt(space)
+	}
+
+	if space.repo == nil {
 		return nil, errors.New("repo is nil")
 	}
 
-	if cache == nil {
+	if space.cache == nil {
 		return nil, errors.New("cache is nil")
 	}
 
-	if worker == nil {
+	if space.worker == nil {
 		return nil, errors.New("worker is nil")
 	}
 
-	return &Space{repo: repo, cache: cache, worker: worker}, nil
+	return space, nil
 }

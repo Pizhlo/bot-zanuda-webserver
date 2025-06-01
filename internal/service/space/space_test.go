@@ -90,8 +90,7 @@ func TestGetSpaceByID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			// positive case
 			if tt.methodErrors == nil {
@@ -152,8 +151,7 @@ func TestIsUserInSpace(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			if tt.err == nil {
 				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
@@ -161,7 +159,7 @@ func TestIsUserInSpace(t *testing.T) {
 				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
-			err = spaceSrv.IsUserInSpace(context.Background(), tt.userID, tt.spaceID)
+			err := spaceSrv.IsUserInSpace(context.Background(), tt.userID, tt.spaceID)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -210,8 +208,7 @@ func TestCreateSpace(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			if tt.err == nil {
 				worker.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(nil)
@@ -219,7 +216,7 @@ func TestCreateSpace(t *testing.T) {
 				worker.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
-			err = spaceSrv.CreateSpace(context.Background(), tt.req)
+			err := spaceSrv.CreateSpace(context.Background(), tt.req)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())

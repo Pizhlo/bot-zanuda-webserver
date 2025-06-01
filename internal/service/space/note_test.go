@@ -56,8 +56,7 @@ func TestCreateNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			if tt.err == nil {
 				worker.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil)
@@ -65,7 +64,7 @@ func TestCreateNote(t *testing.T) {
 				worker.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(tt.err)
 			}
 
-			err = spaceSrv.CreateNote(context.Background(), tt.req)
+			err := spaceSrv.CreateNote(context.Background(), tt.req)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -119,8 +118,7 @@ func TestGetAllNotesBySpaceIDFull(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -174,8 +172,7 @@ func TestGetAllNotesBySpaceID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -229,12 +226,11 @@ func TestUpdateNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			worker.EXPECT().UpdateNote(context.Background(), &tt.req).Return(tt.err)
 
-			err = spaceSrv.UpdateNote(context.Background(), tt.req)
+			err := spaceSrv.UpdateNote(context.Background(), tt.req)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -281,8 +277,7 @@ func TestGetNoteByID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -337,8 +332,7 @@ func TestGetNotesTypes(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			repo.EXPECT().GetNotesTypes(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -402,8 +396,7 @@ func TestGetNotesByType(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			repo.EXPECT().GetNotesByType(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -481,8 +474,7 @@ func TestSearchNoteByText(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			expectedReq := tt.req
 			if len(tt.req.Type) == 0 {
@@ -537,12 +529,11 @@ func TestDeleteNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			worker.EXPECT().DeleteNote(context.Background(), &tt.req).Return(tt.err)
 
-			err = spaceSrv.DeleteNote(context.Background(), tt.req)
+			err := spaceSrv.DeleteNote(context.Background(), tt.req)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
@@ -585,12 +576,11 @@ func TestDeleteAllNotes(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv, err := New(repo, cache, worker)
-			require.NoError(t, err)
+			spaceSrv := createTestSpace(t, repo, cache, worker)
 
 			worker.EXPECT().DeleteAllNotes(context.Background(), &tt.req).Return(tt.err)
 
-			err = spaceSrv.DeleteAllNotes(context.Background(), tt.req)
+			err := spaceSrv.DeleteAllNotes(context.Background(), tt.req)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())

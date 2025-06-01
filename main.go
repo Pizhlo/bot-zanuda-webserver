@@ -147,7 +147,11 @@ func main() {
 
 	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
 
-	spaceSrv, err := space.New(spaceRepo, spaceCache, rabbit)
+	spaceSrv, err := space.New(
+		space.WithRepo(spaceRepo),
+		space.WithCache(spaceCache),
+		space.WithWorker(rabbit),
+	)
 	if err != nil {
 		logrus.Fatalf("error creating space service: %+v", err)
 	}
@@ -167,7 +171,10 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	userSrv := user.New(userRepo, userCache)
+	userSrv, err := user.New(userRepo, userCache)
+	if err != nil {
+		logrus.Fatalf("error creating user service: %+v", err)
+	}
 
 	secretKey := os.Getenv("SECRET_KEY")
 	if len(secretKey) == 0 {

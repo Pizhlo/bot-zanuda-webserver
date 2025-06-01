@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
+func (s *space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
 	space, err := s.cache.GetSpaceByID(ctx, id)
 	if err != nil {
 		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
@@ -27,10 +27,10 @@ func (s *Space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 }
 
 // IsUserInSpace проверяет, состоит ли пользователь в пространстве
-func (s *Space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+func (s *space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error {
 	return s.repo.CheckParticipant(ctx, userID, spaceID)
 }
 
-func (s *Space) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
+func (s *space) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
 	return s.worker.CreateSpace(ctx, req)
 }

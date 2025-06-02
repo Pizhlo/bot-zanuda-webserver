@@ -16,7 +16,7 @@ func TestHealth(t *testing.T) {
 
 	handler := createTestHandler(t, ctrl)
 
-	r, err := runTestServer(handler)
+	r, err := runTestServer(t, handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)

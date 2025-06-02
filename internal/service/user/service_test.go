@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
-	api_errors "webserver/internal/errors"
-	"webserver/internal/model"
-	"webserver/mocks"
+	"webserver/internal/service/user/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -68,60 +66,77 @@ func TestNew(t *testing.T) {
 }
 
 func TestCheckUser(t *testing.T) {
-	type test struct {
-		name         string
-		tgID         int64
-		methodErrors map[string]error
-		err          error
+	type fields struct {
+		repo  *mocks.MockuserRepo
+		cache *mocks.MockuserCache
 	}
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	repo, cache := createMockServices(ctrl)
+	type test struct {
+		name       string
+		tgID       int64
+		err        error
+		exists     bool
+		setupMocks func(mocks *fields)
+	}
 
 	tests := []test{
 		{
-			name: "positive case",
-			tgID: 123,
-			err:  nil,
+			name:   "positive case: exists in cache",
+			tgID:   123,
+			err:    nil,
+			exists: true,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
+			},
 		},
 		{
-			name: "error case: cache error",
-			tgID: 123,
-			methodErrors: map[string]error{
-				"cache": errors.New("cache error"),
+			name:   "positive case: exists in repo",
+			tgID:   123,
+			err:    nil,
+			exists: true,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(false, nil)
+				mocks.repo.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
 			},
-			err: errors.New("cache error"),
 		},
 		{
-			name: "error case: repo error",
-			tgID: 123,
-			methodErrors: map[string]error{
-				"repo": errors.New("repo error"),
+			name:   "error case: cache error",
+			tgID:   123,
+			err:    errors.New("cache error"),
+			exists: false,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(false, errors.New("cache error"))
 			},
-			err: errors.New("repo error"),
+		},
+		{
+			name:   "error case: repo error",
+			tgID:   123,
+			exists: false,
+			err:    errors.New("repo error"),
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(false, nil)
+				mocks.repo.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(false, errors.New("repo error"))
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.methodErrors != nil {
-				if err, ok := tt.methodErrors["cache"]; ok {
-					cache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
-				}
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-				if err, ok := tt.methodErrors["repo"]; ok {
-					cache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, api_errors.ErrUnknownUser)
-					repo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
-				}
-			} else {
-				cache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, nil)
-			}
+			repo, cache := createMockServices(ctrl)
+
+			tt.setupMocks(&fields{repo: repo, cache: cache})
 
 			userSrv := createTestUserService(t, repo, cache)
 
-			err := userSrv.CheckUser(context.Background(), tt.tgID)
+			exists, err := userSrv.CheckUser(context.Background(), tt.tgID)
+			assert.Equal(t, tt.exists, exists)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())

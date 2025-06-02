@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -10,7 +11,7 @@ import (
 type Space struct {
 	ID       uuid.UUID `json:"id"`
 	Name     string    `json:"name"`
-	Created  int64     `json:"created"`  // unix in UTC
+	Created  time.Time `json:"created"`  // TODO: unix in UTC
 	Creator  int64     `json:"creator"`  // айди пользователя-создателя в телеге
 	Personal bool      `json:"personal"` // личное / совместное пространство
 }
@@ -32,7 +33,7 @@ func (s *Space) Validate() error {
 		return ErrFieldNameNotFilled
 	}
 
-	if s.Created == 0 {
+	if s.Created.IsZero() {
 		return ErrFieldCreatedNotFilled
 	}
 

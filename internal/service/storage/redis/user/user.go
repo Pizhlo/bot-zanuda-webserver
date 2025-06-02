@@ -72,6 +72,15 @@ func (u *userCache) GetUser(ctx context.Context, tgID int64) (model.User, error)
 	return parseUser(res)
 }
 
+func (u *userCache) CheckUser(ctx context.Context, tgID int64) (bool, error) {
+	user, err := u.GetUser(ctx, tgID)
+	if err != nil {
+		return false, err
+	}
+
+	return user.ID != 0, nil
+}
+
 func parseUser(res map[string]string) (model.User, error) {
 	id, err := strconv.Atoi(res[idKey])
 	if err != nil {

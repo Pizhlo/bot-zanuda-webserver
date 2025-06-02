@@ -95,7 +95,7 @@ func parseSpace(res map[string]string) (model.Space, error) {
 	return model.Space{
 		ID:       id,
 		Name:     res[nameKey],
-		Created:  created.Unix(),
+		Created:  created,
 		Creator:  int64(creator),
 		Personal: personal,
 	}, nil

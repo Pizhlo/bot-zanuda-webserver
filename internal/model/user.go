@@ -1,13 +1,17 @@
 package model
 
-import "errors"
+import (
+	"database/sql"
+	"errors"
+)
 
 type User struct {
-	ID            int    `json:"id"`
-	TgID          int64  `json:"tg_id"`
-	Username      string `json:"username"`
-	PersonalSpace *Space `json:"personal_space"`
-	Timezone      string `json:"timezone"`
+	ID            int            `json:"id"`
+	TgID          int64          `json:"tg_id"`
+	Username      string         `json:"username"`
+	UsernameSQL   sql.NullString `json:"-"`
+	PersonalSpace *Space         `json:"personal_space"`
+	Timezone      string         `json:"timezone"`
 }
 
 var (

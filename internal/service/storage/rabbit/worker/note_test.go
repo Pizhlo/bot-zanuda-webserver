@@ -6,7 +6,7 @@ import (
 	"testing"
 	api_model "webserver/internal/model"
 	"webserver/internal/model/rabbit"
-	"webserver/mocks"
+	"webserver/internal/service/storage/rabbit/worker/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"

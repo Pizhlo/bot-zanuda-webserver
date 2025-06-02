@@ -37,3 +37,16 @@ func (c CreateSpaceRequest) Validate() error {
 
 	return nil
 }
+
+type AddParticipantRequest struct {
+	ID          uuid.UUID `json:"id"`
+	SpaceID     uuid.UUID `json:"space_id"`
+	UserID      int64     `json:"user_id"`     // кто добавляет участника
+	Participant int64     `json:"participant"` // кто добавляется в пространство
+	Operation   Operation `json:"operation"`
+	Created     int64     `json:"created"`
+}
+
+func (a AddParticipantRequest) Validate() error {
+	return nil
+}

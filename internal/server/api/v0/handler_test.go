@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(ctrl)
+	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)
 
 	tests := []test{
 		{

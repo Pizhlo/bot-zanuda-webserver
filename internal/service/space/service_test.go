@@ -3,7 +3,7 @@ package space
 import (
 	"errors"
 	"testing"
-	"webserver/mocks"
+	"webserver/internal/service/space/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

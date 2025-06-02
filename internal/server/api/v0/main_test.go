@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"webserver/mocks"
+	"webserver/internal/server/api/v0/mocks"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -14,6 +15,7 @@ import (
 
 func testRequest(t *testing.T, ts *httptest.Server, method,
 	path string, token string, body io.Reader) *http.Response {
+	t.Helper()
 
 	req, err := http.NewRequest(method, ts.URL+path, body)
 	require.NoError(t, err)
@@ -39,7 +41,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp
 }
 
-func runTestServer(h *handler) (*echo.Echo, error) {
+func runTestServer(t *testing.T, h *handler) (*echo.Echo, error) {
+	t.Helper()
+
 	e := echo.New()
 
 	api := e.Group("api/")
@@ -52,7 +56,8 @@ func runTestServer(h *handler) (*echo.Echo, error) {
 	spaces := apiv0.Group("spaces")
 
 	// spaces
-	spaces.POST("/create", h.CreateSpace)
+	spaces.POST("/create", h.CreateSpace, h.Auth)                        // создать пространство
+	spaces.POST("/:space_id/participants/add", h.AddParticipant, h.Auth) // добавить участника в пространство
 
 	// notes
 	spaces.GET("/:space_id/notes", h.NotesBySpaceID)
@@ -72,7 +77,9 @@ func runTestServer(h *handler) (*echo.Echo, error) {
 
 	return e, nil
 }
-func runTestServerWithMiddleware(h *handler) (*echo.Echo, error) {
+func runTestServerWithMiddleware(t *testing.T, h *handler) (*echo.Echo, error) {
+	t.Helper()
+
 	e := echo.New()
 
 	api := e.Group("api/")
@@ -83,6 +90,10 @@ func runTestServerWithMiddleware(h *handler) (*echo.Echo, error) {
 	apiv0.GET("health", h.Health)
 
 	spaces := apiv0.Group("spaces")
+
+	// spaces
+	spaces.POST("/create", h.CreateSpace, h.Auth)                        // создать пространство
+	spaces.POST("/:space_id/participants/add", h.AddParticipant, h.Auth) // добавить участника в пространство
 
 	// notes
 	spaces.GET("/:space_id/notes", h.NotesBySpaceID)
@@ -103,7 +114,9 @@ func runTestServerWithMiddleware(h *handler) (*echo.Echo, error) {
 	return e, nil
 }
 
-func createMockServices(ctrl *gomock.Controller) (*mocks.MockspaceService, *mocks.MockuserService, *mocks.MockauthService) {
+func createMockServices(t *testing.T, ctrl *gomock.Controller) (*mocks.MockspaceService, *mocks.MockuserService, *mocks.MockauthService) {
+	t.Helper()
+
 	spaceSrvMock := mocks.NewMockspaceService(ctrl)
 	userSrvMock := mocks.NewMockuserService(ctrl)
 	authSrvMock := mocks.NewMockauthService(ctrl)
@@ -112,10 +125,33 @@ func createMockServices(ctrl *gomock.Controller) (*mocks.MockspaceService, *mock
 }
 
 func createTestHandler(t *testing.T, ctrl *gomock.Controller) *handler {
-	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(ctrl)
+	t.Helper()
+
+	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)
 
 	h, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock))
 	require.NoError(t, err)
 
 	return h
+}
+
+func generateToken(t *testing.T, userID, expired float64) string {
+	t.Helper()
+
+	claims := jwt.MapClaims{}
+
+	if userID != 0 {
+		claims["user_id"] = userID
+	}
+
+	if expired != 0 {
+		claims["expired"] = expired
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString([]byte("secret"))
+	require.NoError(t, err)
+
+	return tokenString
 }

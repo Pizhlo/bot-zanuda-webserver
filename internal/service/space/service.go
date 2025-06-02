@@ -15,20 +15,23 @@ type space struct {
 	worker dbWorker // создание / обновление записей
 }
 
-//go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
+//go:generate mockgen -source ./space.go -destination=./mocks/space_srv.go -package=mocks
 type repo interface {
 	noteRepo
 	spaceRepo
+	spaceChecker
 }
 
-//go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
+//go:generate mockgen -source ./space.go -destination=./mocks/space_srv.go -package=mocks
 type spaceRepo interface {
 	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 	// CheckParticipant проверяет, является ли пользователь участником пространства
-	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error
+	CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error)
+	IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error)
+	IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error)
 }
 
-//go:generate mockgen -source ./space.go -destination=../../../mocks/space_srv.go -package=mocks
+//go:generate mockgen -source ./space.go -destination=./mocks/space_srv.go -package=mocks
 type noteRepo interface {
 	// GetAllbySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error)
@@ -43,7 +46,7 @@ type noteRepo interface {
 	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
 }
 
-//go:generate mockgen -source ./service.go -destination=../../../mocks/space_srv.go -package=mocks
+//go:generate mockgen -source ./service.go -destination=./mocks/space_srv.go -package=mocks
 type spaceCache interface {
 	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
 }
@@ -52,10 +55,15 @@ type spaceCache interface {
 type dbWorker interface {
 	noteEditor
 	spaceEditor
+	participantEditor
 }
 
 type spaceEditor interface {
 	CreateSpace(ctx context.Context, req rabbit.Model) error
+}
+
+type spaceChecker interface {
+	CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error)
 }
 
 type noteEditor interface {
@@ -63,6 +71,10 @@ type noteEditor interface {
 	UpdateNote(ctx context.Context, req rabbit.Model) error
 	DeleteNote(ctx context.Context, req rabbit.Model) error
 	DeleteAllNotes(ctx context.Context, req rabbit.Model) error
+}
+
+type participantEditor interface {
+	AddParticipant(ctx context.Context, req rabbit.Model) error
 }
 
 type SpaceOption func(*space)

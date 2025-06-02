@@ -22,7 +22,7 @@ func TestHealth(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	resp := testRequest(t, ts, http.MethodGet, "/api/v0/health", nil)
+	resp := testRequest(t, ts, http.MethodGet, "/api/v0/health", "", nil)
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

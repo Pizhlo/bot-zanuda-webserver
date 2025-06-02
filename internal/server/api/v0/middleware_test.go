@@ -151,7 +151,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 			bodyJSON, err := json.Marshal(tt.req)
 			require.NoError(t, err)
 
-			resp := testRequest(t, ts, http.MethodPost, "/api/v0/spaces/notes/create", bytes.NewReader(bodyJSON))
+			resp := testRequest(t, ts, http.MethodPost, "/api/v0/spaces/notes/create", "", bytes.NewReader(bodyJSON))
 			defer resp.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
@@ -311,7 +311,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 			bodyJSON, err := json.Marshal(tt.req)
 			require.NoError(t, err)
 
-			resp := testRequest(t, ts, http.MethodPatch, "/api/v0/spaces/notes/update", bytes.NewReader(bodyJSON))
+			resp := testRequest(t, ts, http.MethodPatch, "/api/v0/spaces/notes/update", "", bytes.NewReader(bodyJSON))
 			defer resp.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)

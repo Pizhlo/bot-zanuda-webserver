@@ -13,7 +13,7 @@ import (
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method,
-	path string, body io.Reader) *http.Response {
+	path string, token string, body io.Reader) *http.Response {
 
 	req, err := http.NewRequest(method, ts.URL+path, body)
 	require.NoError(t, err)
@@ -22,6 +22,10 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	req.Header.Add("Connection", "keep-alive")
 	req.Header.Add("User-Agent", "PostmanRuntime/7.32.3")
 	require.NoError(t, err)
+
+	if token != "" {
+		req.Header.Set("Authorization", token)
+	}
 
 	ts.Client()
 
@@ -46,6 +50,9 @@ func runTestServer(h *handler) (*echo.Echo, error) {
 	apiv0.GET("health", h.Health)
 
 	spaces := apiv0.Group("spaces")
+
+	// spaces
+	spaces.POST("/create", h.CreateSpace)
 
 	// notes
 	spaces.GET("/:space_id/notes", h.NotesBySpaceID)

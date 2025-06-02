@@ -17,6 +17,58 @@
                 }
             }
         },
+        "/spaces/create": {
+            "post": {
+                "description": "Запрос на создание пространства",
+                "summary": "Запрос на создание пространства",
+                "parameters": [
+                    {
+                        "description": "создать пространство:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п.",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rabbit.CreateSpaceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Невалидный токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/spaces/notes/create": {
             "post": {
                 "description": "Запрос на создание заметки с текстом. Создается в указанном пространстве",
@@ -28,7 +80,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.CreateNoteRequest"
+                            "$ref": "#/definitions/rabbit.CreateNoteRequest"
                         }
                     }
                 ],
@@ -120,7 +172,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateNoteRequest"
+                            "$ref": "#/definitions/rabbit.UpdateNoteRequest"
                         }
                     }
                 ],
@@ -152,7 +204,7 @@
                 }
             }
         },
-        "/spaces/{id}/notes": {
+        "/spaces/{space_id}/notes": {
             "get": {
                 "description": "Запрос на получение всех заметок из личного пространства пользователя",
                 "summary": "Запрос на получение всех заметок",
@@ -190,31 +242,22 @@
                 }
             }
         },
-        "/spaces/{id}/notes/types": {
-            "get": {
-                "description": "Получить список всех типов заметок и их количество",
-                "summary": "Получить все типы заметок",
+        "/spaces/{space_id}/notes/delete": {
+            "delete": {
+                "description": "Удалить все заметки в пространстве",
+                "summary": "Удалить все заметки в пространстве",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пространства",
-                        "name": "id",
+                        "description": "айди пространства",
+                        "name": "space_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.NoteTypeResponse"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Невалидный запрос",
+                    "202": {
+                        "description": "Айди запроса",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -222,8 +265,14 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Нет заметок"
+                    "400": {
+                        "description": "Пространства не существует",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -237,22 +286,15 @@
                 }
             }
         },
-        "/spaces/{id}/notes/{type}": {
+        "/spaces/{space_id}/notes/types": {
             "get": {
-                "description": "Получить все заметки определенного типа: текстовые, фото, етс",
-                "summary": "Получить все заметки одного типа",
+                "description": "Получить список всех типов заметок и их количество",
+                "summary": "Получить все типы заметок",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "ID пространства",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "тип заметки: текст, фото, етс",
-                        "name": "type",
+                        "name": "space_id",
                         "in": "path",
                         "required": true
                     }
@@ -263,7 +305,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.GetNote"
+                                "$ref": "#/definitions/model.NoteTypeResponse"
                             }
                         }
                     },
@@ -349,42 +391,63 @@
                     }
                 }
             }
+        },
+        "/spaces/{space_id}/notes/{type}": {
+            "get": {
+                "description": "Получить все заметки определенного типа: текстовые, фото, етс",
+                "summary": "Получить все заметки одного типа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "тип заметки: текст, фото, етс",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "model.CreateNoteRequest": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "description": "дата обращения в Unix в UTC",
-                    "type": "integer"
-                },
-                "file": {
-                    "description": "название файла в Minio (если есть)",
-                    "type": "string"
-                },
-                "space_id": {
-                    "description": "айди пространства, куда сохранить заметку",
-                    "type": "string"
-                },
-                "text": {
-                    "description": "текст заметки",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "тип заметки: текстовая, фото, видео, етс",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.NoteType"
-                        }
-                    ]
-                },
-                "user_id": {
-                    "description": "кто создал заметку",
-                    "type": "integer"
-                }
-            }
-        },
         "model.GetNote": {
             "type": "object",
             "properties": {
@@ -512,8 +575,8 @@
             "type": "object",
             "properties": {
                 "created": {
-                    "description": "указывается в часовом поясе пользователя-создателя",
-                    "type": "string"
+                    "description": "unix in UTC",
+                    "type": "integer"
                 },
                 "creator": {
                     "description": "айди пользователя-создателя в телеге",
@@ -528,37 +591,6 @@
                 "personal": {
                     "description": "личное / совместное пространство",
                     "type": "boolean"
-                }
-            }
-        },
-        "model.UpdateNoteRequest": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "description": "дата обращения в Unix в UTC",
-                    "type": "integer"
-                },
-                "file": {
-                    "description": "название файла в Minio (если есть)",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "айди запроса, генерируется в процессе обработки",
-                    "type": "string"
-                },
-                "note_id": {
-                    "description": "айди заметки",
-                    "type": "string"
-                },
-                "space_id": {
-                    "type": "string"
-                },
-                "text": {
-                    "description": "новый текст",
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -579,6 +611,99 @@
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "rabbit.CreateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "дата обращения в Unix в UTC",
+                    "type": "integer"
+                },
+                "file": {
+                    "description": "название файла в Minio (если есть)",
+                    "type": "string"
+                },
+                "operation": {
+                    "description": "какое действие сделать: создать, удалить, редактировать",
+                    "type": "string"
+                },
+                "space_id": {
+                    "description": "айди пространства, куда сохранить заметку",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "текст заметки",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "тип заметки: текстовая, фото, видео, етс",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.NoteType"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "кто создал заметку",
+                    "type": "integer"
+                }
+            }
+        },
+        "rabbit.CreateSpaceRequest": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "создатель пространства",
+                    "type": "integer"
+                }
+            }
+        },
+        "rabbit.UpdateNoteRequest": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "дата обращения в Unix в UTC",
+                    "type": "integer"
+                },
+                "file": {
+                    "description": "название файла в Minio (если есть)",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "айди запроса, генерируется в процессе обработки",
+                    "type": "string"
+                },
+                "note_id": {
+                    "description": "айди заметки",
+                    "type": "string"
+                },
+                "operation": {
+                    "description": "какое действие сделать: создать, удалить, редактировать",
+                    "type": "string"
+                },
+                "space_id": {
+                    "type": "string"
+                },
+                "text": {
+                    "description": "новый текст",
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

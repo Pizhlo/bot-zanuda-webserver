@@ -13,6 +13,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// @Summary		Запрос на создание пространства
+// @Description	Запрос на создание пространства
+// @Param			request	body	rabbit.CreateSpaceRequest	true	"создать пространство:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п."
+// @Success		202 {object}    string             айди запроса для отслеживания
+// @Failure		400	{object}	map[string]string "Невалидный запрос"
+// @Failure		401	{object}	map[string]string "Невалидный токен"
+// @Failure		500	{object}	map[string]string "Внутренняя ошибка"
+// @Router			/spaces/create [post]
 func (h *handler) CreateSpace(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {

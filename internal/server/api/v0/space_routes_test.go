@@ -55,6 +55,7 @@ func TestCreateSpace(t *testing.T) {
 				authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": userID,
 				}, true)
+				userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
 				spaceSrv.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(nil)
 			},
 			expectedStatus: http.StatusAccepted,
@@ -105,6 +106,7 @@ func TestCreateSpace(t *testing.T) {
 				authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": userID,
 				}, true)
+				userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
 				spaceSrv.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(model.ErrFieldNameNotFilled)
 			},
 			expectedStatus: http.StatusBadRequest,

@@ -10,6 +10,7 @@ import (
 	"time"
 	"webserver/internal/server"
 	v0 "webserver/internal/server/api/v0"
+	"webserver/internal/service/auth"
 	"webserver/internal/service/space"
 	"webserver/internal/service/storage/elasticsearch"
 	space_db "webserver/internal/service/storage/postgres/space"
@@ -120,8 +121,14 @@ func main() {
 		logrus.Fatalf("NOTES_TOPIC not set")
 	}
 
+	spacesTopicName := os.Getenv("SPACES_TOPIC")
+	if len(spacesTopicName) == 0 {
+		logrus.Fatalf("SPACES_TOPIC not set")
+	}
+
 	params := map[string]string{
-		worker.NotesTopicName: notesTopicName,
+		worker.NotesTopicNameKey:  notesTopicName,
+		worker.SpacesTopicNameKey: spacesTopicName,
 	}
 
 	rabbitCfg, err := worker.NewConfig(params, rabbitAddr)
@@ -140,7 +147,14 @@ func main() {
 
 	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
 
-	spaceSrv := space.New(spaceRepo, spaceCache, rabbit)
+	spaceSrv, err := space.New(
+		space.WithRepo(spaceRepo),
+		space.WithCache(spaceCache),
+		space.WithWorker(rabbit),
+	)
+	if err != nil {
+		logrus.Fatalf("error creating space service: %+v", err)
+	}
 
 	serverAddr := os.Getenv("SERVER_ADDR")
 	if len(serverAddr) == 0 {
@@ -157,27 +171,51 @@ func main() {
 		logrus.Fatalf("error connecting db: %+v", err)
 	}
 
-	userSrv := user.New(userRepo, userCache)
+	userSrv, err := user.New(
+		user.WithRepo(userRepo),
+		user.WithCache(userCache),
+	)
+	if err != nil {
+		logrus.Fatalf("error creating user service: %+v", err)
+	}
 
-	logrus.Infof("starting server on %s", serverAddr)
+	secretKey := os.Getenv("SECRET_KEY")
+	if len(secretKey) == 0 {
+		logrus.Fatalf("SECRET_KEY not set")
+	}
 
-	handler := v0.New(spaceSrv, userSrv)
+	authSrv, err := auth.New(
+		auth.WithSecretKey([]byte(secretKey)),
+	)
+	if err != nil {
+		logrus.Fatalf("error creating auth service: %+v", err)
+	}
 
-	serverCfg, err := server.NewConfig(serverAddr, handler)
+	handler, err := v0.New(
+		v0.WithSpaceService(spaceSrv),
+		v0.WithUserService(userSrv),
+		v0.WithAuthService(authSrv),
+	)
+	if err != nil {
+		logrus.Fatalf("error creating handler: %+v", err)
+	}
+
+	server, err := server.New(
+		server.WithAddr(serverAddr),
+		server.WithHandler(handler),
+	)
 	if err != nil {
 		logrus.Fatalf("error creating server config: %+v", err)
 	}
 
-	s := server.New(serverCfg)
-
-	err = s.CreateRoutes()
+	err = server.CreateRoutes()
 	if err != nil {
 		logrus.Fatalf("error creating routes for server: %+v", err)
 	}
 
 	logrus.Infof("started server on %s", serverAddr)
 
-	err = s.Start()
+	err = server.Start()
 	if err != nil {
 		logrus.Fatalf("error starting server: %+v", err)
 	}
@@ -197,7 +235,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(notifyCtx, 2*time.Second)
 		defer cancel()
 
-		err := s.Shutdown(ctx)
+		err := server.Shutdown(ctx)
 		if err != nil {
 			logrus.Errorf("error shutdown server: %+v", err)
 		}

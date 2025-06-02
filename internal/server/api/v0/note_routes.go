@@ -19,7 +19,7 @@ import (
 
 //	@Summary		Запрос на создание заметки
 //	@Description	Запрос на создание заметки с текстом. Создается в указанном пространстве
-//	@Param			request	body	model.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п."
+//	@Param			request	body	rabbit.CreateNoteRequest	true	"создать заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nтекст заметки\nтип заметки: текстовый, фото, видео, и т.п."
 //	@Success		202 {object}    string             айди запроса для отслеживания
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
@@ -39,15 +39,16 @@ func (h *handler) CreateNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	req.ID = uuid.New()
 	req.Created = time.Now().In(time.UTC).Unix()
 	req.Operation = rabbit.CreateOp
 
-	if err := req.Validate(); err != nil {
+	err = h.space.CreateNote(c.Request().Context(), req)
+	if err != nil {
 		// ошибки запроса
 		errs := []error{
 			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
 			model.ErrFieldUserNotFilled, model.ErrFieldTypeNotFilled,
-			rabbit.ErrInvalidOperation,
 		}
 
 		if errorsIn(err, errs) {
@@ -55,13 +56,6 @@ func (h *handler) CreateNote(c echo.Context) error {
 		}
 
 		// внутренняя ошибка
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	req.ID = uuid.New()
-
-	err = h.space.CreateNote(c.Request().Context(), req)
-	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
@@ -149,7 +143,7 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 
 //	@Summary		Запрос на обновление заметки
 //	@Description	Запрос на обновление заметки с текстом. Создается в указанном пространстве
-//	@Param			request	body	model.UpdateNoteRequest	true	"обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить"
+//	@Param			request	body	rabbit.UpdateNoteRequest	true	"обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить"
 //	@Success		202 {object}    string             айди запроса для отслеживания
 //	@Failure		400	{object}	map[string]string "Невалидный запрос"
 //	@Failure		500	{object}	map[string]string "Внутренняя ошибка"
@@ -169,17 +163,22 @@ func (h *handler) UpdateNote(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
+	req.ID = uuid.New()
 	req.Created = time.Now().In(time.UTC).Unix()
 	req.Operation = rabbit.UpdateOp
 
-	// валидируем данные
-	if err := req.Validate(); err != nil {
+	// проверяем, что в пространстве есть заметка с таким айди
+	note, err := h.space.GetNoteByID(c.Request().Context(), req.NoteID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrNoteNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+		}
+
 		// ошибки запроса
 		errs := []error{
 			model.ErrInvalidSpaceID, model.ErrFieldTextNotFilled,
-			model.ErrNoteIdNotFilled, model.ErrFieldUserNotFilled,
-			model.ErrFieldTypeNotFilled, model.ErrUpdateNotTextNote,
-			rabbit.ErrInvalidOperation,
+			model.ErrFieldUserNotFilled, model.ErrFieldTypeNotFilled,
+			model.ErrUpdateNotTextNote,
 		}
 
 		if errorsIn(err, errs) {
@@ -187,16 +186,6 @@ func (h *handler) UpdateNote(c echo.Context) error {
 		}
 
 		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	// проверяем, что в пространстве есть заметка с таким айди
-	note, err := h.space.GetNoteByID(c.Request().Context(), req.NoteID)
-	if err != nil {
-		if errors.Is(err, api_errors.ErrNoteNotFound) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
-		}
-
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
@@ -208,8 +197,6 @@ func (h *handler) UpdateNote(c echo.Context) error {
 	if note.Type != model.TextNoteType {
 		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": model.ErrUpdateNotTextNote.Error()})
 	}
-
-	req.ID = uuid.New()
 
 	if err := h.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
@@ -382,6 +369,10 @@ func (h *handler) DeleteNote(c echo.Context) error {
 
 	err = h.space.DeleteNote(c.Request().Context(), req)
 	if err != nil {
+		if errors.Is(err, model.ErrInvalidSpaceID) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()})
+		}
+
 		// внутренняя ошибка / ошибка валидации
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -389,6 +380,13 @@ func (h *handler) DeleteNote(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
 }
 
+// @Summary		Удалить все заметки в пространстве
+// @Description	Удалить все заметки в пространстве
+// @Param          space_id   path      string  true  "айди пространства"
+// @Success		202 {object}    map[string]string "Айди запроса"
+// @Failure		400	{object}	map[string]string "Пространства не существует"
+// @Failure		500	{object}	map[string]string "Внутренняя ошибка"
+// @Router			/spaces/{space_id}/notes/delete [delete]
 func (h *handler) DeleteAllNotes(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {

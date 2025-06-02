@@ -26,7 +26,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  123,
 					Personal: true,
 				},
@@ -41,7 +41,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  123,
 					Personal: true,
 				},
@@ -57,7 +57,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  123,
 					Personal: true,
 				},
@@ -73,7 +73,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  123,
 					Personal: true,
 				},
@@ -100,7 +100,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Creator:  123,
 					Personal: true,
 				},
@@ -116,7 +116,7 @@ func TestUserValidate(t *testing.T) {
 				PersonalSpace: &Space{
 					ID:       uuid.New(),
 					Name:     "space",
-					Created:  time.Now(),
+					Created:  time.Now().Unix(),
 					Personal: true,
 				},
 				Timezone: "timezone",

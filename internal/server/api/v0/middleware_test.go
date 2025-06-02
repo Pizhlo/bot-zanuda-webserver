@@ -10,14 +10,10 @@ import (
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
-	"webserver/internal/service/space"
-	"webserver/internal/service/user"
-	"webserver/mocks"
 
 	"bou.ke/monkey"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/undefinedlabs/go-mpatch"
@@ -25,13 +21,10 @@ import (
 
 // тест для проверки middleware
 func TestValidateNoteRequest_CreateNote(t *testing.T) {
-	logrus.SetLevel(logrus.DebugLevel)
-
 	type test struct {
 		name         string
 		req          rabbit.CreateNoteRequest
 		expectedNote rabbit.CreateNoteRequest
-		dbErr        bool // должна ли база вернуть ошибку
 		// ошибки разных репозиториев
 		err              error            // ошибки валидации и т.п.
 		methodErrors     map[string]error // название метода : ошибка
@@ -75,7 +68,6 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 		},
 		{
 			name:         "db err: unknown user",
-			dbErr:        true,
 			err:          api_errors.ErrUnknownUser,
 			methodErrors: map[string]error{"CheckUser": api_errors.ErrUnknownUser},
 			req: rabbit.CreateNoteRequest{
@@ -89,7 +81,6 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 		},
 		{
 			name:         "db err: space not exists",
-			dbErr:        true,
 			err:          api_errors.ErrSpaceNotExists,
 			methodErrors: map[string]error{"GetSpaceByID": api_errors.ErrSpaceNotExists},
 			req: rabbit.CreateNoteRequest{
@@ -103,7 +94,6 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 		},
 		{
 			name:         "db err: space belongs another user",
-			dbErr:        true,
 			err:          api_errors.ErrSpaceNotBelongsUser,
 			methodErrors: map[string]error{"IsUserInSpace": api_errors.ErrSpaceNotBelongsUser},
 			req: rabbit.CreateNoteRequest{
@@ -120,20 +110,12 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
-	spaceCache := mocks.NewMockspaceCache(ctrl)
-	saver := mocks.NewMockdbWorker(ctrl)
+	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(ctrl)
 
-	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+	handler, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock))
+	require.NoError(t, err)
 
-	userRepo := mocks.NewMockuserRepo(ctrl)
-	userCache := mocks.NewMockuserCache(ctrl)
-
-	userSrv := user.New(userRepo, userCache)
-
-	handler := New(spaceSrv, userSrv)
-
-	r, err := runTestServer(handler)
+	r, err := runTestServerWithMiddleware(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -141,40 +123,27 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.dbErr {
+			if tt.methodErrors != nil {
 				if err, ok := tt.methodErrors["CheckUser"]; ok {
-					userRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+					userSrvMock.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(err)
 				}
 
 				if err, ok := tt.methodErrors["GetSpaceByID"]; ok {
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
-
-					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
-					spaceRepo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+					userSrvMock.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+					spaceSrvMock.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
 				}
 
 				if err, ok := tt.methodErrors["IsUserInSpace"]; ok {
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
-					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+					userSrvMock.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+					spaceSrvMock.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
 
-					spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
+					spaceSrvMock.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
 				}
-			}
-
-			// positive case
-			if tt.err == nil {
-				userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
-					ID: 1,
-				}, nil)
-
-				spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-				spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
-					ID: generatedID,
-				}, nil)
-
-				saver.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
+			} else {
+				userSrvMock.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+				spaceSrvMock.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+				spaceSrvMock.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				spaceSrvMock.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -182,7 +151,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 			bodyJSON, err := json.Marshal(tt.req)
 			require.NoError(t, err)
 
-			resp := testRequest(t, ts, http.MethodPost, "/api/v0/spaces/notes/create", bytes.NewReader(bodyJSON))
+			resp := testRequest(t, ts, http.MethodPost, "/api/v0/spaces/notes/create", "", bytes.NewReader(bodyJSON))
 			defer resp.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
@@ -200,8 +169,6 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 }
 
 func TestValidateNoteRequest_UpdateNote(t *testing.T) {
-	logrus.SetLevel(logrus.DebugLevel)
-
 	type test struct {
 		name         string
 		req          rabbit.UpdateNoteRequest
@@ -300,20 +267,12 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	spaceRepo := mocks.NewMockspaceRepo(ctrl)
-	spaceCache := mocks.NewMockspaceCache(ctrl)
-	saver := mocks.NewMockdbWorker(ctrl)
+	spaceSrv, userSrv, authSrv := createMockServices(ctrl)
 
-	spaceSrv := space.New(spaceRepo, spaceCache, saver)
+	handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+	require.NoError(t, err)
 
-	userRepo := mocks.NewMockuserRepo(ctrl)
-	userCache := mocks.NewMockuserCache(ctrl)
-
-	userSrv := user.New(userRepo, userCache)
-
-	handler := New(spaceSrv, userSrv)
-
-	r, err := runTestServer(handler)
+	r, err := runTestServerWithMiddleware(handler)
 	require.NoError(t, err)
 
 	ts := httptest.NewServer(r)
@@ -323,40 +282,28 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.dbErr {
 				if err, ok := tt.methodErrors["CheckUser"]; ok {
-					userRepo.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{}, err)
+					userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(err)
 				}
 
 				if err, ok := tt.methodErrors["GetSpaceByID"]; ok {
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
-
-					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
-					spaceRepo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
+					userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+					spaceSrv.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
 				}
 
 				if err, ok := tt.methodErrors["IsUserInSpace"]; ok {
-					userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{ID: 1}, nil)
-					spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
-
-					spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
+					userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+					spaceSrv.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+					spaceSrv.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
 				}
 			}
 
 			// positive case
 			if tt.err == nil {
-				userCache.EXPECT().GetUser(gomock.Any(), gomock.Any()).Return(model.User{
-					ID: 1,
-				}, nil)
-
-				spaceRepo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil)
-
-				spaceRepo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-				spaceCache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{
-					ID: generatedID,
-				}, nil)
-
-				saver.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
+				userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(nil)
+				spaceSrv.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, nil)
+				spaceSrv.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.dbNote, nil)
+				spaceSrv.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
 					assert.Equal(t, tt.expectedNote, actualReq, "requests not equal")
 				})
 			}
@@ -364,7 +311,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 			bodyJSON, err := json.Marshal(tt.req)
 			require.NoError(t, err)
 
-			resp := testRequest(t, ts, http.MethodPatch, "/api/v0/spaces/notes/update", bytes.NewReader(bodyJSON))
+			resp := testRequest(t, ts, http.MethodPatch, "/api/v0/spaces/notes/update", "", bytes.NewReader(bodyJSON))
 			defer resp.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)

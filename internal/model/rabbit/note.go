@@ -1,24 +1,17 @@
 package rabbit
 
 import (
-	"errors"
 	"webserver/internal/model"
 
 	"github.com/google/uuid"
 )
 
-type Operation string
-
-var (
-	CreateOp    Operation = "create"
-	UpdateOp    Operation = "update"
-	DeleteOp    Operation = "delete"
-	DeleteAllOp Operation = "delete_all"
-)
-
-var (
-	ErrInvalidOperation = errors.New("invalid operation")
-)
+// интерфейс для всех моделей rabbit
+//
+//go:generate mockgen -source ./note.go -destination=../../../mocks/rabbit.go -package=mocks
+type Model interface {
+	Validate() error
+}
 
 //	{
 //	  "user_id": 12345678,
@@ -40,7 +33,10 @@ type CreateNoteRequest struct {
 }
 
 func (s *CreateNoteRequest) Validate() error {
-	// проверяем не все поля, т.к. не все поля заполнены из запроса
+	if s.ID == uuid.Nil {
+		return model.ErrIDNotFilled
+	}
+
 	if s.UserID == 0 {
 		return model.ErrFieldUserNotFilled
 	}
@@ -90,6 +86,10 @@ type UpdateNoteRequest struct {
 }
 
 func (s *UpdateNoteRequest) Validate() error {
+	if s.ID == uuid.Nil {
+		return model.ErrIDNotFilled
+	}
+
 	if s.UserID == 0 {
 		return model.ErrFieldUserNotFilled
 	}
@@ -132,7 +132,7 @@ func (s *DeleteNoteRequest) Validate() error {
 	}
 
 	if s.NoteID == uuid.Nil {
-		return model.ErrNoteIdNotFilled
+		return model.ErrIDNotFilled
 	}
 
 	if s.Created == 0 {

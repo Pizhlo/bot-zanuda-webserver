@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"webserver/internal/model"
+	api_model "webserver/internal/model"
 	"webserver/internal/model/rabbit"
 	"webserver/mocks"
 
@@ -30,7 +30,7 @@ func TestCreateNote(t *testing.T) {
 				UserID:    1234,
 				SpaceID:   uuid.New(),
 				Text:      "test note",
-				Type:      model.TextNoteType,
+				Type:      api_model.TextNoteType,
 				Created:   5678,
 				Operation: rabbit.CreateOp,
 			},
@@ -41,10 +41,10 @@ func TestCreateNote(t *testing.T) {
 				ID:      uuid.New(),
 				SpaceID: uuid.New(),
 				Text:    "test note",
-				Type:    model.TextNoteType,
+				Type:    api_model.TextNoteType,
 				Created: 5678,
 			},
-			err: model.ErrFieldUserNotFilled,
+			err: api_model.ErrFieldUserNotFilled,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestCreateNote(t *testing.T) {
 					}).Return(nil)
 			}
 
-			err := w.CreateNote(context.Background(), tt.req)
+			err := w.CreateNote(context.Background(), &tt.req)
 			if tt.err != nil {
 				assert.EqualError(t, err, tt.err.Error())
 			} else {
@@ -116,7 +116,7 @@ func TestUpdateNote(t *testing.T) {
 				Text:    "test note",
 				Created: 5678,
 			},
-			err: model.ErrFieldUserNotFilled,
+			err: api_model.ErrFieldUserNotFilled,
 		},
 	}
 
@@ -151,7 +151,7 @@ func TestUpdateNote(t *testing.T) {
 					}).Return(nil)
 			}
 
-			err := w.UpdateNote(context.Background(), tt.req)
+			err := w.UpdateNote(context.Background(), &tt.req)
 			if tt.err != nil {
 				assert.EqualError(t, err, tt.err.Error())
 			} else {
@@ -186,7 +186,7 @@ func TestDeleteNote(t *testing.T) {
 				SpaceID: uuid.New(),
 				Created: 5678,
 			},
-			err: model.ErrNoteIdNotFilled,
+			err: api_model.ErrIDNotFilled,
 		},
 	}
 
@@ -221,7 +221,7 @@ func TestDeleteNote(t *testing.T) {
 					}).Return(nil)
 			}
 
-			err := w.DeleteNote(context.Background(), tt.req)
+			err := w.DeleteNote(context.Background(), &tt.req)
 			if tt.err != nil {
 				assert.EqualError(t, err, tt.err.Error())
 			} else {

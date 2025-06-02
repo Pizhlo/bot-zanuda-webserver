@@ -39,6 +39,7 @@ require (
 require (
 	bou.ke/monkey v1.0.2
 	github.com/elastic/go-elasticsearch/v8 v8.17.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0

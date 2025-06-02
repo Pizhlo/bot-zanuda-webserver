@@ -1,15 +1,88 @@
 package v0
 
 import (
-	"webserver/internal/service/space"
-	"webserver/internal/service/user"
+	"context"
+	"errors"
+	"webserver/internal/model"
+	"webserver/internal/model/rabbit"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type handler struct {
-	space *space.Space
-	user  *user.User
+	space spaceService
+	user  userService
+	auth  authService
 }
 
-func New(space *space.Space, user *user.User) *handler {
-	return &handler{space: space, user: user}
+// интерфейс сервиса пространств. управляет пространствами, а также принадлежащими им записями: заметки, напоминания, етс
+//
+//go:generate mockgen -source ./handler.go -destination=../../../../mocks/handler.go -package=mocks
+type spaceService interface {
+	CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error
+	CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error
+	DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error
+	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
+	GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error)
+	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error)
+	GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error)
+	GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error)
+	GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error)
+	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
+	IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error
+	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
+	UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error
+}
+
+type userService interface {
+	CheckUser(ctx context.Context, tgID int64) error
+}
+
+type authService interface {
+	CheckToken(authHeader string) (*jwt.Token, error)
+	GetPayload(token *jwt.Token) (jwt.MapClaims, bool)
+	ParseToken(tokenString string) (*jwt.Token, error)
+}
+
+type handlerOption func(*handler)
+
+func WithSpaceService(space spaceService) handlerOption {
+	return func(h *handler) {
+		h.space = space
+	}
+}
+
+func WithUserService(user userService) handlerOption {
+	return func(h *handler) {
+		h.user = user
+	}
+}
+
+func WithAuthService(auth authService) handlerOption {
+	return func(h *handler) {
+		h.auth = auth
+	}
+}
+
+func New(opts ...handlerOption) (*handler, error) {
+	h := &handler{}
+
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	if h.space == nil {
+		return nil, errors.New("space is nil")
+	}
+
+	if h.user == nil {
+		return nil, errors.New("user is nil")
+	}
+
+	if h.auth == nil {
+		return nil, errors.New("auth is nil")
+	}
+
+	return h, nil
 }

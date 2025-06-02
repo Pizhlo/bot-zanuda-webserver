@@ -1,26 +1,4 @@
 definitions:
-  model.CreateNoteRequest:
-    properties:
-      created:
-        description: дата обращения в Unix в UTC
-        type: integer
-      file:
-        description: название файла в Minio (если есть)
-        type: string
-      space_id:
-        description: айди пространства, куда сохранить заметку
-        type: string
-      text:
-        description: текст заметки
-        type: string
-      type:
-        allOf:
-        - $ref: '#/definitions/model.NoteType'
-        description: 'тип заметки: текстовая, фото, видео, етс'
-      user_id:
-        description: кто создал заметку
-        type: integer
-    type: object
   model.GetNote:
     properties:
       created:
@@ -100,8 +78,8 @@ definitions:
   model.Space:
     properties:
       created:
-        description: указывается в часовом поясе пользователя-создателя
-        type: string
+        description: unix in UTC
+        type: integer
       creator:
         description: айди пользователя-создателя в телеге
         type: integer
@@ -112,28 +90,6 @@ definitions:
       personal:
         description: личное / совместное пространство
         type: boolean
-    type: object
-  model.UpdateNoteRequest:
-    properties:
-      created:
-        description: дата обращения в Unix в UTC
-        type: integer
-      file:
-        description: название файла в Minio (если есть)
-        type: string
-      id:
-        description: айди запроса, генерируется в процессе обработки
-        type: string
-      note_id:
-        description: айди заметки
-        type: string
-      space_id:
-        type: string
-      text:
-        description: новый текст
-        type: string
-      user_id:
-        type: integer
     type: object
   model.User:
     properties:
@@ -147,6 +103,70 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  rabbit.CreateNoteRequest:
+    properties:
+      created:
+        description: дата обращения в Unix в UTC
+        type: integer
+      file:
+        description: название файла в Minio (если есть)
+        type: string
+      operation:
+        description: 'какое действие сделать: создать, удалить, редактировать'
+        type: string
+      space_id:
+        description: айди пространства, куда сохранить заметку
+        type: string
+      text:
+        description: текст заметки
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.NoteType'
+        description: 'тип заметки: текстовая, фото, видео, етс'
+      user_id:
+        description: кто создал заметку
+        type: integer
+    type: object
+  rabbit.CreateSpaceRequest:
+    properties:
+      created:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      operation:
+        type: string
+      user_id:
+        description: создатель пространства
+        type: integer
+    type: object
+  rabbit.UpdateNoteRequest:
+    properties:
+      created:
+        description: дата обращения в Unix в UTC
+        type: integer
+      file:
+        description: название файла в Minio (если есть)
+        type: string
+      id:
+        description: айди запроса, генерируется в процессе обработки
+        type: string
+      note_id:
+        description: айди заметки
+        type: string
+      operation:
+        description: 'какое действие сделать: создать, удалить, редактировать'
+        type: string
+      space_id:
+        type: string
+      text:
+        description: новый текст
+        type: string
+      user_id:
+        type: integer
     type: object
   sql.NullString:
     properties:
@@ -177,7 +197,7 @@ paths:
         "200":
           description: OK
       summary: Проверить состояние сервера и соединения
-  /spaces/{id}/notes:
+  /spaces/{space_id}/notes:
     get:
       description: Запрос на получение всех заметок из личного пространства пользователя
       responses:
@@ -202,73 +222,6 @@ paths:
               type: string
             type: object
       summary: Запрос на получение всех заметок
-  /spaces/{id}/notes/{type}:
-    get:
-      description: 'Получить все заметки определенного типа: текстовые, фото, етс'
-      parameters:
-      - description: ID пространства
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 'тип заметки: текст, фото, етс'
-        in: path
-        name: type
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.GetNote'
-            type: array
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Нет заметок
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Получить все заметки одного типа
-  /spaces/{id}/notes/types:
-    get:
-      description: Получить список всех типов заметок и их количество
-      parameters:
-      - description: ID пространства
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.NoteTypeResponse'
-            type: array
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Нет заметок
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Получить все типы заметок
   /spaces/{space_id}/notes/{note_id}/delete:
     delete:
       parameters:
@@ -308,6 +261,141 @@ paths:
               type: string
             type: object
       summary: Удалить заметку по айди
+  /spaces/{space_id}/notes/{type}:
+    get:
+      description: 'Получить все заметки определенного типа: текстовые, фото, етс'
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: 'тип заметки: текст, фото, етс'
+        in: path
+        name: type
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GetNote'
+            type: array
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Нет заметок
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все заметки одного типа
+  /spaces/{space_id}/notes/delete:
+    delete:
+      description: Удалить все заметки в пространстве
+      parameters:
+      - description: айди пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Айди запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Пространства не существует
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить все заметки в пространстве
+  /spaces/{space_id}/notes/types:
+    get:
+      description: Получить список всех типов заметок и их количество
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.NoteTypeResponse'
+            type: array
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Нет заметок
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все типы заметок
+  /spaces/create:
+    post:
+      description: Запрос на создание пространства
+      parameters:
+      - description: |-
+          создать пространство:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          текст заметки
+          тип заметки: текстовый, фото, видео, и т.п.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rabbit.CreateSpaceRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Невалидный токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на создание пространства
   /spaces/notes/create:
     post:
       description: Запрос на создание заметки с текстом. Создается в указанном пространстве
@@ -322,7 +410,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/model.CreateNoteRequest'
+          $ref: '#/definitions/rabbit.CreateNoteRequest'
       responses:
         "202":
           description: Accepted
@@ -389,7 +477,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/model.UpdateNoteRequest'
+          $ref: '#/definitions/rabbit.UpdateNoteRequest'
       responses:
         "202":
           description: Accepted

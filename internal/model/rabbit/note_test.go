@@ -20,6 +20,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "positive case",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				SpaceID:   uuid.New(),
@@ -29,8 +30,21 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "ID not filled",
+			model: CreateNoteRequest{
+				UserID:    1,
+				Text:      "test",
+				SpaceID:   uuid.New(),
+				Type:      model.TextNoteType,
+				Created:   123,
+				Operation: CreateOp,
+			},
+			err: model.ErrIDNotFilled,
+		},
+		{
 			name: "user ID not filled",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				Text:      "test",
 				SpaceID:   uuid.New(),
 				Type:      model.TextNoteType,
@@ -42,6 +56,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "text not filled",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				SpaceID:   uuid.New(),
 				Type:      model.TextNoteType,
@@ -53,6 +68,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "SpaceID not filled",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				Type:      model.TextNoteType,
@@ -64,6 +80,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "Type field not filled",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				SpaceID:   uuid.New(),
@@ -75,6 +92,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "Created field not filled",
 			model: CreateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				SpaceID:   uuid.New(),
@@ -86,6 +104,7 @@ func TestCreateNoteRequestValidate(t *testing.T) {
 		{
 			name: "operation not filled",
 			model: CreateNoteRequest{
+				ID:      uuid.New(),
 				UserID:  1,
 				Text:    "test",
 				SpaceID: uuid.New(),
@@ -119,6 +138,7 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		{
 			name: "positive case",
 			model: UpdateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				SpaceID:   uuid.New(),
@@ -127,8 +147,19 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "ID not filled",
+			model: UpdateNoteRequest{
+				Text:      "test",
+				SpaceID:   uuid.New(),
+				Created:   123,
+				Operation: UpdateOp,
+			},
+			err: model.ErrIDNotFilled,
+		},
+		{
 			name: "user ID not filled",
 			model: UpdateNoteRequest{
+				ID:        uuid.New(),
 				Text:      "test",
 				SpaceID:   uuid.New(),
 				Created:   123,
@@ -139,6 +170,7 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		{
 			name: "text not filled",
 			model: UpdateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				SpaceID:   uuid.New(),
 				Created:   123,
@@ -149,6 +181,7 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		{
 			name: "SpaceID not filled",
 			model: UpdateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				Created:   123,
@@ -159,6 +192,7 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		{
 			name: "Created field not filled",
 			model: UpdateNoteRequest{
+				ID:        uuid.New(),
 				UserID:    1,
 				Text:      "test",
 				SpaceID:   uuid.New(),
@@ -169,6 +203,7 @@ func TestUpdateNoteRequestValidate(t *testing.T) {
 		{
 			name: "operation not filled",
 			model: UpdateNoteRequest{
+				ID:      uuid.New(),
 				UserID:  1,
 				Text:    "test",
 				SpaceID: uuid.New(),
@@ -236,7 +271,7 @@ func TestDeleteNoteRequestValidate(t *testing.T) {
 				Created:   123,
 				Operation: DeleteOp,
 			},
-			err: model.ErrNoteIdNotFilled,
+			err: model.ErrIDNotFilled,
 		},
 		{
 			name: "Created field not filled",

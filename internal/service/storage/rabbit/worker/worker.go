@@ -15,7 +15,8 @@ type worker struct {
 	channel channel
 
 	// queues
-	notesTopicName amqp.Queue
+	notesTopic  amqp.Queue
+	spacesTopic amqp.Queue
 }
 
 //go:generate mockgen -source ./worker.go -destination=../../../../../mocks/rabbit.go -package=mocks
@@ -57,7 +58,21 @@ func (s *worker) Connect() error {
 		return fmt.Errorf("error creating queue %s: %+v", s.cfg.NotesTopicName, err)
 	}
 
-	s.notesTopicName = notesTopic
+	s.notesTopic = notesTopic
+
+	spacesTopic, err := ch.QueueDeclare(
+		s.cfg.SpacesTopicName, // name
+		true,                  // durable
+		false,                 // delete when unused
+		false,                 // exclusive
+		false,                 // no-wait
+		nil,                   // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("error creating queue %s: %+v", s.cfg.SpacesTopicName, err)
+	}
+
+	s.spacesTopic = spacesTopic
 
 	return nil
 }

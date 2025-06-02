@@ -21,15 +21,48 @@ type server struct {
 	}
 }
 
-func New(cfg *Config) *server {
-	return &server{addr: cfg.Address, api: struct{ h0 handler }{h0: cfg.HandlerV0}}
+type ServerOption func(*server)
+
+func WithAddr(addr string) ServerOption {
+	return func(s *server) {
+		s.addr = addr
+	}
+}
+
+func WithHandler(handler handler) ServerOption {
+	return func(s *server) {
+		s.api.h0 = handler
+	}
+}
+
+func New(opts ...ServerOption) (*server, error) {
+	server := &server{}
+
+	for _, opt := range opts {
+		opt(server)
+	}
+
+	if server.addr == "" {
+		return nil, errors.New("addr is required")
+	}
+
+	if server.api.h0 == nil {
+		return nil, errors.New("handler is required")
+	}
+
+	return server, nil
 }
 
 //go:generate mockgen -source ./server.go -destination=../../mocks/server.go -package=mocks
 type handler interface {
+	spaceHandler
 	noteHandler
 	middlewareHandler
 	healthHandler
+}
+
+type spaceHandler interface {
+	CreateSpace(c echo.Context) error
 }
 
 type noteHandler interface {
@@ -82,6 +115,9 @@ func (s *server) CreateRoutes() error {
 	apiv0.GET("health", s.api.h0.Health)
 
 	spaces := apiv0.Group("spaces")
+
+	// spaces
+	spaces.POST("/create", s.api.h0.CreateSpace)
 
 	// notes
 	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID)

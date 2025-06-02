@@ -34,6 +34,13 @@ func (h *handler) CreateSpace(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": "user id not found in payload"})
 	}
 
+	userID := int64(userIDStr.(float64))
+
+	err = h.user.CheckUser(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": err.Error()})
+	}
+
 	var req rabbit.CreateSpaceRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -49,7 +56,7 @@ func (h *handler) CreateSpace(c echo.Context) error {
 	req.ID = uuid.New()
 	req.Created = time.Now().In(time.UTC).Unix()
 	req.Operation = rabbit.CreateOp
-	req.UserID = int64(userIDStr.(float64))
+	req.UserID = userID
 
 	if err := h.space.CreateSpace(c.Request().Context(), req); err != nil {
 		if errors.Is(err, model.ErrFieldNameNotFilled) {

@@ -12,7 +12,13 @@ test:
 	go test -gcflags="-l" -race -v ./...
 
 all:
-    make lint
+	echo "linting..."
+	make lint
+	echo "testing..."
 	make test
+	echo "successfully finished"
 
-.PHONY: mocks swag lint test all
+run:
+	go run main.go
+
+.PHONY: mocks swag lint test all run

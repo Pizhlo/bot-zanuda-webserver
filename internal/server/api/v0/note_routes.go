@@ -56,10 +56,10 @@ func (h *handler) CreateNote(c echo.Context) error {
 		}
 
 		// внутренняя ошибка
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
-	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
+	return sendRequestID(c, req.ID)
 }
 
 func errorsIn(target error, errs []error) bool {
@@ -116,7 +116,7 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 				return c.NoContent(http.StatusNotFound)
 			}
 
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return sendInternalError(c, err)
 		}
 
 		return c.JSON(http.StatusOK, notes)
@@ -135,7 +135,7 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, notes)
@@ -186,7 +186,7 @@ func (h *handler) UpdateNote(c echo.Context) error {
 		}
 
 		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	if note.SpaceID != req.SpaceID {
@@ -200,11 +200,11 @@ func (h *handler) UpdateNote(c echo.Context) error {
 
 	if err := h.space.UpdateNote(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	// запрос принят в обработку
-	return c.JSON(http.StatusAccepted, map[string]string{"request_id": req.ID.String()})
+	return sendRequestID(c, req.ID)
 }
 
 //	@Summary		Получить все типы заметок
@@ -229,7 +229,7 @@ func (h *handler) GetNoteTypes(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, types)
@@ -267,7 +267,7 @@ func (h *handler) GetNotesByType(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, notes)
@@ -306,7 +306,7 @@ func (h *handler) SearchNoteByText(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, notes)
@@ -340,7 +340,7 @@ func (h *handler) DeleteNote(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	// проверяем, что в пространстве есть заметка с таким айди
@@ -351,7 +351,7 @@ func (h *handler) DeleteNote(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"bad request": err.Error()})
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	// заметка не из этого пространства
@@ -374,10 +374,10 @@ func (h *handler) DeleteNote(c echo.Context) error {
 		}
 
 		// внутренняя ошибка / ошибка валидации
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
-	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
+	return sendRequestID(c, req.ID)
 }
 
 // @Summary		Удалить все заметки в пространстве
@@ -400,7 +400,7 @@ func (h *handler) DeleteAllNotes(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 		}
 
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
 	req := rabbit.DeleteAllNotesRequest{
@@ -412,10 +412,10 @@ func (h *handler) DeleteAllNotes(c echo.Context) error {
 
 	if err := h.space.DeleteAllNotes(c.Request().Context(), req); err != nil {
 		// внутренняя ошибка / ошибка валидации
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return sendInternalError(c, err)
 	}
 
-	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
+	return sendRequestID(c, req.ID)
 }
 
 func getSpaceIDFromPath(c echo.Context) (uuid.UUID, error) {
@@ -428,4 +428,12 @@ func getNoteIDFromPath(c echo.Context) (uuid.UUID, error) {
 	noteIDStr := c.Param("note_id")
 
 	return uuid.Parse(noteIDStr)
+}
+
+func sendRequestID(c echo.Context, reqID uuid.UUID) error {
+	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
+}
+
+func sendInternalError(c echo.Context, err error) error {
+	return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 }

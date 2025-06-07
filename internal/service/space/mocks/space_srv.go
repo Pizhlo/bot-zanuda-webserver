@@ -37,12 +37,28 @@ func (m *Mockrepo) EXPECT() *MockrepoMockRecorder {
 	return m.recorder
 }
 
+// CheckInvitation mocks base method.
+func (m *Mockrepo) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckInvitation", ctx, from, to, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckInvitation indicates an expected call of CheckInvitation.
+func (mr *MockrepoMockRecorder) CheckInvitation(ctx, from, to, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckInvitation", reflect.TypeOf((*Mockrepo)(nil).CheckInvitation), ctx, from, to, spaceID)
+}
+
 // CheckParticipant mocks base method.
-func (m *Mockrepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+func (m *Mockrepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckParticipant", ctx, userID, spaceID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CheckParticipant indicates an expected call of CheckParticipant.
@@ -141,6 +157,36 @@ func (mr *MockrepoMockRecorder) GetSpaceByID(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpaceByID", reflect.TypeOf((*Mockrepo)(nil).GetSpaceByID), ctx, id)
 }
 
+// IsSpaceExists mocks base method.
+func (m *Mockrepo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSpaceExists", ctx, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSpaceExists indicates an expected call of IsSpaceExists.
+func (mr *MockrepoMockRecorder) IsSpaceExists(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSpaceExists", reflect.TypeOf((*Mockrepo)(nil).IsSpaceExists), ctx, spaceID)
+}
+
+// IsSpacePersonal mocks base method.
+func (m *Mockrepo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSpacePersonal", ctx, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSpacePersonal indicates an expected call of IsSpacePersonal.
+func (mr *MockrepoMockRecorder) IsSpacePersonal(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSpacePersonal", reflect.TypeOf((*Mockrepo)(nil).IsSpacePersonal), ctx, spaceID)
+}
+
 // SearchNoteByText mocks base method.
 func (m *Mockrepo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
 	m.ctrl.T.Helper()
@@ -180,11 +226,12 @@ func (m *MockspaceRepo) EXPECT() *MockspaceRepoMockRecorder {
 }
 
 // CheckParticipant mocks base method.
-func (m *MockspaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+func (m *MockspaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckParticipant", ctx, userID, spaceID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CheckParticipant indicates an expected call of CheckParticipant.
@@ -206,6 +253,36 @@ func (m *MockspaceRepo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.S
 func (mr *MockspaceRepoMockRecorder) GetSpaceByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpaceByID", reflect.TypeOf((*MockspaceRepo)(nil).GetSpaceByID), ctx, id)
+}
+
+// IsSpaceExists mocks base method.
+func (m *MockspaceRepo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSpaceExists", ctx, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSpaceExists indicates an expected call of IsSpaceExists.
+func (mr *MockspaceRepoMockRecorder) IsSpaceExists(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSpaceExists", reflect.TypeOf((*MockspaceRepo)(nil).IsSpaceExists), ctx, spaceID)
+}
+
+// IsSpacePersonal mocks base method.
+func (m *MockspaceRepo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSpacePersonal", ctx, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSpacePersonal indicates an expected call of IsSpacePersonal.
+func (mr *MockspaceRepoMockRecorder) IsSpacePersonal(ctx, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSpacePersonal", reflect.TypeOf((*MockspaceRepo)(nil).IsSpacePersonal), ctx, spaceID)
 }
 
 // MocknoteRepo is a mock of noteRepo interface.
@@ -382,6 +459,20 @@ func (m *MockdbWorker) EXPECT() *MockdbWorkerMockRecorder {
 	return m.recorder
 }
 
+// AddParticipant mocks base method.
+func (m *MockdbWorker) AddParticipant(ctx context.Context, req rabbit.Model) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddParticipant", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddParticipant indicates an expected call of AddParticipant.
+func (mr *MockdbWorkerMockRecorder) AddParticipant(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddParticipant", reflect.TypeOf((*MockdbWorker)(nil).AddParticipant), ctx, req)
+}
+
 // CreateNote mocks base method.
 func (m *MockdbWorker) CreateNote(ctx context.Context, req rabbit.Model) error {
 	m.ctrl.T.Helper()
@@ -489,6 +580,44 @@ func (mr *MockspaceEditorMockRecorder) CreateSpace(ctx, req interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSpace", reflect.TypeOf((*MockspaceEditor)(nil).CreateSpace), ctx, req)
 }
 
+// MockspaceChecker is a mock of spaceChecker interface.
+type MockspaceChecker struct {
+	ctrl     *gomock.Controller
+	recorder *MockspaceCheckerMockRecorder
+}
+
+// MockspaceCheckerMockRecorder is the mock recorder for MockspaceChecker.
+type MockspaceCheckerMockRecorder struct {
+	mock *MockspaceChecker
+}
+
+// NewMockspaceChecker creates a new mock instance.
+func NewMockspaceChecker(ctrl *gomock.Controller) *MockspaceChecker {
+	mock := &MockspaceChecker{ctrl: ctrl}
+	mock.recorder = &MockspaceCheckerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockspaceChecker) EXPECT() *MockspaceCheckerMockRecorder {
+	return m.recorder
+}
+
+// CheckInvitation mocks base method.
+func (m *MockspaceChecker) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckInvitation", ctx, from, to, spaceID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckInvitation indicates an expected call of CheckInvitation.
+func (mr *MockspaceCheckerMockRecorder) CheckInvitation(ctx, from, to, spaceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckInvitation", reflect.TypeOf((*MockspaceChecker)(nil).CheckInvitation), ctx, from, to, spaceID)
+}
+
 // MocknoteEditor is a mock of noteEditor interface.
 type MocknoteEditor struct {
 	ctrl     *gomock.Controller
@@ -566,4 +695,41 @@ func (m *MocknoteEditor) UpdateNote(ctx context.Context, req rabbit.Model) error
 func (mr *MocknoteEditorMockRecorder) UpdateNote(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNote", reflect.TypeOf((*MocknoteEditor)(nil).UpdateNote), ctx, req)
+}
+
+// MockparticipantEditor is a mock of participantEditor interface.
+type MockparticipantEditor struct {
+	ctrl     *gomock.Controller
+	recorder *MockparticipantEditorMockRecorder
+}
+
+// MockparticipantEditorMockRecorder is the mock recorder for MockparticipantEditor.
+type MockparticipantEditorMockRecorder struct {
+	mock *MockparticipantEditor
+}
+
+// NewMockparticipantEditor creates a new mock instance.
+func NewMockparticipantEditor(ctrl *gomock.Controller) *MockparticipantEditor {
+	mock := &MockparticipantEditor{ctrl: ctrl}
+	mock.recorder = &MockparticipantEditorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockparticipantEditor) EXPECT() *MockparticipantEditorMockRecorder {
+	return m.recorder
+}
+
+// AddParticipant mocks base method.
+func (m *MockparticipantEditor) AddParticipant(ctx context.Context, req rabbit.Model) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddParticipant", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddParticipant indicates an expected call of AddParticipant.
+func (mr *MockparticipantEditorMockRecorder) AddParticipant(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddParticipant", reflect.TypeOf((*MockparticipantEditor)(nil).AddParticipant), ctx, req)
 }

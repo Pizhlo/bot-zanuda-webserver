@@ -53,7 +53,7 @@ func New(opts ...ServerOption) (*server, error) {
 	return server, nil
 }
 
-//go:generate mockgen -source ./server.go -destination=../../mocks/server.go -package=mocks
+//go:generate mockgen -source ./server.go -destination=./mocks/server.go -package=mocks
 type handler interface {
 	spaceHandler
 	noteHandler
@@ -63,6 +63,7 @@ type handler interface {
 
 type spaceHandler interface {
 	CreateSpace(c echo.Context) error
+	AddParticipant(c echo.Context) error
 }
 
 type noteHandler interface {
@@ -82,6 +83,7 @@ type healthHandler interface {
 
 type middlewareHandler interface {
 	ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc
+	Auth(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 func (s *server) Start() error {
@@ -117,7 +119,8 @@ func (s *server) CreateRoutes() error {
 	spaces := apiv0.Group("spaces")
 
 	// spaces
-	spaces.POST("/create", s.api.h0.CreateSpace)
+	spaces.POST("/create", s.api.h0.CreateSpace, s.api.h0.Auth)                        // создать пространство
+	spaces.POST("/:space_id/participants/add", s.api.h0.AddParticipant, s.api.h0.Auth) // добавить участника в пространство
 
 	// notes
 	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID)

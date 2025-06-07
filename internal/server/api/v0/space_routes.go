@@ -3,9 +3,12 @@ package v0
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
+	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
 
@@ -22,31 +25,9 @@ import (
 // @Failure		500	{object}	map[string]string "Внутренняя ошибка"
 // @Router			/spaces/create [post]
 func (h *handler) CreateSpace(c echo.Context) error {
-	authHeader := c.Request().Header.Get("Authorization")
-	if authHeader == "" {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": "token not found"})
-	}
-
-	token, err := h.auth.CheckToken(authHeader)
+	userID, err := getUserID(c)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": err.Error()})
-	}
-
-	payload, ok := h.auth.GetPayload(token)
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "payload in token not found"})
-	}
-
-	userIDStr, ok := payload["user_id"]
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": "user id not found in payload"})
-	}
-
-	userID := int64(userIDStr.(float64))
-
-	err = h.user.CheckUser(c.Request().Context(), userID)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": err.Error()})
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
 	}
 
 	var req rabbit.CreateSpaceRequest
@@ -72,8 +53,116 @@ func (h *handler) CreateSpace(c echo.Context) error {
 		}
 
 		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
+		return sendInternalError(c, err)
+	}
+
+	return sendRequestID(c, req.ID)
+}
+
+func (h *handler) AddParticipant(c echo.Context) error {
+	userID, err := getUserID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	spaceID, err := getSpaceIDFromPath(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	var req rabbit.AddParticipantRequest
+
+	body, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	// нельзя добавить самого себя
+	if req.Participant == userID {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "you can't add yourself as a participant"})
+	}
+
+	// 400 пользователя (которого пригласили) не существует
+	// проверяем, что существует пользователь, которого добавляем
+	exists, err := h.user.CheckUser(c.Request().Context(), req.Participant)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+	}
+
+	if !exists {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": fmt.Sprintf("user %d not found", req.Participant)})
+	}
+
+	// 400 не найдено совместное пространство с таким айди
+	// проверка, что пространство не личное (и что оно существует)
+	isPersonal, err := h.space.IsSpacePersonal(c.Request().Context(), spaceID)
+	if err != nil {
+		if errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "space not found"})
+		}
+
+		return sendInternalError(c, err)
+	}
+
+	// 400 пространство личное
+	if isPersonal {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "personal space"})
+	}
+
+	// 400 пользователь (который приглашает) не состоит в пространстве
+	exists, err = h.space.IsUserInSpace(c.Request().Context(), userID, spaceID)
+	if err != nil {
+		return sendInternalError(c, err)
+	}
+
+	if !exists {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("user %d not in space", userID)})
+	}
+
+	// 400 приглашенный пользователь уже в пространстве
+	exists, err = h.space.IsUserInSpace(c.Request().Context(), req.Participant, spaceID)
+	if err != nil {
+		return sendInternalError(c, err)
+	}
+
+	if exists {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("user %d already in space", req.Participant)})
+	}
+
+	// проверяем, что пользователь еще не приглашен в пространство
+	// 400 уже существует такое приглашение (пользователь А уже пригласил пользователя В)
+	exists, err = h.space.CheckInvitation(c.Request().Context(), userID, req.Participant, spaceID)
+	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusAccepted, map[string]string{"req_id": req.ID.String()})
+	if exists {
+		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "invitation already exists"})
+	}
+
+	req.ID = uuid.New()
+	req.Created = time.Now().In(time.UTC).Unix()
+	req.Operation = rabbit.AddParticipantOp
+	req.UserID = userID
+	req.SpaceID = spaceID
+
+	if err := h.space.AddParticipant(c.Request().Context(), req); err != nil {
+		return sendInternalError(c, err)
+	}
+
+	return sendRequestID(c, req.ID)
+}
+
+func getUserID(c echo.Context) (int64, error) {
+	userIDStr := c.Request().Header.Get("user_id")
+	if userIDStr == "" {
+		return 0, errors.New("user id not found in request header")
+	}
+
+	return strconv.ParseInt(userIDStr, 10, 64)
 }

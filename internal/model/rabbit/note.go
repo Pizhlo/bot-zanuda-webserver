@@ -8,7 +8,7 @@ import (
 
 // интерфейс для всех моделей rabbit
 //
-//go:generate mockgen -source ./note.go -destination=../../../mocks/rabbit.go -package=mocks
+//go:generate mockgen -source ./note.go -destination=./mocks/rabbit.go -package=mocks
 type Model interface {
 	Validate() error
 }

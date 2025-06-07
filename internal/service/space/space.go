@@ -27,10 +27,48 @@ func (s *space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 }
 
 // IsUserInSpace проверяет, состоит ли пользователь в пространстве
-func (s *space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error {
+func (s *space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
 	return s.repo.CheckParticipant(ctx, userID, spaceID)
 }
 
 func (s *space) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
 	return s.worker.CreateSpace(ctx, req)
+}
+
+func (s *space) AddParticipant(ctx context.Context, req rabbit.AddParticipantRequest) error {
+	return s.worker.AddParticipant(ctx, req)
+}
+
+func (s *space) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	space, err := s.cache.GetSpaceByID(ctx, spaceID)
+	if err != nil {
+		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return false, err
+		}
+	}
+
+	if err == nil {
+		return space.Personal, nil
+	}
+
+	return s.repo.IsSpacePersonal(ctx, spaceID)
+}
+
+func (s *space) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+	_, err := s.cache.GetSpaceByID(ctx, spaceID)
+	if err != nil {
+		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
+			return false, err
+		}
+	}
+
+	if err == nil {
+		return true, nil
+	}
+
+	return s.repo.IsSpaceExists(ctx, spaceID)
+}
+
+func (s *space) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
+	return s.repo.CheckInvitation(ctx, from, to, spaceID)
 }

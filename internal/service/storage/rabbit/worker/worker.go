@@ -19,7 +19,7 @@ type worker struct {
 	spacesTopic amqp.Queue
 }
 
-//go:generate mockgen -source ./worker.go -destination=../../../../../mocks/rabbit.go -package=mocks
+//go:generate mockgen -source ./worker.go -destination=./mocks/rabbit.go -package=mocks
 type channel interface {
 	PublishWithContext(_ context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error
 	Close() error

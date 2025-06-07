@@ -12,11 +12,11 @@ test:
 	go test -gcflags="-l" -race -v ./...
 
 all:
-	echo "linting..."
+	@echo "linting..."
 	make lint
-	echo "testing..."
+	@echo "testing..."
 	make test
-	echo "successfully finished"
+	@echo "successfully finished"
 
 run:
 	go run main.go

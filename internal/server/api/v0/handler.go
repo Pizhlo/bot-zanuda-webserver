@@ -18,25 +18,66 @@ type handler struct {
 
 // интерфейс сервиса пространств. управляет пространствами, а также принадлежащими им записями: заметки, напоминания, етс
 //
-//go:generate mockgen -source ./handler.go -destination=../../../../mocks/handler.go -package=mocks
+//go:generate mockgen -source ./handler.go -destination=./mocks/handler.go -package=mocks
 type spaceService interface {
-	CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error
+	noteCreator
+	spaceCreator
+	spaceChecker
+	noteDeleter
+	noteGetter
+	spaceGetter
+	noteSearcher
+	noteUpdater
+	participantAdder
+}
+
+type spaceCreator interface {
 	CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error
+}
+
+type spaceChecker interface {
+	IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error)
+	IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error)
+	IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error)
+	// проверяет, что приглашение от пользователя from для пользователя to в пространстве spaceID существует
+	CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error)
+}
+
+type participantAdder interface {
+	AddParticipant(ctx context.Context, req rabbit.AddParticipantRequest) error
+}
+
+type spaceGetter interface {
+	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
+}
+
+type noteCreator interface {
+	CreateNote(ctx context.Context, note rabbit.CreateNoteRequest) error
+}
+
+type noteUpdater interface {
+	UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error
+}
+
+type noteDeleter interface {
 	DeleteAllNotes(ctx context.Context, req rabbit.DeleteAllNotesRequest) error
 	DeleteNote(ctx context.Context, req rabbit.DeleteNoteRequest) error
+}
+
+type noteGetter interface {
 	GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error)
 	GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error)
 	GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error)
 	GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error)
 	GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error)
-	GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error)
-	IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) error
+}
+
+type noteSearcher interface {
 	SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error)
-	UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error
 }
 
 type userService interface {
-	CheckUser(ctx context.Context, tgID int64) error
+	CheckUser(ctx context.Context, tgID int64) (bool, error)
 }
 
 type authService interface {

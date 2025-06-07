@@ -165,45 +165,6 @@ where notes.notes.id = $1;`, noteID)
 	return note, nil
 }
 
-// CheckParticipant проверяет, является ли пользователь участником пространства
-func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) error {
-	space, err := db.GetSpaceByID(ctx, spaceID) // получаем информацию о пространстве (проверить, личное ли оно)
-	if err != nil {
-		return err
-	}
-
-	if space.Personal {
-		var userSpaceID uuid.UUID
-
-		// выясняем айди личного пространства пользователя
-		err := db.db.QueryRowContext(ctx, "select space_id from users.users where tg_id = $1", userID).
-			Scan(&userSpaceID)
-		if err != nil {
-			return err
-		}
-
-		if userSpaceID != spaceID {
-			return api_errors.ErrUserNotBelongsSpace
-		}
-
-		return nil
-	}
-
-	var id int
-
-	err = db.db.QueryRowContext(ctx, "select id from shared_spaces.participants where user_id = $1 and space_id = $2", userID, spaceID).
-		Scan(&id)
-	if err != nil {
-		return err
-	}
-
-	if id == 0 {
-		return api_errors.ErrUserNotBelongsSpace
-	}
-
-	return nil
-}
-
 // GetNotesTypes возвращает все типы заметок в пространстве и их количество (3 текстовых, 2 фото, и т.п.)
 func (db *spaceRepo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
 	res := []model.NoteTypeResponse{}

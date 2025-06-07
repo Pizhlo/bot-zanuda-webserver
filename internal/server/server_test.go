@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"webserver/mocks"
+	"webserver/internal/server/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
@@ -140,6 +140,11 @@ func TestCreateRoutes(t *testing.T) {
 			Method: http.MethodPost,
 			Path:   "/api/v0/spaces/create",
 			Name:   "webserver/internal/server.handler.CreateSpace-fm",
+		},
+		{
+			Method: http.MethodPost,
+			Path:   "/api/v0/spaces/:space_id/participants/add",
+			Name:   "webserver/internal/server.handler.AddParticipant-fm",
 		},
 	}
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
-	"webserver/mocks"
+	"webserver/internal/service/space/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -16,69 +17,68 @@ import (
 )
 
 func TestGetSpaceByID(t *testing.T) {
+	type fields struct {
+		repo   *mocks.Mockrepo
+		cache  *mocks.MockspaceCache
+		worker *mocks.MockdbWorker
+	}
+
 	type test struct {
-		name         string
-		spaceID      uuid.UUID
-		space        model.Space
-		methodErrors map[string]error
-		err          error
+		name       string
+		spaceID    uuid.UUID
+		space      model.Space
+		setupMocks func(mocks *fields)
+		err        error
+	}
+
+	space := model.Space{
+		ID:       uuid.New(),
+		Name:     "test",
+		Created:  time.Now(),
+		Creator:  123,
+		Personal: true,
 	}
 
 	tests := []test{
 		{
 			name:    "positive case: from cache",
 			spaceID: uuid.New(),
-			space: model.Space{
-				ID:       uuid.New(),
-				Name:     "test",
-				Created:  1236788,
-				Creator:  123,
-				Personal: true,
+			space:   space,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(space, nil)
 			},
 			err: nil,
 		},
 		{
 			name:    "positive case: from db",
 			spaceID: uuid.New(),
-			space: model.Space{
-				ID:       uuid.New(),
-				Name:     "test",
-				Created:  1236788,
-				Creator:  123,
-				Personal: true,
-			},
-			methodErrors: map[string]error{
-				"cache": api_errors.ErrSpaceNotExists,
+			space:   space,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, api_errors.ErrSpaceNotExists)
+				mocks.repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(space, nil)
 			},
 			err: nil,
 		},
 		{
 			name:    "error case: cache error",
 			spaceID: uuid.New(),
-			space: model.Space{
-				ID:       uuid.New(),
-				Name:     "test",
-				Created:  1236788,
-				Creator:  123,
-				Personal: true,
-			},
-			methodErrors: map[string]error{
-				"cache": errors.New("cache error"),
+			space:   space,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, errors.New("cache error"))
 			},
 			err: errors.New("cache error"),
 		},
 		{
 			name:    "error case: db error",
 			spaceID: uuid.New(),
-			space: model.Space{
-				ID:       uuid.New(),
-				Name:     "test",
-				Created:  1236788,
-				Creator:  123,
-				Personal: true,
-			},
-			methodErrors: map[string]error{
-				"db": api_errors.ErrSpaceNotExists,
+			space:   space,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, api_errors.ErrSpaceNotExists)
+				mocks.repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, api_errors.ErrSpaceNotExists)
 			},
 			err: api_errors.ErrSpaceNotExists,
 		},
@@ -92,23 +92,7 @@ func TestGetSpaceByID(t *testing.T) {
 			repo, cache, worker := createMockServices(ctrl)
 			spaceSrv := createTestSpace(t, repo, cache, worker)
 
-			// positive case
-			if tt.methodErrors == nil {
-				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(tt.space, nil)
-			}
-
-			if err, ok := tt.methodErrors["cache"]; ok {
-				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
-
-				if tt.err == nil {
-					repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(tt.space, nil)
-				}
-			}
-
-			if err, ok := tt.methodErrors["db"]; ok {
-				cache.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
-				repo.EXPECT().GetSpaceByID(gomock.Any(), gomock.Any()).Return(model.Space{}, err)
-			}
+			tt.setupMocks(&fields{repo: repo, cache: cache, worker: worker})
 
 			space, err := spaceSrv.GetSpaceByID(context.Background(), tt.spaceID)
 			if tt.err != nil {
@@ -123,11 +107,19 @@ func TestGetSpaceByID(t *testing.T) {
 }
 
 func TestIsUserInSpace(t *testing.T) {
+	type fields struct {
+		repo   *mocks.Mockrepo
+		cache  *mocks.MockspaceCache
+		worker *mocks.MockdbWorker
+	}
+
 	type test struct {
-		name    string
-		userID  int64
-		spaceID uuid.UUID
-		err     error
+		name       string
+		userID     int64
+		spaceID    uuid.UUID
+		exists     bool
+		err        error
+		setupMocks func(mocks *fields)
 	}
 
 	tests := []test{
@@ -135,13 +127,23 @@ func TestIsUserInSpace(t *testing.T) {
 			name:    "positive case",
 			userID:  123,
 			spaceID: uuid.New(),
-			err:     nil,
+			exists:  true,
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+			},
+			err: nil,
 		},
 		{
 			name:    "error case: db error",
 			userID:  123,
 			spaceID: uuid.New(),
+			exists:  false,
 			err:     errors.New("db error"),
+			setupMocks: func(mocks *fields) {
+				t.Helper()
+				mocks.repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, errors.New("db error"))
+			},
 		},
 	}
 
@@ -153,18 +155,15 @@ func TestIsUserInSpace(t *testing.T) {
 			repo, cache, worker := createMockServices(ctrl)
 			spaceSrv := createTestSpace(t, repo, cache, worker)
 
-			if tt.err == nil {
-				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-			} else {
-				repo.EXPECT().CheckParticipant(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.err)
-			}
+			tt.setupMocks(&fields{repo: repo, cache: cache, worker: worker})
 
-			err := spaceSrv.IsUserInSpace(context.Background(), tt.userID, tt.spaceID)
+			exists, err := spaceSrv.IsUserInSpace(context.Background(), tt.userID, tt.spaceID)
 			if tt.err != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, tt.err.Error())
 			} else {
 				require.NoError(t, err)
+				assert.Equal(t, tt.exists, exists)
 			}
 		})
 	}

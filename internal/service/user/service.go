@@ -12,12 +12,14 @@ type User struct {
 	cache userCache
 }
 
-//go:generate mockgen -source ./user.go -destination=../../../mocks/user_srv.go -package=mocks
+//go:generate mockgen -source ./service.go -destination=./mocks/user_srv.go -package=mocks
 type userRepo interface {
 	GetUser(ctx context.Context, tgID int64) (model.User, error)
+	CheckUser(ctx context.Context, tgID int64) (bool, error)
 }
 type userCache interface {
 	GetUser(ctx context.Context, tgID int64) (model.User, error)
+	CheckUser(ctx context.Context, tgID int64) (bool, error)
 }
 
 type UserOption func(*User)
@@ -53,20 +55,22 @@ func WithCache(cache userCache) UserOption {
 }
 
 // CheckUser проверяет существование пользователя по tgID
-func (s *User) CheckUser(ctx context.Context, tgID int64) error {
+func (s *User) CheckUser(ctx context.Context, tgID int64) (bool, error) {
 	// проверяем в кэшэ
-	_, err := s.cache.GetUser(ctx, tgID)
+	exists, err := s.cache.CheckUser(ctx, tgID)
+	// если ошибка не связана с отсутствием пользователя, возвращаем её
+	if err != nil && !errors.Is(err, api_errors.ErrUnknownUser) {
+		return false, err
+	}
+	// если пользователь найден в кэше, возвращаем true
+	if err == nil && exists {
+		return true, nil
+	}
+
+	// проверяем в БД
+	exists, err = s.repo.CheckUser(ctx, tgID)
 	if err != nil {
-		if !errors.Is(err, api_errors.ErrUnknownUser) {
-			return err
-		}
+		return false, err
 	}
-
-	if err == nil {
-		return nil
-	}
-
-	// в кэшэ не найдено - проверяем в БД
-	_, err = s.repo.GetUser(ctx, tgID)
-	return err
+	return exists, nil
 }

@@ -22,7 +22,7 @@ func TestSpaceValidate(t *testing.T) {
 			space: Space{
 				ID:       uuid.New(),
 				Name:     "space",
-				Created:  time.Now().Unix(),
+				Created:  time.Now(),
 				Creator:  123,
 				Personal: false,
 			},
@@ -32,7 +32,7 @@ func TestSpaceValidate(t *testing.T) {
 			space: Space{
 				ID:       uuid.New(),
 				Name:     "space",
-				Created:  time.Now().Unix(),
+				Created:  time.Now(),
 				Creator:  123,
 				Personal: true,
 			},
@@ -41,7 +41,7 @@ func TestSpaceValidate(t *testing.T) {
 			name: "uuid nil",
 			space: Space{
 				Name:     "space",
-				Created:  time.Now().Unix(),
+				Created:  time.Now(),
 				Creator:  123,
 				Personal: false,
 			},
@@ -51,7 +51,7 @@ func TestSpaceValidate(t *testing.T) {
 			name: "empty name",
 			space: Space{
 				ID:       uuid.New(),
-				Created:  time.Now().Unix(),
+				Created:  time.Now(),
 				Creator:  123,
 				Personal: false,
 			},
@@ -72,7 +72,7 @@ func TestSpaceValidate(t *testing.T) {
 			space: Space{
 				ID:       uuid.New(),
 				Name:     "space",
-				Created:  time.Now().Unix(),
+				Created:  time.Now(),
 				Personal: false,
 			},
 			err: ErrFieldCreatorNotFilled,

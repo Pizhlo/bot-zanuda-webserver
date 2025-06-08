@@ -15,18 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/health": {
-            "get": {
-                "description": "Проверить состояние сервера и соединения",
-                "summary": "Проверить состояние сервера и соединения",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/spaces/create": {
+        "/api/v0/spaces/create": {
             "post": {
                 "description": "Запрос на создание пространства",
                 "summary": "Запрос на создание пространства",
@@ -78,7 +67,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/spaces/notes/create": {
+        "/api/v0/spaces/notes/create": {
             "post": {
                 "description": "Запрос на создание заметки с текстом. Создается в указанном пространстве",
                 "summary": "Запрос на создание заметки",
@@ -117,6 +106,267 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v0/spaces/notes/update": {
+            "patch": {
+                "description": "Запрос на обновление заметки с текстом. Создается в указанном пространстве",
+                "summary": "Запрос на обновление заметки",
+                "parameters": [
+                    {
+                        "description": "обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rabbit.UpdateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v0/spaces/{space_id}/notes": {
+            "get": {
+                "description": "Запрос на получение всех заметок из личного пространства пользователя",
+                "summary": "Запрос на получение всех заметок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Пространства не существует"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v0/spaces/{space_id}/notes/types": {
+            "get": {
+                "description": "Получить список всех типов заметок и их количество",
+                "summary": "Получить все типы заметок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.NoteTypeResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v0/spaces/{space_id}/notes/{type}": {
+            "get": {
+                "description": "Получить все заметки определенного типа: текстовые, фото, етс",
+                "summary": "Получить все заметки одного типа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "тип заметки: текст, фото, етс",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GetNote"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Нет заметок"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v0/spaces/{space_id}/participants/add": {
+            "post": {
+                "description": "Запрос на добавление участника в пространство",
+                "summary": "Запрос на добавление участника в пространство",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пространства",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "добавить участника в пространство:\nуказать айди пользователя,\nайди совместного пространства",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rabbit.AddParticipantRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидный запрос",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Невалидный токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Проверить состояние сервера и соединения",
+                "summary": "Проверить состояние сервера и соединения",
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -170,87 +420,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/spaces/notes/update": {
-            "patch": {
-                "description": "Запрос на обновление заметки с текстом. Создается в указанном пространстве",
-                "summary": "Запрос на обновление заметки",
-                "parameters": [
-                    {
-                        "description": "обновить заметку:\nуказать айди пользователя,\nайди его личного / совместного пространства,\nновый текст заметки,\nтип заметки: текст, фото, етс\nайди заметки, которую нужно обновить",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/rabbit.UpdateNoteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Невалидный запрос",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/spaces/{space_id}/notes": {
-            "get": {
-                "description": "Запрос на получение всех заметок из личного пространства пользователя",
-                "summary": "Запрос на получение всех заметок",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.GetNote"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Невалидный запрос",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Пространства не существует"
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/spaces/{space_id}/notes/delete": {
             "delete": {
                 "description": "Удалить все заметки в пространстве",
@@ -282,53 +451,6 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/spaces/{space_id}/notes/types": {
-            "get": {
-                "description": "Получить список всех типов заметок и их количество",
-                "summary": "Получить все типы заметок",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пространства",
-                        "name": "space_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.NoteTypeResponse"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Невалидный запрос",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Нет заметок"
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -388,60 +510,6 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/spaces/{space_id}/notes/{type}": {
-            "get": {
-                "description": "Получить все заметки определенного типа: текстовые, фото, етс",
-                "summary": "Получить все заметки одного типа",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пространства",
-                        "name": "space_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "тип заметки: текст, фото, етс",
-                        "name": "type",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.GetNote"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Невалидный запрос",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Нет заметок"
                     },
                     "500": {
                         "description": "Внутренняя ошибка",
@@ -584,8 +652,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created": {
-                    "description": "unix in UTC",
-                    "type": "integer"
+                    "description": "TODO: unix in UTC",
+                    "type": "string"
                 },
                 "creator": {
                     "description": "айди пользователя-создателя в телеге",
@@ -620,6 +688,31 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "rabbit.AddParticipantRequest": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "participant": {
+                    "description": "кто добавляется в пространство",
+                    "type": "integer"
+                },
+                "space_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "кто добавляет участника",
+                    "type": "integer"
                 }
             }
         },

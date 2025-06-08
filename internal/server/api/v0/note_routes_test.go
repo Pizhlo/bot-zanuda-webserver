@@ -31,12 +31,12 @@ func TestCreateNote(t *testing.T) {
 	}
 
 	type test struct {
-		name             string
-		req              rabbit.CreateNoteRequest
-		expectedNote     rabbit.CreateNoteRequest
-		expectedCode     int
-		setupMocks       func(mocks *fields)
-		expectedResponse map[string]string
+		name         string
+		req          rabbit.CreateNoteRequest
+		expectedNote rabbit.CreateNoteRequest
+		expectedCode int
+		setupMocks   func(mocks *fields)
+		expectedErr  error
 	}
 
 	generatedID := uuid.New()
@@ -60,12 +60,12 @@ func TestCreateNote(t *testing.T) {
 				Type:    model.TextNoteType,
 			},
 			expectedNote: rabbit.CreateNoteRequest{
-				ID:        uuid.New(),
+				ID:        generatedID,
 				UserID:    1,
 				Text:      "new note",
 				SpaceID:   uuid.New(),
 				Type:      model.TextNoteType,
-				Created:   time.Now().Unix(),
+				Created:   wayback.Unix(),
 				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusAccepted,
@@ -82,17 +82,15 @@ func TestCreateNote(t *testing.T) {
 				Type:    model.TextNoteType,
 			},
 			expectedNote: rabbit.CreateNoteRequest{
-				ID:        uuid.New(),
+				ID:        generatedID,
 				Text:      "new note",
 				SpaceID:   uuid.New(),
 				Type:      model.TextNoteType,
-				Created:   time.Now().Unix(),
+				Created:   wayback.Unix(),
 				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrFieldUserNotFilled.Error(),
-			},
+			expectedErr:  model.ErrFieldUserNotFilled,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(model.ErrFieldUserNotFilled)
@@ -106,17 +104,15 @@ func TestCreateNote(t *testing.T) {
 				Type:    model.TextNoteType,
 			},
 			expectedNote: rabbit.CreateNoteRequest{
-				ID:        uuid.New(),
+				ID:        generatedID,
 				UserID:    1,
 				SpaceID:   uuid.New(),
 				Type:      model.TextNoteType,
-				Created:   time.Now().Unix(),
+				Created:   wayback.Unix(),
 				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrFieldTextNotFilled.Error(),
-			},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, model.ErrFieldTextNotFilled.Error(), model.ErrFieldTextNotFilled),
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(model.ErrFieldTextNotFilled)
@@ -131,18 +127,16 @@ func TestCreateNote(t *testing.T) {
 				Type:    model.TextNoteType,
 			},
 			expectedNote: rabbit.CreateNoteRequest{
-				ID:        uuid.New(),
+				ID:        generatedID,
 				UserID:    1,
 				Text:      "new note",
 				SpaceID:   uuid.Nil,
 				Type:      model.TextNoteType,
-				Created:   time.Now().Unix(),
+				Created:   wayback.Unix(),
 				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrInvalidSpaceID.Error(),
-			},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, model.ErrInvalidSpaceID.Error(), model.ErrInvalidSpaceID),
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(model.ErrInvalidSpaceID)
@@ -156,17 +150,15 @@ func TestCreateNote(t *testing.T) {
 				SpaceID: uuid.New(),
 			},
 			expectedNote: rabbit.CreateNoteRequest{
-				ID:        uuid.New(),
+				ID:        generatedID,
 				UserID:    1,
 				Text:      "new note",
 				SpaceID:   uuid.New(),
-				Created:   time.Now().Unix(),
+				Created:   wayback.Unix(),
 				Operation: rabbit.CreateOp,
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrFieldTypeNotFilled.Error(),
-			},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, model.ErrFieldTypeNotFilled.Error(), model.ErrFieldTypeNotFilled),
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(model.ErrFieldTypeNotFilled)
@@ -204,8 +196,8 @@ func TestCreateNote(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 
-			if tt.expectedResponse != nil {
-				checkResult(t, resp, tt.expectedResponse)
+			if tt.expectedErr != nil {
+				checkResult(t, resp, tt.expectedErr)
 			} else {
 				checkRequestID(t, resp)
 			}
@@ -223,13 +215,13 @@ func TestUpdateNote(t *testing.T) {
 	}
 
 	type test struct {
-		name             string
-		req              rabbit.UpdateNoteRequest
-		expectedNote     rabbit.UpdateNoteRequest
-		dbNote           model.GetNote // что возвращает база при вызове GetNote
-		expectedCode     int
-		expectedResponse map[string]string
-		setupMocks       func(mocks *fields)
+		name         string
+		req          rabbit.UpdateNoteRequest
+		expectedNote rabbit.UpdateNoteRequest
+		dbNote       model.GetNote // что возвращает база при вызове GetNote
+		expectedCode int
+		expectedErr  error
+		setupMocks   func(mocks *fields)
 	}
 
 	generatedID := uuid.New()
@@ -286,9 +278,7 @@ func TestUpdateNote(t *testing.T) {
 				SpaceID: uuid.New(),
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrFieldUserNotFilled.Error(),
-			},
+			expectedErr:  model.ErrFieldUserNotFilled,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{}, model.ErrFieldUserNotFilled)
@@ -301,9 +291,7 @@ func TestUpdateNote(t *testing.T) {
 				SpaceID: uuid.New(),
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrFieldTextNotFilled.Error(),
-			},
+			expectedErr:  model.ErrFieldTextNotFilled,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{}, model.ErrFieldTextNotFilled)
@@ -318,9 +306,7 @@ func TestUpdateNote(t *testing.T) {
 				NoteID:  generatedID,
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrInvalidSpaceID.Error(),
-			},
+			expectedErr:  model.ErrInvalidSpaceID,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{}, model.ErrInvalidSpaceID)
@@ -343,9 +329,7 @@ func TestUpdateNote(t *testing.T) {
 				Created: time.Now(),
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": api_errors.ErrNoteNotBelongsSpace.Error(),
-			},
+			expectedErr:  api_errors.ErrNoteNotBelongsSpace,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{
@@ -375,9 +359,7 @@ func TestUpdateNote(t *testing.T) {
 				Created: time.Now(),
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedResponse: map[string]string{
-				"bad request": model.ErrUpdateNotTextNote.Error(),
-			},
+			expectedErr:  model.ErrUpdateNotTextNote,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{
@@ -399,9 +381,7 @@ func TestUpdateNote(t *testing.T) {
 				NoteID:  generatedID,
 			},
 			expectedCode: http.StatusNotFound,
-			expectedResponse: map[string]string{
-				"error": api_errors.ErrNoteNotFound.Error(),
-			},
+			expectedErr:  api_errors.ErrNoteNotFound,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(model.GetNote{}, api_errors.ErrNoteNotFound)
@@ -439,8 +419,8 @@ func TestUpdateNote(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 
-			if tt.expectedResponse != nil {
-				checkResult(t, resp, tt.expectedResponse)
+			if tt.expectedErr != nil {
+				checkResult(t, resp, tt.expectedErr)
 			} else {
 				checkRequestID(t, resp)
 			}
@@ -461,7 +441,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.Note
-		expectedErr      map[string]string
+		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
 
@@ -535,7 +515,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 			name:         "invalid param",
 			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 7", nil),
 			setupMocks:   func(mocks *fields) {},
 		},
 	}
@@ -600,7 +580,7 @@ func TestNotesBySpaceID(t *testing.T) {
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.GetNote
-		expectedErr      map[string]string
+		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
 
@@ -659,7 +639,7 @@ func TestNotesBySpaceID(t *testing.T) {
 			name:         "invalid param",
 			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 7", nil),
 			setupMocks:   func(mocks *fields) {},
 		},
 	}
@@ -724,7 +704,7 @@ func TestGetNoteTypes(t *testing.T) {
 		err              error
 		expectedCode     int
 		expectedResponse []model.NoteTypeResponse
-		expectedErr      map[string]string
+		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
 
@@ -764,7 +744,7 @@ func TestGetNoteTypes(t *testing.T) {
 			name:         "invalid param",
 			spaceID:      "1234abc",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 7", nil),
 			setupMocks:   func(mocks *fields) {},
 		},
 	}
@@ -829,7 +809,7 @@ func TestGetNotesByType(t *testing.T) {
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.GetNote
-		expectedErr      map[string]string
+		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
 
@@ -872,7 +852,7 @@ func TestGetNotesByType(t *testing.T) {
 			spaceID:      uuid.NewString(),
 			expectedCode: http.StatusBadRequest,
 			noteType:     "video",
-			expectedErr:  map[string]string{"bad request": "invalid note type: video"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid note type: video", nil),
 			setupMocks:   func(mocks *fields) {},
 		},
 		{
@@ -880,7 +860,7 @@ func TestGetNotesByType(t *testing.T) {
 			spaceID:      "1234abc",
 			noteType:     "text",
 			expectedCode: http.StatusBadRequest,
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 7"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 7", nil),
 			setupMocks:   func(mocks *fields) {},
 		},
 	}
@@ -946,7 +926,7 @@ func TestSearchNotesByText(t *testing.T) {
 		dbErr            error // ошибка, которую возвращает база
 		expectedCode     int
 		expectedResponse []model.GetNote
-		expectedErr      map[string]string
+		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
 
@@ -999,7 +979,7 @@ func TestSearchNotesByText(t *testing.T) {
 				Text:    "positive test",
 				Type:    "video",
 			},
-			expectedErr: map[string]string{"bad request": "invalid note type: video"},
+			expectedErr: api_errors.NewHTTPError(http.StatusBadRequest, "invalid note type: video", nil),
 			setupMocks:  func(mocks *fields) {},
 		},
 		{
@@ -1081,7 +1061,7 @@ func TestDeleteNote(t *testing.T) {
 		spaceID, noteID string
 		dbNote          model.GetNote // заметка, возвращаемая базой
 		expectedCode    int
-		expectedErr     map[string]string
+		expectedErr     *api_errors.HTTPError
 		setupMocks      func(mocks *fields)
 	}
 
@@ -1122,7 +1102,7 @@ func TestDeleteNote(t *testing.T) {
 			name:         "invalid space ID",
 			spaceID:      "abc",
 			noteID:       noteID.String(),
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 3"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 3", nil),
 			expectedCode: http.StatusBadRequest,
 			setupMocks:   func(mocks *fields) {},
 		},
@@ -1130,7 +1110,7 @@ func TestDeleteNote(t *testing.T) {
 			name:         "invalid note ID",
 			spaceID:      spaceID.String(),
 			noteID:       "abc",
-			expectedErr:  map[string]string{"bad request": "invalid note id parameter: invalid UUID length: 3"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid note id parameter: invalid UUID length: 3", nil),
 			expectedCode: http.StatusBadRequest,
 			setupMocks:   func(mocks *fields) {},
 		},
@@ -1187,7 +1167,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 		name            string
 		spaceID, noteID string
 		expectedCode    int
-		expectedErr     map[string]string
+		expectedErr     *api_errors.HTTPError
 		setupMocks      func(mocks *fields)
 	}
 
@@ -1207,7 +1187,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 			name:         "space does not exist",
 			spaceID:      spaceID.String(),
 			noteID:       noteID.String(),
-			expectedErr:  map[string]string{"bad request": api_errors.ErrSpaceNotExists.Error()},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, api_errors.ErrSpaceNotExists.Error(), api_errors.ErrSpaceNotExists),
 			expectedCode: http.StatusBadRequest,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -1218,7 +1198,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 			name:         "note not found",
 			spaceID:      spaceID.String(),
 			noteID:       noteID.String(),
-			expectedErr:  map[string]string{"bad request": api_errors.ErrNoteNotFound.Error()},
+			expectedErr:  api_errors.NewHTTPError(http.StatusNotFound, api_errors.ErrNoteNotFound.Error(), api_errors.ErrNoteNotFound),
 			expectedCode: http.StatusNotFound,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -1230,7 +1210,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 			name:         "note does not belong space",
 			spaceID:      spaceID.String(),
 			noteID:       noteID.String(),
-			expectedErr:  map[string]string{"bad request": api_errors.ErrNoteNotBelongsSpace.Error()},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, api_errors.ErrNoteNotBelongsSpace.Error(), api_errors.ErrNoteNotBelongsSpace),
 			expectedCode: http.StatusBadRequest,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -1292,7 +1272,7 @@ func TestDeleteAllNotes(t *testing.T) {
 		spaceID      string
 		expectedReq  rabbit.DeleteAllNotesRequest // ожидаемое сообщение для воркера
 		expectedCode int
-		expectedErr  map[string]string
+		expectedErr  *api_errors.HTTPError
 		setupMocks   func(mocks *fields)
 	}
 
@@ -1325,7 +1305,7 @@ func TestDeleteAllNotes(t *testing.T) {
 		{
 			name:         "space does not exist",
 			spaceID:      spaceID.String(),
-			expectedErr:  map[string]string{"bad request": api_errors.ErrSpaceNotExists.Error()},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, api_errors.ErrSpaceNotExists.Error(), api_errors.ErrSpaceNotExists),
 			expectedCode: http.StatusBadRequest,
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -1335,7 +1315,7 @@ func TestDeleteAllNotes(t *testing.T) {
 		{
 			name:         "invalid space ID",
 			spaceID:      "abc",
-			expectedErr:  map[string]string{"bad request": "invalid space id parameter: invalid UUID length: 3"},
+			expectedErr:  api_errors.NewHTTPError(http.StatusBadRequest, "invalid space id parameter: invalid UUID length: 3", nil),
 			expectedCode: http.StatusBadRequest,
 			setupMocks:   func(mocks *fields) {},
 		},
@@ -1379,14 +1359,4 @@ func TestDeleteAllNotes(t *testing.T) {
 			}
 		})
 	}
-}
-
-func checkResult(t *testing.T, resp *http.Response, expectedResp map[string]string) {
-	var result map[string]string
-
-	dec := json.NewDecoder(resp.Body)
-	err := dec.Decode(&result)
-	require.NoError(t, err)
-
-	assert.Equal(t, expectedResp, result)
 }

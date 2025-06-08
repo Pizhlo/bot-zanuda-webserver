@@ -1,6 +1,7 @@
 package v0
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,24 +59,24 @@ func runTestServer(t *testing.T, h *handler) (*echo.Echo, error) {
 	spaces := apiv0.Group("spaces")
 
 	// spaces
-	spaces.POST("/create", h.CreateSpace, h.Auth)                        // создать пространство
-	spaces.POST("/:space_id/participants/add", h.AddParticipant, h.Auth) // добавить участника в пространство
+	spaces.POST("/create", h.CreateSpace, h.Auth, h.WrapNetHTTP)                        // создать пространство
+	spaces.POST("/:space_id/participants/add", h.AddParticipant, h.Auth, h.WrapNetHTTP) // добавить участника в пространство
 
 	// notes
-	spaces.GET("/:space_id/notes", h.NotesBySpaceID)
+	spaces.GET("/:space_id/notes", h.NotesBySpaceID, h.WrapNetHTTP)
 
 	// создание, обновление, удаление
-	spaces.POST("/notes/create", h.CreateNote)
-	spaces.PATCH("/notes/update", h.UpdateNote)
-	spaces.DELETE("/:space_id/notes/:note_id/delete", h.DeleteNote)
-	spaces.DELETE("/:space_id/notes/delete_all", h.DeleteAllNotes) // удалить все заметки
+	spaces.POST("/notes/create", h.CreateNote, h.WrapNetHTTP)
+	spaces.PATCH("/notes/update", h.UpdateNote, h.WrapNetHTTP)
+	spaces.DELETE("/:space_id/notes/:note_id/delete", h.DeleteNote, h.WrapNetHTTP)
+	spaces.DELETE("/:space_id/notes/delete_all", h.DeleteAllNotes, h.WrapNetHTTP) // удалить все заметки
 
 	// типы заметок
-	spaces.GET("/:space_id/notes/types", h.GetNoteTypes)   // получить, какие есть типы заметок
-	spaces.GET("/:space_id/notes/:type", h.GetNotesByType) // получить все заметки одного типа
+	spaces.GET("/:space_id/notes/types", h.GetNoteTypes, h.WrapNetHTTP)   // получить, какие есть типы заметок
+	spaces.GET("/:space_id/notes/:type", h.GetNotesByType, h.WrapNetHTTP) // получить все заметки одного типа
 
 	// поиск
-	spaces.POST("/notes/search/text", h.SearchNoteByText) // по тексту
+	spaces.POST("/notes/search/text", h.SearchNoteByText, h.WrapNetHTTP) // по тексту
 
 	return e, nil
 }
@@ -154,4 +157,27 @@ func generateToken(t *testing.T, userID, expired float64) string {
 	require.NoError(t, err)
 
 	return tokenString
+}
+
+func checkResult(t *testing.T, resp *http.Response, expectedResp error) {
+	t.Helper()
+
+	var result map[string]string
+
+	dec := json.NewDecoder(resp.Body)
+	err := dec.Decode(&result)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedResp.Error(), result["error"])
+}
+
+func checkRequestID(t *testing.T, resp *http.Response) {
+	t.Helper()
+
+	var respBody map[string]string
+	err := json.NewDecoder(resp.Body).Decode(&respBody)
+	require.NoError(t, err)
+
+	_, err = uuid.Parse(respBody["request_id"])
+	require.NoError(t, err)
 }

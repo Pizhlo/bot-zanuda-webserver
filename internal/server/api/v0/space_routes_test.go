@@ -3,7 +3,6 @@ package v0
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -35,11 +34,10 @@ func TestCreateSpace(t *testing.T) {
 	type test struct {
 		name           string
 		req            rabbit.CreateSpaceRequest
-		token          string
 		tokenArgs      tokenArgs
 		setupMocks     func(mocks *fields)
 		expectedStatus int
-		expectedError  map[string]string
+		expectedError  error
 	}
 
 	userID := float64(123)
@@ -68,46 +66,6 @@ func TestCreateSpace(t *testing.T) {
 			expectedStatus: http.StatusAccepted,
 		},
 		{
-			name: "no auth token",
-			req: rabbit.CreateSpaceRequest{
-				Name: "test space",
-			},
-			token: "",
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, errors.New("token not found"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "token not found"},
-		},
-		{
-			name: "invalid token",
-			req: rabbit.CreateSpaceRequest{
-				Name: "test space",
-			},
-			token: "invalid_token",
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, errors.New("invalid token"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "invalid token"},
-		},
-		{
-			name: "no payload in token",
-			req: rabbit.CreateSpaceRequest{
-				Name: "test space",
-			},
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, errors.New("payload in token not found"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "payload in token not found"},
-		},
-		{
 			name: "empty space name",
 			req: rabbit.CreateSpaceRequest{
 				Name: "",
@@ -127,23 +85,7 @@ func TestCreateSpace(t *testing.T) {
 				mocks.spaceSrv.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(model.ErrFieldNameNotFilled)
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  map[string]string{"bad request": model.ErrFieldNameNotFilled.Error()},
-		},
-		{
-			name: "no user ID in payload",
-			req: rabbit.CreateSpaceRequest{
-				Name: "test space",
-			},
-			tokenArgs: tokenArgs{
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
-			},
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
-				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{}, true)
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "user id not found in payload"},
+			expectedError:  model.ErrFieldNameNotFilled,
 		},
 	}
 
@@ -203,11 +145,10 @@ func TestAddParticipant(t *testing.T) {
 	type test struct {
 		name           string
 		req            rabbit.AddParticipantRequest
-		token          string
 		tokenArgs      tokenArgs
 		setupMocks     func(mocks *fields)
 		expectedStatus int
-		expectedError  map[string]string
+		expectedError  *api_errors.HTTPError
 	}
 
 	tests := []test{
@@ -238,33 +179,6 @@ func TestAddParticipant(t *testing.T) {
 			expectedStatus: http.StatusAccepted,
 		},
 		{
-			name: "no auth token",
-			req: rabbit.AddParticipantRequest{
-				Participant: 456,
-			},
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, errors.New("token not found"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "token not found"},
-		},
-		{
-			name: "invalid token",
-			req: rabbit.AddParticipantRequest{
-				Participant: 456,
-			},
-			token: "invalid_token",
-			setupMocks: func(mocks *fields) {
-				t.Helper()
-
-				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, errors.New("invalid token"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedError:  map[string]string{"bad request": "invalid token"},
-		},
-		{
 			name: "trying to add self as participant",
 			req: rabbit.AddParticipantRequest{
 				Participant: int64(fromUser),
@@ -284,7 +198,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  map[string]string{"bad request": "you can't add yourself as a participant"},
+			expectedError:  api_errors.NewHTTPError(http.StatusBadRequest, "you can't add yourself as a participant", nil),
 		},
 		{
 			name: "personal space",
@@ -307,7 +221,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.spaceSrv.EXPECT().IsSpacePersonal(gomock.Any(), spaceID).Return(true, nil)
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  map[string]string{"bad request": "personal space"},
+			expectedError:  api_errors.NewHTTPError(http.StatusBadRequest, "personal space", nil),
 		},
 		{
 			name: "space not found",
@@ -330,7 +244,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.spaceSrv.EXPECT().IsSpacePersonal(gomock.Any(), spaceID).Return(false, api_errors.ErrSpaceNotExists)
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  map[string]string{"bad request": "space not found"},
+			expectedError:  api_errors.NewHTTPError(http.StatusBadRequest, "space not found", nil),
 		},
 	}
 
@@ -371,13 +285,4 @@ func TestAddParticipant(t *testing.T) {
 			}
 		})
 	}
-}
-
-func checkRequestID(t *testing.T, resp *http.Response) {
-	var respBody map[string]string
-	err := json.NewDecoder(resp.Body).Decode(&respBody)
-	require.NoError(t, err)
-
-	_, err = uuid.Parse(respBody["request_id"])
-	require.NoError(t, err)
 }

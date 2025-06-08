@@ -13,11 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type userCache struct {
+type Cache struct {
 	client *redis.Client
 }
 
-func New(ctx context.Context, addr string) (*userCache, error) {
+func New(ctx context.Context, addr string) (*Cache, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password set
@@ -32,12 +32,12 @@ func New(ctx context.Context, addr string) (*userCache, error) {
 
 	logrus.Infof("user cache: successfully connected redis on %s", addr)
 
-	return &userCache{
+	return &Cache{
 		client: redisClient,
 	}, nil
 }
 
-func (u *userCache) Save(ctx context.Context, user model.User) error {
+func (u *Cache) Save(ctx context.Context, user model.User) error {
 	return u.client.Set(ctx, fmt.Sprintf("%d", user.TgID), user, 0).Err()
 }
 
@@ -53,7 +53,7 @@ const (
 	idKey              = "id"
 )
 
-func (u *userCache) GetUser(ctx context.Context, tgID int64) (model.User, error) {
+func (u *Cache) GetUser(ctx context.Context, tgID int64) (model.User, error) {
 	res, err := u.client.HGetAll(ctx, fmt.Sprintf(userKey, tgID)).Result()
 	if err == redis.Nil {
 		return model.User{}, api_errors.ErrUnknownUser
@@ -72,7 +72,7 @@ func (u *userCache) GetUser(ctx context.Context, tgID int64) (model.User, error)
 	return parseUser(res)
 }
 
-func (u *userCache) CheckUser(ctx context.Context, tgID int64) (bool, error) {
+func (u *Cache) CheckUser(ctx context.Context, tgID int64) (bool, error) {
 	user, err := u.GetUser(ctx, tgID)
 	if err != nil {
 		return false, err

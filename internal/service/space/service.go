@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type space struct {
+type Service struct {
 	repo   repo
 	cache  spaceCache
 	worker dbWorker // создание / обновление записей
@@ -77,28 +77,28 @@ type participantEditor interface {
 	AddParticipant(ctx context.Context, req rabbit.Model) error
 }
 
-type SpaceOption func(*space)
+type SpaceOption func(*Service)
 
 func WithRepo(repo repo) SpaceOption {
-	return func(s *space) {
+	return func(s *Service) {
 		s.repo = repo
 	}
 }
 
 func WithCache(cache spaceCache) SpaceOption {
-	return func(s *space) {
+	return func(s *Service) {
 		s.cache = cache
 	}
 }
 
 func WithWorker(worker dbWorker) SpaceOption {
-	return func(s *space) {
+	return func(s *Service) {
 		s.worker = worker
 	}
 }
 
-func New(opts ...SpaceOption) (*space, error) {
-	space := &space{}
+func New(opts ...SpaceOption) (*Service, error) {
+	space := &Service{}
 
 	for _, opt := range opts {
 		opt(space)

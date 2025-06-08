@@ -8,7 +8,7 @@ import (
 	"webserver/internal/model"
 )
 
-func (db *userRepo) GetUser(ctx context.Context, tgID int64) (model.User, error) {
+func (db *Repo) GetUser(ctx context.Context, tgID int64) (model.User, error) {
 	res := model.User{
 		PersonalSpace: &model.Space{},
 	}
@@ -28,7 +28,7 @@ func (db *userRepo) GetUser(ctx context.Context, tgID int64) (model.User, error)
 	return res, err
 }
 
-func (db *userRepo) CheckUser(ctx context.Context, tgID int64) (bool, error) {
+func (db *Repo) CheckUser(ctx context.Context, tgID int64) (bool, error) {
 	var exists bool
 	err := db.db.QueryRowContext(ctx, "select exists(select 1 from users.users where tg_id = $1)", tgID).
 		Scan(&exists)

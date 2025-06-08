@@ -6,7 +6,7 @@ import (
 	"webserver/internal/model/rabbit"
 )
 
-func (s *worker) CreateSpace(ctx context.Context, req rabbit.Model) error {
+func (s *Worker) CreateSpace(ctx context.Context, req rabbit.Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func (s *worker) CreateSpace(ctx context.Context, req rabbit.Model) error {
 	return s.publish(ctx, s.config.spacesTopic, bodyJSON)
 }
 
-func (s *worker) AddParticipant(ctx context.Context, req rabbit.Model) error {
+func (s *Worker) AddParticipant(ctx context.Context, req rabbit.Model) error {
 	if err := req.Validate(); err != nil {
 		return err
 	}

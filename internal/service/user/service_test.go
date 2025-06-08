@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 		name  string
 		repo  userRepo
 		cache userCache
-		want  *User
+		want  *Service
 		err   error
 	}
 
@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 			name:  "positive case",
 			repo:  repo,
 			cache: cache,
-			want:  &User{repo: repo, cache: cache},
+			want:  &Service{repo: repo, cache: cache},
 			err:   nil,
 		},
 		{
@@ -147,7 +147,7 @@ func TestCheckUser(t *testing.T) {
 	}
 }
 
-func createTestUserService(t *testing.T, repo *mocks.MockuserRepo, cache *mocks.MockuserCache) *User {
+func createTestUserService(t *testing.T, repo *mocks.MockuserRepo, cache *mocks.MockuserCache) *Service {
 	userSrv, err := New(
 		WithRepo(repo),
 		WithCache(cache),

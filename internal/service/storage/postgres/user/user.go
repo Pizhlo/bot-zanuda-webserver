@@ -9,12 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type userRepo struct {
+type Repo struct {
 	db        *sql.DB
 	currentTx *sql.Tx
 }
 
-func New(addr string) (*userRepo, error) {
+func New(addr string) (*Repo, error) {
 	db, err := sql.Open("postgres", addr)
 	if err != nil {
 		return nil, fmt.Errorf("connect open a db driver: %w", err)
@@ -30,10 +30,10 @@ func New(addr string) (*userRepo, error) {
 		return nil, fmt.Errorf("cannot connect to a db: %w", err)
 	} // to check connectivity and DSN correctness
 
-	return &userRepo{db, nil}, nil
+	return &Repo{db, nil}, nil
 }
 
-func (db *userRepo) Close() {
+func (db *Repo) Close() {
 	if err := db.db.Close(); err != nil {
 		logrus.Errorf("error on closing space repo: %v", err)
 	}

@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 		repo   repo
 		cache  spaceCache
 		worker dbWorker
-		want   *space
+		want   *Service
 		err    error
 	}
 
@@ -31,7 +31,7 @@ func TestNew(t *testing.T) {
 			repo:   repo,
 			cache:  cache,
 			worker: worker,
-			want:   &space{repo: repo, cache: cache, worker: worker},
+			want:   &Service{repo: repo, cache: cache, worker: worker},
 			err:    nil,
 		},
 		{
@@ -76,7 +76,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func createTestSpace(t *testing.T, repo *mocks.Mockrepo, cache *mocks.MockspaceCache, worker *mocks.MockdbWorker) *space {
+func createTestSpace(t *testing.T, repo *mocks.Mockrepo, cache *mocks.MockspaceCache, worker *mocks.MockdbWorker) *Service {
 	spaceSrv, err := New(
 		WithRepo(repo),
 		WithCache(cache),

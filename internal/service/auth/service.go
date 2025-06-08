@@ -2,20 +2,20 @@ package auth
 
 import "errors"
 
-type AuthService struct {
+type Service struct {
 	secretKey []byte
 }
 
-type AuthOption func(*AuthService)
+type AuthOption func(*Service)
 
 func WithSecretKey(secretKey []byte) AuthOption {
-	return func(a *AuthService) {
+	return func(a *Service) {
 		a.secretKey = secretKey
 	}
 }
 
-func New(opts ...AuthOption) (*AuthService, error) {
-	auth := &AuthService{}
+func New(opts ...AuthOption) (*Service, error) {
+	auth := &Service{}
 
 	for _, opt := range opts {
 		opt(auth)

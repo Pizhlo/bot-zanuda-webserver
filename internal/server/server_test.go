@@ -20,7 +20,7 @@ func TestNewServer(t *testing.T) {
 	tests := []struct {
 		name string
 		opts []ServerOption
-		want *server
+		want *Server
 		err  error
 	}{
 		{
@@ -29,7 +29,7 @@ func TestNewServer(t *testing.T) {
 				WithAddr(":8080"),
 				WithHandler(mocks.NewMockhandler(ctrl)),
 			},
-			want: &server{
+			want: &Server{
 				addr: ":8080",
 				api: struct {
 					h0 handler

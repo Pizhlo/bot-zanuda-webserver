@@ -26,7 +26,7 @@ import (
 //	@Router			/api/v0/spaces/notes/create [post]
 //
 // ручка для создания заметки
-func (h *handler) CreateNote(c echo.Context) error {
+func (h *Handler) CreateNote(c echo.Context) error {
 	var req rabbit.CreateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -82,7 +82,7 @@ func errorsIn(target error, errs []error) bool {
 //			@Router			/api/v0/spaces/{space_id}/notes [get]
 //
 // ручка для получения всех заметок пользователя из его личного пространства
-func (h *handler) NotesBySpaceID(c echo.Context) error {
+func (h *Handler) NotesBySpaceID(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid space id parameter: %+v", err), err)
@@ -149,7 +149,7 @@ func (h *handler) NotesBySpaceID(c echo.Context) error {
 //	@Router			/api/v0/spaces/notes/update [patch]
 //
 // ручка для обновления заметки
-func (h *handler) UpdateNote(c echo.Context) error {
+func (h *Handler) UpdateNote(c echo.Context) error {
 	var req rabbit.UpdateNoteRequest
 
 	body, err := io.ReadAll(c.Request().Body)
@@ -216,7 +216,7 @@ func (h *handler) UpdateNote(c echo.Context) error {
 //	@Router			/api/v0/spaces/{space_id}/notes/types [get]
 //
 // ручка для получения типов заметок
-func (h *handler) GetNoteTypes(c echo.Context) error {
+func (h *Handler) GetNoteTypes(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid space id parameter: %+v", err), err)
@@ -245,7 +245,7 @@ func (h *handler) GetNoteTypes(c echo.Context) error {
 //	@Router			/api/v0/spaces/{space_id}/notes/{type} [get]
 //
 // ручка для заметок по типу
-func (h *handler) GetNotesByType(c echo.Context) error {
+func (h *Handler) GetNotesByType(c echo.Context) error {
 	noteType := c.Param("type")
 
 	// валидируем запрос: тип должен быть одним из перечисленных
@@ -282,7 +282,7 @@ func (h *handler) GetNotesByType(c echo.Context) error {
 //	@Router			/spaces/notes/search/text [post]
 //
 // ручка для поиска заметок по тексту
-func (h *handler) SearchNoteByText(c echo.Context) error {
+func (h *Handler) SearchNoteByText(c echo.Context) error {
 	var req model.SearchNoteByTextRequest
 
 	err := json.NewDecoder(c.Request().Body).Decode(&req)
@@ -321,7 +321,7 @@ func (h *handler) SearchNoteByText(c echo.Context) error {
 //	@Router			/spaces/{space_id}/notes/{note_id}/delete [delete]
 //
 // ручка для удаления заметки по id
-func (h *handler) DeleteNote(c echo.Context) error {
+func (h *Handler) DeleteNote(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid space id parameter: %+v", err), err)
@@ -386,7 +386,7 @@ func (h *handler) DeleteNote(c echo.Context) error {
 // @Failure		400	{object}	map[string]string "Пространства не существует"
 // @Failure		500	{object}	map[string]string "Внутренняя ошибка"
 // @Router			/spaces/{space_id}/notes/delete [delete]
-func (h *handler) DeleteAllNotes(c echo.Context) error {
+func (h *Handler) DeleteAllNotes(c echo.Context) error {
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid space id parameter: %+v", err), err)

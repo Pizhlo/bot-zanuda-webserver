@@ -20,7 +20,7 @@ import (
 
 // ValidateNoteRequest производит валидацию запросов на создание и обновление заметки.
 // Проверяет: что пользователь существует, что пространство существует, что пользователь состоит в пространстве.
-func (h *handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *Handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// нам нужно сохранить тело запроса для последующей обработки в хендлерах
 		body, err := io.ReadAll(c.Request().Body)
@@ -88,7 +88,7 @@ func (h *handler) ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func (h *handler) Auth(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *Handler) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
 		if authHeader == "" {
@@ -135,7 +135,7 @@ func (h *handler) Auth(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 // WrapNetHTTP вызывает следующий хендлер и обрабатывает его ответ.
-func (h *handler) WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc {
+func (h *Handler) WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if err := next(c); err != nil {
 			var httpErr *api_errors.HTTPError

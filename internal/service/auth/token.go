@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func (s *AuthService) CheckToken(authHeader string) (*jwt.Token, error) {
+func (s *Service) CheckToken(authHeader string) (*jwt.Token, error) {
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	token, err := s.ParseToken(tokenString)
 	if err != nil || !token.Valid {
@@ -37,13 +37,13 @@ func (s *AuthService) CheckToken(authHeader string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func (s *AuthService) ParseToken(tokenString string) (*jwt.Token, error) {
+func (s *Service) ParseToken(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return s.secretKey, nil
 	})
 }
 
-func (s *AuthService) GetPayload(token *jwt.Token) (jwt.MapClaims, bool) {
+func (s *Service) GetPayload(token *jwt.Token) (jwt.MapClaims, bool) {
 	if token == nil {
 		return nil, false
 	}

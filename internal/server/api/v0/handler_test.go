@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 		user  userService
 		auth  authService
 		err   error
-		want  *handler
+		want  *Handler
 	}
 
 	ctrl := gomock.NewController(t)
@@ -31,7 +31,7 @@ func TestNew(t *testing.T) {
 			user:  userSrvMock,
 			auth:  authSrvMock,
 			err:   nil,
-			want:  &handler{space: spaceSrvMock, user: userSrvMock, auth: authSrvMock},
+			want:  &Handler{space: spaceSrvMock, user: userSrvMock, auth: authSrvMock},
 		},
 		{
 			name:  "space is nil",

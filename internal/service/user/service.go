@@ -7,7 +7,7 @@ import (
 	"webserver/internal/model"
 )
 
-type User struct {
+type Service struct {
 	repo  userRepo
 	cache userCache
 }
@@ -22,10 +22,10 @@ type userCache interface {
 	CheckUser(ctx context.Context, tgID int64) (bool, error)
 }
 
-type UserOption func(*User)
+type UserOption func(*Service)
 
-func New(opts ...UserOption) (*User, error) {
-	user := &User{}
+func New(opts ...UserOption) (*Service, error) {
+	user := &Service{}
 
 	for _, opt := range opts {
 		opt(user)
@@ -43,19 +43,19 @@ func New(opts ...UserOption) (*User, error) {
 }
 
 func WithRepo(repo userRepo) UserOption {
-	return func(u *User) {
+	return func(u *Service) {
 		u.repo = repo
 	}
 }
 
 func WithCache(cache userCache) UserOption {
-	return func(u *User) {
+	return func(u *Service) {
 		u.cache = cache
 	}
 }
 
 // CheckUser проверяет существование пользователя по tgID
-func (s *User) CheckUser(ctx context.Context, tgID int64) (bool, error) {
+func (s *Service) CheckUser(ctx context.Context, tgID int64) (bool, error) {
 	// проверяем в кэшэ
 	exists, err := s.cache.CheckUser(ctx, tgID)
 	// если ошибка не связана с отсутствием пользователя, возвращаем её

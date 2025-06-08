@@ -14,11 +14,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type spaceCache struct {
+type Cache struct {
 	client *redis.Client
 }
 
-func New(ctx context.Context, addr string) (*spaceCache, error) {
+func New(ctx context.Context, addr string) (*Cache, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password set
@@ -33,7 +33,7 @@ func New(ctx context.Context, addr string) (*spaceCache, error) {
 
 	logrus.Infof("space cache: successfully connected redis on %s", addr)
 
-	return &spaceCache{
+	return &Cache{
 		client: redisClient,
 	}, nil
 }
@@ -50,7 +50,7 @@ const (
 	creatorKey  = "creator"
 )
 
-func (s *spaceCache) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
+func (s *Cache) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
 	key := fmt.Sprintf(spaceKey, id.String())
 	res, err := s.client.HGetAll(ctx, key).Result()
 	if err == redis.Nil {

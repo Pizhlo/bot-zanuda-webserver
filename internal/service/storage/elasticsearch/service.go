@@ -10,12 +10,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type client struct {
+type Client struct {
 	addresses []string
 	cl        *elasticsearch.TypedClient
 }
 
-func New(addresses []string) (*client, error) {
+func New(addresses []string) (*Client, error) {
 	cl, err := elasticsearch.NewTypedClient(elasticsearch.Config{
 		Addresses: addresses,
 	})
@@ -23,7 +23,7 @@ func New(addresses []string) (*client, error) {
 		return nil, err
 	}
 
-	c := &client{cl: cl, addresses: addresses}
+	c := &Client{cl: cl, addresses: addresses}
 
 	logrus.Infof("sucessfully connected elastic on %v", addresses)
 
@@ -33,7 +33,7 @@ func New(addresses []string) (*client, error) {
 var ErrRecordsNotFound = errors.New(`records not found in elastic`)
 
 // getElasticID ищет запись в elasticSearch по тексту и userID. Возвращает id в elastic search
-func (c *client) getElasticID(ctx context.Context, data elastic.Data) (string, error) {
+func (c *Client) getElasticID(ctx context.Context, data elastic.Data) (string, error) {
 	_, err := data.ValidateNote()
 	if err != nil {
 		return "", err

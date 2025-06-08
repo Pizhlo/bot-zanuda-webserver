@@ -55,7 +55,7 @@ func TestCreateNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := worker{
+	w := Worker{
 		config: struct {
 			address     string
 			notesTopic  string
@@ -133,7 +133,7 @@ func TestUpdateNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := worker{
+	w := Worker{
 		config: struct {
 			address     string
 			notesTopic  string
@@ -209,7 +209,7 @@ func TestDeleteNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := worker{
+	w := Worker{
 		config: struct {
 			address     string
 			notesTopic  string

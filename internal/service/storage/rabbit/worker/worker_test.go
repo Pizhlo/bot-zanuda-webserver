@@ -11,7 +11,7 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name string
 		opts []RabbitOption
-		want *worker
+		want *Worker
 		err  error
 	}{
 		{
@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 				WithNotesTopic("notes"),
 				WithSpacesTopic("spaces"),
 			},
-			want: &worker{
+			want: &Worker{
 				config: struct {
 					address     string
 					notesTopic  string

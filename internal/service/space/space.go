@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
+func (s *Service) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
 	space, err := s.cache.GetSpaceByID(ctx, id)
 	if err != nil {
 		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
@@ -27,19 +27,19 @@ func (s *space) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 }
 
 // IsUserInSpace проверяет, состоит ли пользователь в пространстве
-func (s *space) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
+func (s *Service) IsUserInSpace(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
 	return s.repo.CheckParticipant(ctx, userID, spaceID)
 }
 
-func (s *space) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
+func (s *Service) CreateSpace(ctx context.Context, req rabbit.CreateSpaceRequest) error {
 	return s.worker.CreateSpace(ctx, req)
 }
 
-func (s *space) AddParticipant(ctx context.Context, req rabbit.AddParticipantRequest) error {
+func (s *Service) AddParticipant(ctx context.Context, req rabbit.AddParticipantRequest) error {
 	return s.worker.AddParticipant(ctx, req)
 }
 
-func (s *space) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+func (s *Service) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
 	space, err := s.cache.GetSpaceByID(ctx, spaceID)
 	if err != nil {
 		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
@@ -54,7 +54,7 @@ func (s *space) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, e
 	return s.repo.IsSpacePersonal(ctx, spaceID)
 }
 
-func (s *space) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+func (s *Service) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
 	_, err := s.cache.GetSpaceByID(ctx, spaceID)
 	if err != nil {
 		if !errors.Is(err, api_errors.ErrSpaceNotExists) {
@@ -69,6 +69,6 @@ func (s *space) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, err
 	return s.repo.IsSpaceExists(ctx, spaceID)
 }
 
-func (s *space) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
+func (s *Service) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
 	return s.repo.CheckInvitation(ctx, from, to, spaceID)
 }

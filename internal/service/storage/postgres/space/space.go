@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type spaceRepo struct {
+type Repo struct {
 	db            *sql.DB
 	currentTx     *sql.Tx
 	elasticClient elasticClient
@@ -31,7 +31,7 @@ type elasticClient interface {
 	UpdateNote(ctx context.Context, search elastic.Data) error
 }
 
-func New(addr string, elasticClient elasticClient) (*spaceRepo, error) {
+func New(addr string, elasticClient elasticClient) (*Repo, error) {
 	db, err := sql.Open("postgres", addr)
 	if err != nil {
 		return nil, fmt.Errorf("connect open a db driver: %w", err)
@@ -47,16 +47,16 @@ func New(addr string, elasticClient elasticClient) (*spaceRepo, error) {
 		return nil, fmt.Errorf("cannot connect to a db: %w", err)
 	} // to check connectivity and DSN correctness
 
-	return &spaceRepo{db, nil, elasticClient}, nil
+	return &Repo{db, nil, elasticClient}, nil
 }
 
-func (db *spaceRepo) Close() {
+func (db *Repo) Close() {
 	if err := db.db.Close(); err != nil {
 		logrus.Errorf("error on closing space repo: %v", err)
 	}
 }
 
-func (db *spaceRepo) tx(ctx context.Context) (*sql.Tx, error) {
+func (db *Repo) tx(ctx context.Context) (*sql.Tx, error) {
 	if db.currentTx != nil {
 		return db.currentTx, nil
 	}

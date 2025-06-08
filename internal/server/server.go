@@ -13,7 +13,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-type server struct {
+type Server struct {
 	addr string
 	e    *echo.Echo
 
@@ -22,22 +22,22 @@ type server struct {
 	}
 }
 
-type ServerOption func(*server)
+type ServerOption func(*Server)
 
 func WithAddr(addr string) ServerOption {
-	return func(s *server) {
+	return func(s *Server) {
 		s.addr = addr
 	}
 }
 
 func WithHandler(handler handler) ServerOption {
-	return func(s *server) {
+	return func(s *Server) {
 		s.api.h0 = handler
 	}
 }
 
-func New(opts ...ServerOption) (*server, error) {
-	server := &server{}
+func New(opts ...ServerOption) (*Server, error) {
+	server := &Server{}
 
 	for _, opt := range opts {
 		opt(server)
@@ -88,7 +88,7 @@ type middlewareHandler interface {
 	WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc
 }
 
-func (s *server) Start() error {
+func (s *Server) Start() error {
 	if len(s.e.Routes()) > 0 {
 		return s.e.Start(s.addr)
 	}
@@ -96,7 +96,7 @@ func (s *server) Start() error {
 	return errors.New("no routes initialized")
 }
 
-func (s *server) CreateRoutes() error {
+func (s *Server) CreateRoutes() error {
 	e := echo.New()
 
 	skipper := func(c echo.Context) bool {
@@ -148,6 +148,6 @@ func (s *server) CreateRoutes() error {
 	return nil
 }
 
-func (s *server) Shutdown(ctx context.Context) error {
+func (s *Server) Shutdown(ctx context.Context) error {
 	return s.e.Shutdown(ctx)
 }

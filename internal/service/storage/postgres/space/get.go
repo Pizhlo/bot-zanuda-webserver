@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (db *spaceRepo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
+func (db *Repo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
 	res := model.Space{}
 
 	err := db.db.QueryRowContext(ctx, "select id, name, created, creator, personal from shared_spaces.shared_spaces where id = $1", id).
@@ -24,7 +24,7 @@ func (db *spaceRepo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Spac
 	return res, err
 }
 
-func (db *spaceRepo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+func (db *Repo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, error) {
 	var personal bool
 	err := db.db.QueryRowContext(ctx, "select personal from shared_spaces.shared_spaces where id = $1", spaceID).
 		Scan(&personal)
@@ -39,7 +39,7 @@ func (db *spaceRepo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bo
 	return personal, nil
 }
 
-func (db *spaceRepo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
+func (db *Repo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, error) {
 	var exists bool
 	err := db.db.QueryRowContext(ctx, "select exists(select 1 from shared_spaces.shared_spaces where id = $1)", spaceID).
 		Scan(&exists)
@@ -50,7 +50,7 @@ func (db *spaceRepo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool
 	return exists, nil
 }
 
-func (db *spaceRepo) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
+func (db *Repo) CheckInvitation(ctx context.Context, from, to int64, spaceID uuid.UUID) (bool, error) {
 	var exists bool
 	err := db.db.QueryRowContext(ctx, `select exists(select 1 from shared_spaces.invitations 
 where "from" = (select id from users.users where tg_id = $1)
@@ -65,7 +65,7 @@ and space_id = $3);`, from, to, spaceID).
 }
 
 // CheckParticipant проверяет, является ли пользователь участником пространства
-func (db *spaceRepo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
+func (db *Repo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
 	space, err := db.GetSpaceByID(ctx, spaceID) // получаем информацию о пространстве (проверить, личное ли оно)
 	if err != nil {
 		return false, err

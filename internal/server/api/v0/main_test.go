@@ -44,7 +44,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp
 }
 
-func runTestServer(t *testing.T, h *handler) (*echo.Echo, error) {
+func runTestServer(t *testing.T, h *Handler) (*echo.Echo, error) {
 	t.Helper()
 
 	e := echo.New()
@@ -80,7 +80,7 @@ func runTestServer(t *testing.T, h *handler) (*echo.Echo, error) {
 
 	return e, nil
 }
-func runTestServerWithMiddleware(t *testing.T, h *handler) (*echo.Echo, error) {
+func runTestServerWithMiddleware(t *testing.T, h *Handler) (*echo.Echo, error) {
 	t.Helper()
 
 	e := echo.New()
@@ -127,7 +127,7 @@ func createMockServices(t *testing.T, ctrl *gomock.Controller) (*mocks.Mockspace
 	return spaceSrvMock, userSrvMock, authSrvMock
 }
 
-func createTestHandler(t *testing.T, ctrl *gomock.Controller) *handler {
+func createTestHandler(t *testing.T, ctrl *gomock.Controller) *Handler {
 	t.Helper()
 
 	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)

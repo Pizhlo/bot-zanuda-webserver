@@ -24,7 +24,7 @@ import (
 // @Failure		401	{object}	map[string]string "Невалидный токен"
 // @Failure		500	{object}	map[string]string "Внутренняя ошибка"
 // @Router			/api/v0/spaces/create [post]
-func (h *handler) CreateSpace(c echo.Context) error {
+func (h *Handler) CreateSpace(c echo.Context) error {
 	userID, err := getUserID(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
@@ -68,7 +68,7 @@ func (h *handler) CreateSpace(c echo.Context) error {
 // @Failure		401	{object}	map[string]string "Невалидный токен"
 // @Failure		500	{object}	map[string]string "Внутренняя ошибка"
 // @Router			/api/v0/spaces/{space_id}/participants/add [post]
-func (h *handler) AddParticipant(c echo.Context) error {
+func (h *Handler) AddParticipant(c echo.Context) error {
 	userID, err := getUserID(c)
 	if err != nil {
 		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)

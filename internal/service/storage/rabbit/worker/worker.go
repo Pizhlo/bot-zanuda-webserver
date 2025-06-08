@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type worker struct {
+type Worker struct {
 	config struct {
 		address string
 
@@ -31,28 +31,28 @@ type channel interface {
 	Close() error
 }
 
-type RabbitOption func(*worker)
+type RabbitOption func(*Worker)
 
 func WithAddress(address string) RabbitOption {
-	return func(w *worker) {
+	return func(w *Worker) {
 		w.config.address = address
 	}
 }
 
 func WithNotesTopic(notesTopic string) RabbitOption {
-	return func(w *worker) {
+	return func(w *Worker) {
 		w.config.notesTopic = notesTopic
 	}
 }
 
 func WithSpacesTopic(spacesTopic string) RabbitOption {
-	return func(w *worker) {
+	return func(w *Worker) {
 		w.config.spacesTopic = spacesTopic
 	}
 }
 
-func New(opts ...RabbitOption) (*worker, error) {
-	w := &worker{}
+func New(opts ...RabbitOption) (*Worker, error) {
+	w := &Worker{}
 
 	for _, opt := range opts {
 		opt(w)
@@ -73,7 +73,7 @@ func New(opts ...RabbitOption) (*worker, error) {
 	return w, nil
 }
 
-func (s *worker) Connect() error {
+func (s *Worker) Connect() error {
 	conn, err := amqp.Dial(s.config.address)
 	if err != nil {
 		return err
@@ -119,7 +119,7 @@ func (s *worker) Connect() error {
 	return nil
 }
 
-func (s *worker) Close() error {
+func (s *Worker) Close() error {
 	err := s.channel.Close()
 	if err != nil {
 		logrus.Errorf("worker: error closing channel rabbit mq: %+v", err)
@@ -128,7 +128,7 @@ func (s *worker) Close() error {
 	return s.conn.Close()
 }
 
-func (s *worker) publish(ctx context.Context, queue string, body []byte) error {
+func (s *Worker) publish(ctx context.Context, queue string, body []byte) error {
 	logrus.Debugf("rabbit: publishing message to queue '%s': %+v", queue, string(body))
 
 	return s.channel.PublishWithContext(

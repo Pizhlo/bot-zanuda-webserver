@@ -12,7 +12,7 @@ func TestNew(t *testing.T) {
 	type test struct {
 		name string
 		opts []AuthOption
-		want *AuthService
+		want *Service
 		err  error
 	}
 
@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 			opts: []AuthOption{
 				WithSecretKey(secretKey),
 			},
-			want: &AuthService{
+			want: &Service{
 				secretKey: secretKey,
 			},
 			err: nil,
@@ -51,7 +51,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func createTestAuthService(t *testing.T, secretKey []byte) *AuthService {
+func createTestAuthService(t *testing.T, secretKey []byte) *Service {
 	auth, err := New(WithSecretKey(secretKey))
 	require.NoError(t, err)
 	return auth

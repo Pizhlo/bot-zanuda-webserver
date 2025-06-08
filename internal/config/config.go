@@ -3,13 +3,15 @@ package config
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v2"
 )
 
 type Server struct {
-	Address string `yaml:"address" validate:"required,hostname_port"`
+	Address         string        `yaml:"address" validate:"required,hostname_port"`
+	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" validate:"required,min=1s"`
 }
 
 type RabbitMQ struct {

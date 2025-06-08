@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (c *client) Save(ctx context.Context, data elastic.Data) error {
+func (c *Client) Save(ctx context.Context, data elastic.Data) error {
 	_, err := data.ValidateNote()
 	if err != nil {
 		return fmt.Errorf("error validating note while saving: %+v", err)
@@ -27,7 +27,7 @@ func (c *client) Save(ctx context.Context, data elastic.Data) error {
 	return nil
 }
 
-func (c *client) UpdateNote(ctx context.Context, data elastic.Data) error {
+func (c *Client) UpdateNote(ctx context.Context, data elastic.Data) error {
 	_, err := data.ValidateNote()
 	if err != nil {
 		return fmt.Errorf("error while validating note while updating: %+v", err)

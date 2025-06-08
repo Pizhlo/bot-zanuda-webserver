@@ -10,7 +10,7 @@ import (
 )
 
 // Search производит поиск по переданным данным. Возвращает ID подходящих записей
-func (c *client) SearchByText(ctx context.Context, data elastic.Data) ([]uuid.UUID, error) {
+func (c *Client) SearchByText(ctx context.Context, data elastic.Data) ([]uuid.UUID, error) {
 	_, err := data.ValidateNote()
 	if err != nil {
 		return nil, err

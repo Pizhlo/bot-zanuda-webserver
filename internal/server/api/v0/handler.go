@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type handler struct {
+type Handler struct {
 	space spaceService
 	user  userService
 	auth  authService
@@ -86,28 +86,28 @@ type authService interface {
 	ParseToken(tokenString string) (*jwt.Token, error)
 }
 
-type handlerOption func(*handler)
+type handlerOption func(*Handler)
 
 func WithSpaceService(space spaceService) handlerOption {
-	return func(h *handler) {
+	return func(h *Handler) {
 		h.space = space
 	}
 }
 
 func WithUserService(user userService) handlerOption {
-	return func(h *handler) {
+	return func(h *Handler) {
 		h.user = user
 	}
 }
 
 func WithAuthService(auth authService) handlerOption {
-	return func(h *handler) {
+	return func(h *Handler) {
 		h.auth = auth
 	}
 }
 
-func New(opts ...handlerOption) (*handler, error) {
-	h := &handler{}
+func New(opts ...handlerOption) (*Handler, error) {
+	h := &Handler{}
 
 	for _, opt := range opts {
 		opt(h)

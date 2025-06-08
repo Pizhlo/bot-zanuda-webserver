@@ -2,6 +2,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,8 @@ func TestLoadConfig(t *testing.T) {
 			file: "testdata/valid.yaml",
 			want: &Config{
 				Server: Server{
-					Address: "0.0.0.0:9999",
+					Address:         "0.0.0.0:9999",
+					ShutdownTimeout: 1 * time.Second,
 				},
 				LogLevel: "debug",
 				Storage: struct {

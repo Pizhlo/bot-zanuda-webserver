@@ -23,23 +23,23 @@ import (
 // @Failure		400	{object}	map[string]string "Невалидный запрос"
 // @Failure		401	{object}	map[string]string "Невалидный токен"
 // @Failure		500	{object}	map[string]string "Внутренняя ошибка"
-// @Router			/spaces/create [post]
+// @Router			/api/v0/spaces/create [post]
 func (h *handler) CreateSpace(c echo.Context) error {
 	userID, err := getUserID(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	var req rabbit.CreateSpaceRequest
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	err = json.Unmarshal(body, &req)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	req.ID = uuid.New()
@@ -49,53 +49,62 @@ func (h *handler) CreateSpace(c echo.Context) error {
 
 	if err := h.space.CreateSpace(c.Request().Context(), req); err != nil {
 		if errors.Is(err, model.ErrFieldNameNotFilled) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+			return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 		}
 
 		// ошибку про поле created выше не проверяем, т.к. это внутренняя ошибка сервера, а не клиента
-		return sendInternalError(c, err)
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	return sendRequestID(c, req.ID)
 }
 
+// @Summary		Запрос на добавление участника в пространство
+// @Description	Запрос на добавление участника в пространство
+// @Param          space_id   path      string  true  "ID пространства"
+// @Param		request	body	rabbit.AddParticipantRequest	true	"добавить участника в пространство:\nуказать айди пользователя,\nайди совместного пространства"
+// @Success		202 {object}    string             айди запроса для отслеживания
+// @Failure		400	{object}	map[string]string "Невалидный запрос"
+// @Failure		401	{object}	map[string]string "Невалидный токен"
+// @Failure		500	{object}	map[string]string "Внутренняя ошибка"
+// @Router			/api/v0/spaces/{space_id}/participants/add [post]
 func (h *handler) AddParticipant(c echo.Context) error {
 	userID, err := getUserID(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	spaceID, err := getSpaceIDFromPath(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	var req rabbit.AddParticipantRequest
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	err = json.Unmarshal(body, &req)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	// нельзя добавить самого себя
 	if req.Participant == userID {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "you can't add yourself as a participant"})
+		return api_errors.NewHTTPError(http.StatusBadRequest, "you can't add yourself as a participant", nil)
 	}
 
 	// 400 пользователя (которого пригласили) не существует
 	// проверяем, что существует пользователь, которого добавляем
 	exists, err := h.user.CheckUser(c.Request().Context(), req.Participant)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": err.Error()})
+		return api_errors.NewHTTPError(http.StatusBadRequest, err.Error(), err)
 	}
 
 	if !exists {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"bad request": fmt.Sprintf("user %d not found", req.Participant)})
+		return api_errors.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("user %d not found", req.Participant), nil)
 	}
 
 	// 400 не найдено совместное пространство с таким айди
@@ -103,46 +112,46 @@ func (h *handler) AddParticipant(c echo.Context) error {
 	isPersonal, err := h.space.IsSpacePersonal(c.Request().Context(), spaceID)
 	if err != nil {
 		if errors.Is(err, api_errors.ErrSpaceNotExists) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "space not found"})
+			return api_errors.NewHTTPError(http.StatusBadRequest, "space not found", err)
 		}
 
-		return sendInternalError(c, err)
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	// 400 пространство личное
 	if isPersonal {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "personal space"})
+		return api_errors.NewHTTPError(http.StatusBadRequest, "personal space", nil)
 	}
 
 	// 400 пользователь (который приглашает) не состоит в пространстве
 	exists, err = h.space.IsUserInSpace(c.Request().Context(), userID, spaceID)
 	if err != nil {
-		return sendInternalError(c, err)
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	if !exists {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("user %d not in space", userID)})
+		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("user %d not in space", userID), nil)
 	}
 
 	// 400 приглашенный пользователь уже в пространстве
 	exists, err = h.space.IsUserInSpace(c.Request().Context(), req.Participant, spaceID)
 	if err != nil {
-		return sendInternalError(c, err)
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	if exists {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": fmt.Sprintf("user %d already in space", req.Participant)})
+		return api_errors.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("user %d already in space", req.Participant), nil)
 	}
 
 	// проверяем, что пользователь еще не приглашен в пространство
 	// 400 уже существует такое приглашение (пользователь А уже пригласил пользователя В)
 	exists, err = h.space.CheckInvitation(c.Request().Context(), userID, req.Participant, spaceID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	if exists {
-		return c.JSON(http.StatusBadRequest, map[string]string{"bad request": "invitation already exists"})
+		return api_errors.NewHTTPError(http.StatusBadRequest, "invitation already exists", nil)
 	}
 
 	req.ID = uuid.New()
@@ -152,7 +161,7 @@ func (h *handler) AddParticipant(c echo.Context) error {
 	req.SpaceID = spaceID
 
 	if err := h.space.AddParticipant(c.Request().Context(), req); err != nil {
-		return sendInternalError(c, err)
+		return api_errors.NewHTTPError(http.StatusInternalServerError, err.Error(), err)
 	}
 
 	return sendRequestID(c, req.ID)

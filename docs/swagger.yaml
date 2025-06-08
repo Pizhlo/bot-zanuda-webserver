@@ -78,8 +78,8 @@ definitions:
   model.Space:
     properties:
       created:
-        description: unix in UTC
-        type: integer
+        description: 'TODO: unix in UTC'
+        type: string
       creator:
         description: айди пользователя-создателя в телеге
         type: integer
@@ -103,6 +103,23 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  rabbit.AddParticipantRequest:
+    properties:
+      created:
+        type: integer
+      id:
+        type: string
+      operation:
+        type: string
+      participant:
+        description: кто добавляется в пространство
+        type: integer
+      space_id:
+        type: string
+      user_id:
+        description: кто добавляет участника
+        type: integer
     type: object
   rabbit.CreateNoteRequest:
     properties:
@@ -190,16 +207,15 @@ info:
     а также перенаправление запросов к другим сервисам (напоминяний, пользователей)'
   title: Веб-сервер для Бота Зануды
 paths:
-  /health:
-    get:
-      description: Проверить состояние сервера и соединения
-      responses:
-        "200":
-          description: OK
-      summary: Проверить состояние сервера и соединения
-  /spaces/{space_id}/notes:
+  /api/v0/spaces/{space_id}/notes:
     get:
       description: Запрос на получение всех заметок из личного пространства пользователя
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
       responses:
         "200":
           description: OK
@@ -222,6 +238,228 @@ paths:
               type: string
             type: object
       summary: Запрос на получение всех заметок
+  /api/v0/spaces/{space_id}/notes/{type}:
+    get:
+      description: 'Получить все заметки определенного типа: текстовые, фото, етс'
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: 'тип заметки: текст, фото, етс'
+        in: path
+        name: type
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GetNote'
+            type: array
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Нет заметок
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все заметки одного типа
+  /api/v0/spaces/{space_id}/notes/types:
+    get:
+      description: Получить список всех типов заметок и их количество
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.NoteTypeResponse'
+            type: array
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Нет заметок
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все типы заметок
+  /api/v0/spaces/{space_id}/participants/add:
+    post:
+      description: Запрос на добавление участника в пространство
+      parameters:
+      - description: ID пространства
+        in: path
+        name: space_id
+        required: true
+        type: string
+      - description: |-
+          добавить участника в пространство:
+          указать айди пользователя,
+          айди совместного пространства
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rabbit.AddParticipantRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Невалидный токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на добавление участника в пространство
+  /api/v0/spaces/create:
+    post:
+      description: Запрос на создание пространства
+      parameters:
+      - description: |-
+          создать пространство:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          текст заметки
+          тип заметки: текстовый, фото, видео, и т.п.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rabbit.CreateSpaceRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Невалидный токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на создание пространства
+  /api/v0/spaces/notes/create:
+    post:
+      description: Запрос на создание заметки с текстом. Создается в указанном пространстве
+      parameters:
+      - description: |-
+          создать заметку:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          текст заметки
+          тип заметки: текстовый, фото, видео, и т.п.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rabbit.CreateNoteRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на создание заметки
+  /api/v0/spaces/notes/update:
+    patch:
+      description: Запрос на обновление заметки с текстом. Создается в указанном пространстве
+      parameters:
+      - description: |-
+          обновить заметку:
+          указать айди пользователя,
+          айди его личного / совместного пространства,
+          новый текст заметки,
+          тип заметки: текст, фото, етс
+          айди заметки, которую нужно обновить
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rabbit.UpdateNoteRequest'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Невалидный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Запрос на обновление заметки
+  /health:
+    get:
+      description: Проверить состояние сервера и соединения
+      responses:
+        "200":
+          description: OK
+      summary: Проверить состояние сервера и соединения
   /spaces/{space_id}/notes/{note_id}/delete:
     delete:
       parameters:
@@ -261,42 +499,6 @@ paths:
               type: string
             type: object
       summary: Удалить заметку по айди
-  /spaces/{space_id}/notes/{type}:
-    get:
-      description: 'Получить все заметки определенного типа: текстовые, фото, етс'
-      parameters:
-      - description: ID пространства
-        in: path
-        name: space_id
-        required: true
-        type: string
-      - description: 'тип заметки: текст, фото, етс'
-        in: path
-        name: type
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.GetNote'
-            type: array
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Нет заметок
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Получить все заметки одного типа
   /spaces/{space_id}/notes/delete:
     delete:
       description: Удалить все заметки в пространстве
@@ -326,109 +528,6 @@ paths:
               type: string
             type: object
       summary: Удалить все заметки в пространстве
-  /spaces/{space_id}/notes/types:
-    get:
-      description: Получить список всех типов заметок и их количество
-      parameters:
-      - description: ID пространства
-        in: path
-        name: space_id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/model.NoteTypeResponse'
-            type: array
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Нет заметок
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Получить все типы заметок
-  /spaces/create:
-    post:
-      description: Запрос на создание пространства
-      parameters:
-      - description: |-
-          создать пространство:
-          указать айди пользователя,
-          айди его личного / совместного пространства,
-          текст заметки
-          тип заметки: текстовый, фото, видео, и т.п.
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/rabbit.CreateSpaceRequest'
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            type: string
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Невалидный токен
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Запрос на создание пространства
-  /spaces/notes/create:
-    post:
-      description: Запрос на создание заметки с текстом. Создается в указанном пространстве
-      parameters:
-      - description: |-
-          создать заметку:
-          указать айди пользователя,
-          айди его личного / совместного пространства,
-          текст заметки
-          тип заметки: текстовый, фото, видео, и т.п.
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/rabbit.CreateNoteRequest'
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            type: string
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Запрос на создание заметки
   /spaces/notes/search/text:
     post:
       description: 'Получить все заметки с текстом среди указанного типа (по умолчанию:
@@ -462,38 +561,4 @@ paths:
               type: string
             type: object
       summary: Получить все заметки по тексту
-  /spaces/notes/update:
-    patch:
-      description: Запрос на обновление заметки с текстом. Создается в указанном пространстве
-      parameters:
-      - description: |-
-          обновить заметку:
-          указать айди пользователя,
-          айди его личного / совместного пространства,
-          новый текст заметки,
-          тип заметки: текст, фото, етс
-          айди заметки, которую нужно обновить
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/rabbit.UpdateNoteRequest'
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            type: string
-        "400":
-          description: Невалидный запрос
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Запрос на обновление заметки
 swagger: "2.0"

@@ -216,6 +216,20 @@ func (mr *MockhandlerMockRecorder) ValidateNoteRequest(next interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateNoteRequest", reflect.TypeOf((*Mockhandler)(nil).ValidateNoteRequest), next)
 }
 
+// WrapNetHTTP mocks base method.
+func (m *Mockhandler) WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WrapNetHTTP", next)
+	ret0, _ := ret[0].(echo.HandlerFunc)
+	return ret0
+}
+
+// WrapNetHTTP indicates an expected call of WrapNetHTTP.
+func (mr *MockhandlerMockRecorder) WrapNetHTTP(next interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrapNetHTTP", reflect.TypeOf((*Mockhandler)(nil).WrapNetHTTP), next)
+}
+
 // MockspaceHandler is a mock of spaceHandler interface.
 type MockspaceHandler struct {
 	ctrl     *gomock.Controller
@@ -488,4 +502,18 @@ func (m *MockmiddlewareHandler) ValidateNoteRequest(next echo.HandlerFunc) echo.
 func (mr *MockmiddlewareHandlerMockRecorder) ValidateNoteRequest(next interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateNoteRequest", reflect.TypeOf((*MockmiddlewareHandler)(nil).ValidateNoteRequest), next)
+}
+
+// WrapNetHTTP mocks base method.
+func (m *MockmiddlewareHandler) WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WrapNetHTTP", next)
+	ret0, _ := ret[0].(echo.HandlerFunc)
+	return ret0
+}
+
+// WrapNetHTTP indicates an expected call of WrapNetHTTP.
+func (mr *MockmiddlewareHandlerMockRecorder) WrapNetHTTP(next interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrapNetHTTP", reflect.TypeOf((*MockmiddlewareHandler)(nil).WrapNetHTTP), next)
 }

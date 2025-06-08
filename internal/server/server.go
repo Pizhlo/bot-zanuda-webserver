@@ -84,6 +84,7 @@ type healthHandler interface {
 type middlewareHandler interface {
 	ValidateNoteRequest(next echo.HandlerFunc) echo.HandlerFunc
 	Auth(next echo.HandlerFunc) echo.HandlerFunc
+	WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 func (s *server) Start() error {
@@ -119,24 +120,24 @@ func (s *server) CreateRoutes() error {
 	spaces := apiv0.Group("spaces")
 
 	// spaces
-	spaces.POST("/create", s.api.h0.CreateSpace, s.api.h0.Auth)                        // создать пространство
-	spaces.POST("/:space_id/participants/add", s.api.h0.AddParticipant, s.api.h0.Auth) // добавить участника в пространство
+	spaces.POST("/create", s.api.h0.CreateSpace, s.api.h0.Auth, s.api.h0.WrapNetHTTP)                        // создать пространство
+	spaces.POST("/:space_id/participants/add", s.api.h0.AddParticipant, s.api.h0.Auth, s.api.h0.WrapNetHTTP) // добавить участника в пространство
 
 	// notes
-	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID)
+	spaces.GET("/:space_id/notes", s.api.h0.NotesBySpaceID, s.api.h0.WrapNetHTTP)
 
 	// создание, обновление, удаление
-	spaces.POST("/notes/create", s.api.h0.CreateNote, s.api.h0.ValidateNoteRequest)
-	spaces.PATCH("/notes/update", s.api.h0.UpdateNote, s.api.h0.ValidateNoteRequest)
-	spaces.DELETE("/:space_id/notes/:note_id/delete", s.api.h0.DeleteNote)
-	spaces.DELETE("/:space_id/notes/delete_all", s.api.h0.DeleteAllNotes) // удалить все заметки
+	spaces.POST("/notes/create", s.api.h0.CreateNote, s.api.h0.ValidateNoteRequest, s.api.h0.WrapNetHTTP)
+	spaces.PATCH("/notes/update", s.api.h0.UpdateNote, s.api.h0.ValidateNoteRequest, s.api.h0.WrapNetHTTP)
+	spaces.DELETE("/:space_id/notes/:note_id/delete", s.api.h0.DeleteNote, s.api.h0.WrapNetHTTP)
+	spaces.DELETE("/:space_id/notes/delete_all", s.api.h0.DeleteAllNotes, s.api.h0.WrapNetHTTP) // удалить все заметки
 
 	// типы заметок
-	spaces.GET("/:space_id/notes/types", s.api.h0.GetNoteTypes)   // получить, какие есть типы заметок
-	spaces.GET("/:space_id/notes/:type", s.api.h0.GetNotesByType) // получить все заметки одного типа
+	spaces.GET("/:space_id/notes/types", s.api.h0.GetNoteTypes, s.api.h0.WrapNetHTTP)   // получить, какие есть типы заметок
+	spaces.GET("/:space_id/notes/:type", s.api.h0.GetNotesByType, s.api.h0.WrapNetHTTP) // получить все заметки одного типа
 
 	// поиск
-	spaces.POST("/notes/search/text", s.api.h0.SearchNoteByText) // по тексту
+	spaces.POST("/notes/search/text", s.api.h0.SearchNoteByText, s.api.h0.WrapNetHTTP) // по тексту
 
 	s.e = e
 

@@ -93,6 +93,11 @@ func TestCreateRoutes(t *testing.T) {
 		},
 		{
 			Method: http.MethodGet,
+			Path:   "/metrics",
+			Name:   "github.com/labstack/echo-contrib/echoprometheus.NewHandler",
+		},
+		{
+			Method: http.MethodGet,
 			Path:   "/swagger/*",
 			Name:   "github.com/swaggo/echo-swagger.EchoWrapHandler.func1",
 		},

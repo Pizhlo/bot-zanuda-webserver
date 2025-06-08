@@ -21,4 +21,10 @@ all:
 run:
 	go run main.go
 
-.PHONY: mocks swag lint test all run
+image:
+	docker build -f Dockerfile -t pizhlo/bot-zanuda-webserver:latest .
+
+push:
+	docker push pizhlo/bot-zanuda-webserver:latest
+
+.PHONY: mocks swag lint test all run image push

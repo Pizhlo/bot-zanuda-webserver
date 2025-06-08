@@ -9,14 +9,20 @@ import (
 )
 
 type worker struct {
-	cfg config
+	config struct {
+		address string
 
-	conn    *amqp.Connection
-	channel channel
+		// queues
+		notesTopic  string
+		spacesTopic string
+	}
 
 	// queues
 	notesTopic  amqp.Queue
 	spacesTopic amqp.Queue
+
+	conn    *amqp.Connection
+	channel channel
 }
 
 //go:generate mockgen -source ./worker.go -destination=./mocks/rabbit.go -package=mocks
@@ -25,14 +31,50 @@ type channel interface {
 	Close() error
 }
 
-func New(cfg config) *worker {
-	return &worker{
-		cfg: cfg,
+type RabbitOption func(*worker)
+
+func WithAddress(address string) RabbitOption {
+	return func(w *worker) {
+		w.config.address = address
 	}
 }
 
+func WithNotesTopic(notesTopic string) RabbitOption {
+	return func(w *worker) {
+		w.config.notesTopic = notesTopic
+	}
+}
+
+func WithSpacesTopic(spacesTopic string) RabbitOption {
+	return func(w *worker) {
+		w.config.spacesTopic = spacesTopic
+	}
+}
+
+func New(opts ...RabbitOption) (*worker, error) {
+	w := &worker{}
+
+	for _, opt := range opts {
+		opt(w)
+	}
+
+	if w.config.address == "" {
+		return nil, fmt.Errorf("rabbit: address is required")
+	}
+
+	if w.config.notesTopic == "" {
+		return nil, fmt.Errorf("rabbit: notes topic is required")
+	}
+
+	if w.config.spacesTopic == "" {
+		return nil, fmt.Errorf("rabbit: spaces topic is required")
+	}
+
+	return w, nil
+}
+
 func (s *worker) Connect() error {
-	conn, err := amqp.Dial(s.cfg.Address)
+	conn, err := amqp.Dial(s.config.address)
 	if err != nil {
 		return err
 	}
@@ -47,7 +89,21 @@ func (s *worker) Connect() error {
 	s.channel = ch
 
 	notesTopic, err := ch.QueueDeclare(
-		s.cfg.NotesTopicName, // name
+		s.config.notesTopic, // name
+		true,                // durable
+		false,               // delete when unused
+		false,               // exclusive
+		false,               // no-wait
+		nil,                 // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("error creating queue %s: %+v", s.config.notesTopic, err)
+	}
+
+	s.notesTopic = notesTopic
+
+	spacesTopic, err := ch.QueueDeclare(
+		s.config.spacesTopic, // name
 		true,                 // durable
 		false,                // delete when unused
 		false,                // exclusive
@@ -55,21 +111,7 @@ func (s *worker) Connect() error {
 		nil,                  // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.cfg.NotesTopicName, err)
-	}
-
-	s.notesTopic = notesTopic
-
-	spacesTopic, err := ch.QueueDeclare(
-		s.cfg.SpacesTopicName, // name
-		true,                  // durable
-		false,                 // delete when unused
-		false,                 // exclusive
-		false,                 // no-wait
-		nil,                   // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.cfg.SpacesTopicName, err)
+		return fmt.Errorf("error creating queue %s: %+v", s.config.spacesTopic, err)
 	}
 
 	s.spacesTopic = spacesTopic

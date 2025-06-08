@@ -16,7 +16,7 @@ func (s *worker) CreateNote(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
+	return s.publish(ctx, s.config.notesTopic, bodyJSON)
 }
 
 func (s *worker) UpdateNote(ctx context.Context, req rabbit.Model) error {
@@ -29,7 +29,7 @@ func (s *worker) UpdateNote(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
+	return s.publish(ctx, s.config.notesTopic, bodyJSON)
 }
 
 func (s *worker) DeleteNote(ctx context.Context, req rabbit.Model) error {
@@ -42,7 +42,7 @@ func (s *worker) DeleteNote(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
+	return s.publish(ctx, s.config.notesTopic, bodyJSON)
 }
 
 func (s *worker) DeleteAllNotes(ctx context.Context, req rabbit.Model) error {
@@ -55,5 +55,5 @@ func (s *worker) DeleteAllNotes(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.cfg.NotesTopicName, bodyJSON)
+	return s.publish(ctx, s.config.notesTopic, bodyJSON)
 }

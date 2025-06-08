@@ -1,0 +1,23 @@
+server:
+  address: "not a valid address"
+
+log_level: "invalid_level"
+
+storage:
+  postgres:
+    host: ""
+    port: 80
+    user: ""
+    password: ""
+    db_name: ""
+  elasticsearch:
+    address: "not_a_url"
+  redis:
+    address: "invalid:port"
+  rabbitmq:
+    address: "invalid://address"
+    note_queue: ""
+    space_queue: ""
+
+auth:
+  secret_key: "too_short" 

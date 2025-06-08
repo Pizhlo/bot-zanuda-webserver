@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+	"webserver/internal/config"
 	"webserver/internal/server"
 	v0 "webserver/internal/server/api/v0"
 	"webserver/internal/service/auth"
@@ -20,7 +22,6 @@ import (
 	user_cache "webserver/internal/service/storage/redis/user"
 	"webserver/internal/service/user"
 
-	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,14 +31,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := godotenv.Load()
+	configPath := flag.String("config", "internal/config/config.yaml", "путь к файлу конфигурации")
+	flag.Parse()
+
+	cfg, err := config.LoadConfig(*configPath)
 	if err != nil {
-		logrus.Errorf("error loading env: %+v", err)
+		logrus.Fatalf("error loading config: %+v", err)
 	}
 
-	logLvl := os.Getenv("LOG_LEVEL")
-
-	switch logLvl {
+	switch cfg.LogLevel {
 	case "info":
 		logrus.SetLevel(logrus.InfoLevel)
 	case "warn":
@@ -51,174 +53,70 @@ func main() {
 	case "panic":
 		logrus.SetLevel(logrus.PanicLevel)
 	case "fatal":
-		logrus.SetLevel(logrus.PanicLevel)
+		logrus.SetLevel(logrus.FatalLevel)
 	default:
 		logrus.SetLevel(logrus.InfoLevel)
 	}
 
 	logrus.Infof("log level: %+v", logrus.GetLevel())
 
-	dbUser := os.Getenv("POSTGRES_USER")
-	if len(dbUser) == 0 {
-		logrus.Fatal("POSTGRES_USER is not set")
-	}
+	elasticClient := start(elasticsearch.New([]string{cfg.Storage.ElasticSearch.Address}))
 
-	dbPass := os.Getenv("POSTGRES_PASSWORD")
-	if len(dbPass) == 0 {
-		logrus.Fatal("POSTGRES_PASSWORD is not set")
-	}
-
-	dbName := os.Getenv("POSTGRES_DB")
-	if len(dbName) == 0 {
-		logrus.Fatal("POSTGRES_DB is not set")
-	}
-
-	dbHost := os.Getenv("POSTGRES_HOST")
-	if len(dbHost) == 0 {
-		logrus.Fatal("POSTGRES_HOST is not set")
-	}
-
-	dbPort := os.Getenv("POSTGRES_PORT")
-	if len(dbPort) == 0 {
-		logrus.Fatal("POSTGRES_PORT is not set")
-	}
-
-	elasticAddr := os.Getenv("ELASTIC_ADDR")
-	if len(elasticAddr) == 0 {
-		logrus.Fatal("ELASTIC_ADDR is not set")
-	}
-
-	elasticClient, err := elasticsearch.New([]string{elasticAddr})
-	if err != nil {
-		logrus.Fatalf("unable to connect elastic search: %+v", err)
-	}
-
-	addr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
+	addr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.Storage.Postgres.User, cfg.Storage.Postgres.Password, cfg.Storage.Postgres.Host, cfg.Storage.Postgres.Port, cfg.Storage.Postgres.DBName)
 
 	logrus.Infof("connecting db on %s", addr)
-	spaceRepo, err := space_db.New(addr, elasticClient)
-	if err != nil {
-		logrus.Fatalf("error connecting db: %+v", err)
-	}
+	spaceRepo := start(space_db.New(addr, elasticClient))
 
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if len(redisAddr) == 0 {
-		logrus.Fatalf("REDIS_ADDR not set")
-	}
+	spaceCache := start(space_cache.New(ctx, cfg.Storage.Redis.Address))
 
-	spaceCache, err := space_cache.New(ctx, redisAddr)
-	if err != nil {
-		logrus.Fatalf("error connecting redis (space cache): %+v", err)
-	}
+	logrus.Infof("connecting rabbit on %s", cfg.Storage.RabbitMQ.Address)
 
-	rabbitAddr := os.Getenv("RABBIT_ADDR")
-	if len(rabbitAddr) == 0 {
-		logrus.Fatalf("RABBIT_ADDR not set")
-	}
+	rabbit := start(worker.New(
+		worker.WithAddress(cfg.Storage.RabbitMQ.Address),
+		worker.WithNotesTopic(cfg.Storage.RabbitMQ.NoteQueue),
+		worker.WithSpacesTopic(cfg.Storage.RabbitMQ.SpaceQueue),
+	))
 
-	notesTopicName := os.Getenv("NOTES_TOPIC")
-	if len(notesTopicName) == 0 {
-		logrus.Fatalf("NOTES_TOPIC not set")
-	}
+	startService(rabbit.Connect(), "rabbit")
 
-	spacesTopicName := os.Getenv("SPACES_TOPIC")
-	if len(spacesTopicName) == 0 {
-		logrus.Fatalf("SPACES_TOPIC not set")
-	}
+	logrus.Infof("succesfully connected rabbit on %s", cfg.Storage.RabbitMQ.Address)
 
-	params := map[string]string{
-		worker.NotesTopicNameKey:  notesTopicName,
-		worker.SpacesTopicNameKey: spacesTopicName,
-	}
-
-	rabbitCfg, err := worker.NewConfig(params, rabbitAddr)
-	if err != nil {
-		logrus.Fatalf("error creating rabbit config: %+v", err)
-	}
-
-	logrus.Infof("connecting rabbit on %s", rabbitAddr)
-
-	rabbit := worker.New(rabbitCfg)
-
-	err = rabbit.Connect()
-	if err != nil {
-		logrus.Fatalf("error connecting rabbit: %+v", err)
-	}
-
-	logrus.Infof("succesfully connected rabbit on %s", rabbitAddr)
-
-	spaceSrv, err := space.New(
+	spaceSrv := start(space.New(
 		space.WithRepo(spaceRepo),
 		space.WithCache(spaceCache),
 		space.WithWorker(rabbit),
-	)
-	if err != nil {
-		logrus.Fatalf("error creating space service: %+v", err)
-	}
+	))
 
-	serverAddr := os.Getenv("SERVER_ADDR")
-	if len(serverAddr) == 0 {
-		logrus.Fatalf("SERVER_ADDR not set")
-	}
+	userCache := start(user_cache.New(ctx, cfg.Storage.Redis.Address))
 
-	userCache, err := user_cache.New(ctx, redisAddr)
-	if err != nil {
-		logrus.Fatalf("error connecting redis (user cache): %+v", err)
-	}
+	userRepo := start(user_db.New(addr))
 
-	userRepo, err := user_db.New(addr)
-	if err != nil {
-		logrus.Fatalf("error connecting db: %+v", err)
-	}
-
-	userSrv, err := user.New(
+	userSrv := start(user.New(
 		user.WithRepo(userRepo),
 		user.WithCache(userCache),
-	)
-	if err != nil {
-		logrus.Fatalf("error creating user service: %+v", err)
-	}
+	))
 
-	secretKey := os.Getenv("SECRET_KEY")
-	if len(secretKey) == 0 {
-		logrus.Fatalf("SECRET_KEY not set")
-	}
+	authSrv := start(auth.New(
+		auth.WithSecretKey([]byte(cfg.Auth.SecretKey)),
+	))
 
-	authSrv, err := auth.New(
-		auth.WithSecretKey([]byte(secretKey)),
-	)
-	if err != nil {
-		logrus.Fatalf("error creating auth service: %+v", err)
-	}
-
-	handler, err := v0.New(
+	handler := start(v0.New(
 		v0.WithSpaceService(spaceSrv),
 		v0.WithUserService(userSrv),
 		v0.WithAuthService(authSrv),
-	)
-	if err != nil {
-		logrus.Fatalf("error creating handler: %+v", err)
-	}
+	))
 
-	server, err := server.New(
-		server.WithAddr(serverAddr),
+	server := start(server.New(
+		server.WithAddr(cfg.Server.Address),
 		server.WithHandler(handler),
-	)
-	if err != nil {
-		logrus.Fatalf("error creating server config: %+v", err)
-	}
+	))
 
-	err = server.CreateRoutes()
-	if err != nil {
-		logrus.Fatalf("error creating routes for server: %+v", err)
-	}
+	startService(server.CreateRoutes(), "server routes")
 
-	logrus.Infof("started server on %s", serverAddr)
+	logrus.Infof("started server on %s", cfg.Server.Address)
 
-	err = server.Start()
-	if err != nil {
-		logrus.Fatalf("error starting server: %+v", err)
-	}
+	startService(server.Start(), "server")
 
 	notifyCtx, notify := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer notify()
@@ -252,4 +150,16 @@ func main() {
 	wg.Wait()
 
 	notify()
+}
+
+func startService(err error, name string) {
+	if err != nil {
+		logrus.Fatalf("error creating %s: %+v", name, err)
+	}
+}
+
+func start[T any](svc T, err error) T {
+	startService(err, fmt.Sprintf("%T", svc))
+
+	return svc
 }

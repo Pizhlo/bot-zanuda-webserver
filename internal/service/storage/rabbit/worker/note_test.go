@@ -56,8 +56,14 @@ func TestCreateNote(t *testing.T) {
 	ch := mocks.NewMockchannel(ctrl)
 
 	w := worker{
-		cfg: config{
-			NotesTopicName: notesTopicName,
+		config: struct {
+			address     string
+			notesTopic  string
+			spacesTopic string
+		}{
+			address:     "amqp://localhost:5672/",
+			notesTopic:  notesTopicName,
+			spacesTopic: "spaces",
 		},
 		channel: ch,
 	}
@@ -128,8 +134,14 @@ func TestUpdateNote(t *testing.T) {
 	ch := mocks.NewMockchannel(ctrl)
 
 	w := worker{
-		cfg: config{
-			NotesTopicName: notesTopicName,
+		config: struct {
+			address     string
+			notesTopic  string
+			spacesTopic string
+		}{
+			address:     "amqp://localhost:5672/",
+			notesTopic:  notesTopicName,
+			spacesTopic: "spaces",
 		},
 		channel: ch,
 	}
@@ -198,8 +210,14 @@ func TestDeleteNote(t *testing.T) {
 	ch := mocks.NewMockchannel(ctrl)
 
 	w := worker{
-		cfg: config{
-			NotesTopicName: notesTopicName,
+		config: struct {
+			address     string
+			notesTopic  string
+			spacesTopic string
+		}{
+			address:     "amqp://localhost:5672/",
+			notesTopic:  notesTopicName,
+			spacesTopic: "spaces",
 		},
 		channel: ch,
 	}

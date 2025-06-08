@@ -1,0 +1,26 @@
+server:
+  address: "0.0.0.0:9999"
+
+log_level: "debug"
+
+storage:
+  postgres:
+    host: "localhost"
+    port: 5432
+    user: "user"
+    password: "password"
+    db_name: "test"
+  
+  elasticsearch:
+    address: "http://localhost:1234"
+  
+  redis:
+    address: "localhost:1234"
+  
+  rabbitmq:
+    address: "amqp://user:password@localhost:1234/"
+    note_queue: "notes"
+    space_queue: "spaces"
+
+auth:
+  secret_key: "a-string-secret-at-least-256-bits-long"

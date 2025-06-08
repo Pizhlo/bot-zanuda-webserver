@@ -70,10 +70,10 @@ func NewApp(ctx context.Context, configPath string) (*App, error) {
 	logrus.Infof("connecting db on %s", addr)
 	spaceRepo := start(space_db.New(addr, elasticClient))
 
+	logrus.Infof("connecting redis on %s", cfg.Storage.Redis.Address)
 	spaceCache := start(space_cache.New(ctx, cfg.Storage.Redis.Address))
 
 	logrus.Infof("connecting rabbit on %s", cfg.Storage.RabbitMQ.Address)
-
 	rabbit := start(worker.New(
 		worker.WithAddress(cfg.Storage.RabbitMQ.Address),
 		worker.WithNotesTopic(cfg.Storage.RabbitMQ.NoteQueue),

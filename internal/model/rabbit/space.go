@@ -7,7 +7,7 @@ import (
 )
 
 type CreateSpaceRequest struct {
-	ID        uuid.UUID `json:"id"`
+	ID        uuid.UUID `json:"request_id"`
 	Name      string    `json:"name"`
 	Created   int64     `json:"created"`
 	UserID    int64     `json:"user_id"` // создатель пространства
@@ -39,7 +39,7 @@ func (c CreateSpaceRequest) Validate() error {
 }
 
 type AddParticipantRequest struct {
-	ID          uuid.UUID `json:"id"`
+	ID          uuid.UUID `json:"request_id"`
 	SpaceID     uuid.UUID `json:"space_id"`
 	UserID      int64     `json:"user_id"`     // кто добавляет участника
 	Participant int64     `json:"participant"` // кто добавляется в пространство

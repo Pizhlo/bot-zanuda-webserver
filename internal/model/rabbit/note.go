@@ -22,14 +22,14 @@ type Model interface {
 //
 // Запрос на создание заметки
 type CreateNoteRequest struct {
-	ID        uuid.UUID      `json:"-"`         // айди запроса
-	UserID    int64          `json:"user_id"`   // кто создал заметку
-	SpaceID   uuid.UUID      `json:"space_id"`  // айди пространства, куда сохранить заметку
-	Text      string         `json:"text"`      // текст заметки
-	Type      model.NoteType `json:"type"`      // тип заметки: текстовая, фото, видео, етс
-	File      string         `json:"file"`      // название файла в Minio (если есть)
-	Operation Operation      `json:"operation"` // какое действие сделать: создать, удалить, редактировать
-	Created   int64          `json:"created"`   // дата обращения в Unix в UTC
+	ID        uuid.UUID      `json:"request_id"` // айди запроса
+	UserID    int64          `json:"user_id"`    // кто создал заметку
+	SpaceID   uuid.UUID      `json:"space_id"`   // айди пространства, куда сохранить заметку
+	Text      string         `json:"text"`       // текст заметки
+	Type      model.NoteType `json:"type"`       // тип заметки: текстовая, фото, видео, етс
+	File      string         `json:"file"`       // название файла в Minio (если есть)
+	Operation Operation      `json:"operation"`  // какое действие сделать: создать, удалить, редактировать
+	Created   int64          `json:"created"`    // дата обращения в Unix в UTC
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -75,7 +75,7 @@ func (s *CreateNoteRequest) Validate() error {
 //		“text”: “new note text"
 //	  }
 type UpdateNoteRequest struct {
-	ID        uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
+	ID        uuid.UUID `json:"request_id"` // айди запроса, генерируется в процессе обработки
 	SpaceID   uuid.UUID `json:"space_id"`
 	UserID    int64     `json:"user_id"`
 	NoteID    uuid.UUID `json:"note_id"`   // айди заметки
@@ -115,7 +115,7 @@ func (s *UpdateNoteRequest) Validate() error {
 }
 
 type DeleteNoteRequest struct {
-	ID        uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
+	ID        uuid.UUID `json:"request_id"` // айди запроса, генерируется в процессе обработки
 	SpaceID   uuid.UUID `json:"space_id"`
 	NoteID    uuid.UUID `json:"note_id"`
 	Operation Operation `json:"operation"` // какое действие сделать: создать, удалить, редактировать
@@ -147,7 +147,7 @@ func (s *DeleteNoteRequest) Validate() error {
 }
 
 type DeleteAllNotesRequest struct {
-	ID        uuid.UUID `json:"id"` // айди запроса, генерируется в процессе обработки
+	ID        uuid.UUID `json:"request_id"` // айди запроса, генерируется в процессе обработки
 	SpaceID   uuid.UUID `json:"space_id"`
 	Operation Operation `json:"operation"` // какое действие сделать: создать, удалить, редактировать
 	Created   int64     `json:"created"`   // дата обращения в Unix в UTC

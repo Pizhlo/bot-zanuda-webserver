@@ -27,4 +27,7 @@ image:
 push:
 	docker push pizhlo/bot-zanuda-webserver:latest
 
-.PHONY: mocks swag lint test all run image push
+init:
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+
+.PHONY: mocks swag lint test all run image push init

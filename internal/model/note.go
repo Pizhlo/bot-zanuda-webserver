@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -37,14 +36,14 @@ const (
 )
 
 type Note struct {
-	ID       uuid.UUID    `json:"id"`
-	User     *User        `json:"user"`    // кто создал заметку
-	Text     string       `json:"text"`    // текст заметки
-	Space    *Space       `json:"space"`   // айди пространства, куда сохранить заметку
-	Created  time.Time    `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
-	LastEdit sql.NullTime `json:"last_edit"`
-	Type     NoteType     `json:"type"` // тип заметки: текстовая, фото, видео, етс
-	File     string       `json:"file"` // название файла в Minio (если есть)
+	ID      uuid.UUID     `json:"id"`
+	User    *User         `json:"user"`    // кто создал заметку
+	Text    string        `json:"text"`    // текст заметки
+	Space   *Space        `json:"space"`   // айди пространства, куда сохранить заметку
+	Created int64         `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	Updated sql.NullInt64 `json:"updated"`
+	Type    NoteType      `json:"type"` // тип заметки: текстовая, фото, видео, етс
+	File    string        `json:"file"` // название файла в Minio (если есть)
 }
 
 var ErrSpaceIsNil = fmt.Errorf("field `Space` is nil")
@@ -80,14 +79,14 @@ func (s *Note) Validate() error {
 // структура для ответа на запрос всех заметок пространства в кратком режиме.
 // У этой структуры поля пользователь и пространство заменены на айди
 type GetNote struct {
-	ID       uuid.UUID      `json:"id"`
-	UserID   int            `json:"user_id"`
-	Text     string         `json:"text"`
-	SpaceID  uuid.UUID      `json:"space_id"`
-	Created  time.Time      `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
-	LastEdit sql.NullTime   `json:"last_edit"`
-	Type     NoteType       `json:"type"`
-	File     sql.NullString `json:"file"` // название файла в Minio (если есть)
+	ID      uuid.UUID      `json:"id"`
+	UserID  int            `json:"user_id"`
+	Text    string         `json:"text"`
+	SpaceID uuid.UUID      `json:"space_id"`
+	Created int64          `json:"created"` // дата создания заметки в часовом поясе пользователя в unix
+	Updated sql.NullInt64  `json:"updated"`
+	Type    NoteType       `json:"type"`
+	File    sql.NullString `json:"file"` // название файла в Minio (если есть)
 }
 
 func (s *GetNote) Validate() error {
@@ -99,7 +98,7 @@ func (s *GetNote) Validate() error {
 		return ErrFieldTextNotFilled
 	}
 
-	if s.Created.IsZero() {
+	if s.Created == 0 {
 		return ErrFieldCreatedNotFilled
 	}
 

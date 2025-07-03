@@ -534,7 +534,7 @@
                 "id": {
                     "type": "string"
                 },
-                "last_edit": {
+                "updated": {
                     "$ref": "#/definitions/sql.NullTime"
                 },
                 "space_id": {
@@ -565,7 +565,7 @@
                 "id": {
                     "type": "string"
                 },
-                "last_edit": {
+                "updated": {
                     "$ref": "#/definitions/sql.NullTime"
                 },
                 "space": {

@@ -246,7 +246,7 @@ func TestUpdateNote(t *testing.T) {
 				Text:    "new note",
 				SpaceID: generatedID,
 				Type:    model.TextNoteType,
-				Created: time.Now(),
+				Created: 1236788,
 			},
 			expectedNote: rabbit.UpdateNoteRequest{
 				UserID:    1,
@@ -266,7 +266,7 @@ func TestUpdateNote(t *testing.T) {
 					Text:    "new note",
 					SpaceID: generatedID,
 					Type:    model.TextNoteType,
-					Created: time.Now(),
+					Created: 1236788,
 				}, nil)
 				mocks.spaceSrv.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil)
 			},
@@ -326,7 +326,7 @@ func TestUpdateNote(t *testing.T) {
 				Text:    "note not belongs space DB",
 				SpaceID: newID,
 				Type:    model.TextNoteType,
-				Created: time.Now(),
+				Created: 1236788,
 			},
 			expectedCode: http.StatusBadRequest,
 			expectedErr:  api_errors.ErrNoteNotBelongsSpace,
@@ -338,7 +338,7 @@ func TestUpdateNote(t *testing.T) {
 					Text:    "note not belongs space DB",
 					SpaceID: newID,
 					Type:    model.TextNoteType,
-					Created: time.Now(),
+					Created: 1236788,
 				}, nil)
 			},
 		},
@@ -356,7 +356,7 @@ func TestUpdateNote(t *testing.T) {
 				Text:    "note type is not text DB",
 				SpaceID: generatedID,
 				Type:    model.PhotoNoteType,
-				Created: time.Now(),
+				Created: 1236788,
 			},
 			expectedCode: http.StatusBadRequest,
 			expectedErr:  model.ErrUpdateNotTextNote,
@@ -368,7 +368,7 @@ func TestUpdateNote(t *testing.T) {
 					Text:    "note type is not text DB",
 					SpaceID: generatedID,
 					Type:    model.PhotoNoteType,
-					Created: time.Now(),
+					Created: 1236788,
 				}, nil)
 			},
 		},
@@ -473,8 +473,8 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 				Creator:  1,
 				Personal: true,
 			},
-			Created:  time.Now(),
-			LastEdit: sql.NullTime{Valid: false},
+			Created: 1236788,
+			Updated: sql.NullInt64{Valid: false},
 		},
 	}
 
@@ -598,7 +598,7 @@ func TestNotesBySpaceID(t *testing.T) {
 			UserID:  1,
 			Text:    "test note",
 			SpaceID: uuid.New(),
-			Created: time.Now(),
+			Created: 1236788,
 		},
 	}
 

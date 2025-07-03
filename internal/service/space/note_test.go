@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
 
@@ -91,13 +90,13 @@ func TestGetAllNotesBySpaceIDFull(t *testing.T) {
 			want: []model.Note{
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					Text:    "test note 1",
 					Type:    model.TextNoteType,
 				},
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					Text:    "test note 2",
 					Type:    model.TextNoteType,
 				},
@@ -150,7 +149,7 @@ func TestGetAllNotesBySpaceID(t *testing.T) {
 			want: []model.GetNote{
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					UserID:  123,
 					Text:    "test note 1",
 					Type:    model.TextNoteType,
@@ -256,7 +255,7 @@ func TestGetNoteByID(t *testing.T) {
 			noteID: noteID,
 			want: model.GetNote{
 				ID:      noteID,
-				Created: time.Now(),
+				Created: 1236788,
 				UserID:  123,
 				Text:    "test note",
 				Type:    model.TextNoteType,
@@ -366,14 +365,14 @@ func TestGetNotesByType(t *testing.T) {
 			want: []model.GetNote{
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					UserID:  123,
 					Text:    "test note 1",
 					Type:    model.TextNoteType,
 				},
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					UserID:  123,
 					Text:    "test note 2",
 					Type:    model.TextNoteType,
@@ -431,7 +430,7 @@ func TestSearchNoteByText(t *testing.T) {
 			want: []model.GetNote{
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					UserID:  123,
 					Text:    "test note",
 					Type:    model.TextNoteType,
@@ -448,7 +447,7 @@ func TestSearchNoteByText(t *testing.T) {
 			want: []model.GetNote{
 				{
 					ID:      uuid.New(),
-					Created: time.Now(),
+					Created: 1236788,
 					UserID:  123,
 					Text:    "test note",
 					Type:    model.TextNoteType,

@@ -23,7 +23,7 @@ func (db *Repo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID)
 	res := []model.Note{}
 
 	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, 
-	last_edit as note_last_edit, shared_spaces.shared_spaces.id as space_id,  shared_spaces.shared_spaces.name as space_name, 
+	updated as note_updated, shared_spaces.shared_spaces.id as space_id,  shared_spaces.shared_spaces.name as space_name, 
 	shared_spaces.shared_spaces.personal, shared_spaces.shared_spaces.creator,shared_spaces.shared_spaces.created as space_created, 
 	users.users.tg_id,  users.users.username,  users.users.space_id as users_personal_space, users.timezones.timezone 
 	from shared_spaces.shared_spaces
@@ -38,15 +38,17 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	for rows.Next() {
 		note := model.Note{
 			Space: &model.Space{},
-			User:  &model.User{},
+			User: &model.User{
+				PersonalSpace: &model.Space{},
+			},
 		}
-		err := rows.Scan(&note.ID, &note.Text, &note.Created, &note.LastEdit,
+		err := rows.Scan(&note.ID, &note.Text, &note.Created, &note.Updated,
 			&note.Space.ID, &note.Space.Name, &note.Space.Personal,
 			&note.Space.Creator, &note.Space.Created, &note.User.TgID,
-			&note.User.Username, &note.User.PersonalSpace.ID, &note.User.Timezone)
+			&note.User.UsernameSQL, &note.User.PersonalSpace.ID, &note.User.Timezone)
 		if err != nil {
 			// "sql: Scan error on column index 1, name \"note_text\": converting NULL to string is unsupported"
-			if strings.Contains(err.Error(), "converting NULL") {
+			if strings.Contains(err.Error(), "converting NULL to string is unsupported") {
 				return nil, api_errors.ErrNoNotesFoundBySpaceID
 			}
 
@@ -54,6 +56,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 		}
 
 		note.User.PersonalSpace = note.Space
+		note.User.Username = note.User.UsernameSQL.String
 
 		res = append(res, note)
 	}
@@ -69,7 +72,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 func (db *Repo) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error) {
 	res := []model.GetNote{}
 
-	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, last_edit as note_last_edit, shared_spaces.shared_spaces.id as space_id,  users.users.tg_id from shared_spaces.shared_spaces
+	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, updated as note_updated, shared_spaces.shared_spaces.id as space_id,  users.users.tg_id from shared_spaces.shared_spaces
 left join notes.notes on shared_spaces.shared_spaces.id = notes.notes.space_id
 left join users.users on users.users.id = notes.notes.user_id
 left join users.timezones on users.timezones.user_id = notes.notes.user_id
@@ -81,7 +84,7 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 	for rows.Next() {
 		note := model.GetNote{}
 
-		err := rows.Scan(&note.ID, &note.Text, &note.Created, &note.LastEdit,
+		err := rows.Scan(&note.ID, &note.Text, &note.Created, &note.Updated,
 			&note.SpaceID, &note.UserID,
 		)
 		if err != nil {
@@ -110,7 +113,7 @@ func (db *Repo) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest)
 	}
 
 	var id uuid.UUID
-	err = tx.QueryRowContext(ctx, `update notes.notes set text = $1, last_edit = now()
+	err = tx.QueryRowContext(ctx, `update notes.notes set text = $1, updated = now()
 	where id = $2 and user_id = (select id from users.users where tg_id = $3) returning id`,
 		update.Text, update.NoteID, update.UserID).Scan(&id)
 	if err != nil {
@@ -144,12 +147,12 @@ func (db *Repo) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest)
 func (db *Repo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
 	var note model.GetNote
 
-	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, last_edit, type
+	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, updated, type
 	 from notes.notes 
 left join users.users on users.users.id = notes.notes.user_id
 where notes.notes.id = $1;`, noteID)
 
-	err := row.Scan(&note.ID, &note.UserID, &note.Text, &note.SpaceID, &note.Created, &note.LastEdit, &note.Type)
+	err := row.Scan(&note.ID, &note.UserID, &note.Text, &note.SpaceID, &note.Created, &note.Updated, &note.Type)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.GetNote{}, api_errors.ErrNoteNotFound
@@ -196,7 +199,7 @@ func (db *Repo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.N
 func (db *Repo) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error) {
 	res := []model.GetNote{}
 
-	rows, err := db.db.QueryContext(ctx, `select notes.notes.id, users.users.tg_id, text, created, last_edit, file 
+	rows, err := db.db.QueryContext(ctx, `select notes.notes.id, users.users.tg_id, text, created, updated, file 
 from notes.notes
 join users.users on users.users.id = notes.notes.user_id
 where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
@@ -210,7 +213,7 @@ where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
 			Type:    noteType,
 		}
 
-		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.LastEdit, &note.File)
+		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.Updated, &note.File)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning result of note types query: %+v", err)
 		}
@@ -246,7 +249,7 @@ func (db *Repo) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 
 	var notes []model.GetNote
 
-	q, args, err := sqlx.In(`select notes.notes.id, users.users.tg_id, text, created, last_edit, type, file from notes.notes
+	q, args, err := sqlx.In(`select notes.notes.id, users.users.tg_id, text, created, updated, type, file from notes.notes
 	join users.users on users.users.id = notes.notes.user_id
 	where notes.notes.id IN(?);`, ids)
 	if err != nil {
@@ -264,7 +267,7 @@ func (db *Repo) SearchNoteByText(ctx context.Context, req model.SearchNoteByText
 			SpaceID: req.SpaceID,
 		}
 
-		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.LastEdit, &note.Type, &note.File)
+		err := rows.Scan(&note.ID, &note.UserID, &note.Text, &note.Created, &note.Updated, &note.Type, &note.File)
 		if err != nil {
 			return nil, fmt.Errorf("error while scanning note (search by text): %w", err)
 		}

@@ -543,7 +543,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "last_edit": {
+                "updated": {
                     "$ref": "#/definitions/sql.NullTime"
                 },
                 "space_id": {
@@ -574,7 +574,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "last_edit": {
+                "updated": {
                     "$ref": "#/definitions/sql.NullTime"
                 },
                 "space": {

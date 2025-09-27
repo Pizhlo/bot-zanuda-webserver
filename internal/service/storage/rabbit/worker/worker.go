@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"webserver/internal/model/rabbit"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -12,14 +13,10 @@ type Worker struct {
 	config struct {
 		address string
 
-		// queues
-		notesTopic  string
-		spacesTopic string
+		// exchanges
+		notesExchange  string
+		spacesExchange string
 	}
-
-	// queues
-	notesTopic  amqp.Queue
-	spacesTopic amqp.Queue
 
 	conn    *amqp.Connection
 	channel channel
@@ -39,15 +36,15 @@ func WithAddress(address string) RabbitOption {
 	}
 }
 
-func WithNotesTopic(notesTopic string) RabbitOption {
+func WithNotesExchange(notesExchange string) RabbitOption {
 	return func(w *Worker) {
-		w.config.notesTopic = notesTopic
+		w.config.notesExchange = notesExchange
 	}
 }
 
-func WithSpacesTopic(spacesTopic string) RabbitOption {
+func WithSpacesExchange(spacesExchange string) RabbitOption {
 	return func(w *Worker) {
-		w.config.spacesTopic = spacesTopic
+		w.config.spacesExchange = spacesExchange
 	}
 }
 
@@ -62,12 +59,12 @@ func New(opts ...RabbitOption) (*Worker, error) {
 		return nil, fmt.Errorf("rabbit: address is required")
 	}
 
-	if w.config.notesTopic == "" {
-		return nil, fmt.Errorf("rabbit: notes topic is required")
+	if w.config.notesExchange == "" {
+		return nil, fmt.Errorf("rabbit: notes exchange is required")
 	}
 
-	if w.config.spacesTopic == "" {
-		return nil, fmt.Errorf("rabbit: spaces topic is required")
+	if w.config.spacesExchange == "" {
+		return nil, fmt.Errorf("rabbit: spaces exchange is required")
 	}
 
 	return w, nil
@@ -88,33 +85,33 @@ func (s *Worker) Connect() error {
 
 	s.channel = ch
 
-	notesTopic, err := ch.QueueDeclare(
-		s.config.notesTopic, // name
-		true,                // durable
-		false,               // delete when unused
-		false,               // exclusive
-		false,               // no-wait
-		nil,                 // arguments
+	// Create notes exchange
+	err = ch.ExchangeDeclare(
+		s.config.notesExchange, // name
+		"topic",                // type
+		true,                   // durable
+		false,                  // auto-deleted
+		false,                  // internal
+		false,                  // no-wait
+		nil,                    // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.config.notesTopic, err)
+		return fmt.Errorf("error creating exchange %s: %+v", s.config.notesExchange, err)
 	}
 
-	s.notesTopic = notesTopic
-
-	spacesTopic, err := ch.QueueDeclare(
-		s.config.spacesTopic, // name
-		true,                 // durable
-		false,                // delete when unused
-		false,                // exclusive
-		false,                // no-wait
-		nil,                  // arguments
+	// Create spaces exchange
+	err = ch.ExchangeDeclare(
+		s.config.spacesExchange, // name
+		"topic",                 // type
+		true,                    // durable
+		false,                   // auto-deleted
+		false,                   // internal
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("error creating queue %s: %+v", s.config.spacesTopic, err)
+		return fmt.Errorf("error creating exchange %s: %+v", s.config.spacesExchange, err)
 	}
-
-	s.spacesTopic = spacesTopic
 
 	return nil
 }
@@ -128,15 +125,15 @@ func (s *Worker) Close() error {
 	return s.conn.Close()
 }
 
-func (s *Worker) publish(ctx context.Context, queue string, body []byte) error {
-	logrus.Debugf("rabbit: publishing message to queue '%s': %+v", queue, string(body))
+func (s *Worker) publish(ctx context.Context, exchange string, operation rabbit.Operation, body []byte) error {
+	logrus.Debugf("rabbit: publishing message to exchange '%s' with operation '%s': %+v", exchange, operation, string(body))
 
 	return s.channel.PublishWithContext(
 		ctx,
-		"",    // exchange
-		queue, // routing key
-		false, // mandatory
-		false, // immediate
+		exchange,          // exchange
+		string(operation), // routing key
+		false,             // mandatory
+		false,             // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,

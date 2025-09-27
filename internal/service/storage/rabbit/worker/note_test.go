@@ -48,7 +48,7 @@ func TestCreateNote(t *testing.T) {
 		},
 	}
 
-	notesTopicName := "notes"
+	notesExchangeName := "notes"
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -57,13 +57,13 @@ func TestCreateNote(t *testing.T) {
 
 	w := Worker{
 		config: struct {
-			address     string
-			notesTopic  string
-			spacesTopic string
+			address        string
+			notesExchange  string
+			spacesExchange string
 		}{
-			address:     "amqp://localhost:5672/",
-			notesTopic:  notesTopicName,
-			spacesTopic: "spaces",
+			address:        "amqp://localhost:5672/",
+			notesExchange:  notesExchangeName,
+			spacesExchange: "spaces",
 		},
 		channel: ch,
 	}
@@ -73,7 +73,8 @@ func TestCreateNote(t *testing.T) {
 			if tt.err == nil {
 				ch.EXPECT().PublishWithContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(_ context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) {
-						assert.Equal(t, notesTopicName, key)
+						assert.Equal(t, notesExchangeName, exchange)
+						assert.Equal(t, string(rabbit.CreateOp), key)
 						assert.False(t, mandatory)
 						assert.False(t, immediate)
 						assert.Equal(t, "application/json", msg.ContentType)
@@ -126,7 +127,7 @@ func TestUpdateNote(t *testing.T) {
 		},
 	}
 
-	notesTopicName := "notes"
+	notesExchangeName := "notes"
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -135,13 +136,13 @@ func TestUpdateNote(t *testing.T) {
 
 	w := Worker{
 		config: struct {
-			address     string
-			notesTopic  string
-			spacesTopic string
+			address        string
+			notesExchange  string
+			spacesExchange string
 		}{
-			address:     "amqp://localhost:5672/",
-			notesTopic:  notesTopicName,
-			spacesTopic: "spaces",
+			address:        "amqp://localhost:5672/",
+			notesExchange:  notesExchangeName,
+			spacesExchange: "spaces",
 		},
 		channel: ch,
 	}
@@ -151,7 +152,8 @@ func TestUpdateNote(t *testing.T) {
 			if tt.err == nil {
 				ch.EXPECT().PublishWithContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(_ context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) {
-						assert.Equal(t, notesTopicName, key)
+						assert.Equal(t, notesExchangeName, exchange)
+						assert.Equal(t, string(rabbit.UpdateOp), key)
 						assert.False(t, mandatory)
 						assert.False(t, immediate)
 						assert.Equal(t, "application/json", msg.ContentType)
@@ -202,7 +204,7 @@ func TestDeleteNote(t *testing.T) {
 		},
 	}
 
-	notesTopicName := "notes"
+	notesExchangeName := "notes"
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -211,13 +213,13 @@ func TestDeleteNote(t *testing.T) {
 
 	w := Worker{
 		config: struct {
-			address     string
-			notesTopic  string
-			spacesTopic string
+			address        string
+			notesExchange  string
+			spacesExchange string
 		}{
-			address:     "amqp://localhost:5672/",
-			notesTopic:  notesTopicName,
-			spacesTopic: "spaces",
+			address:        "amqp://localhost:5672/",
+			notesExchange:  notesExchangeName,
+			spacesExchange: "spaces",
 		},
 		channel: ch,
 	}
@@ -227,7 +229,8 @@ func TestDeleteNote(t *testing.T) {
 			if tt.err == nil {
 				ch.EXPECT().PublishWithContext(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(_ context.Context, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) {
-						assert.Equal(t, notesTopicName, key)
+						assert.Equal(t, notesExchangeName, exchange)
+						assert.Equal(t, string(rabbit.DeleteOp), key)
 						assert.False(t, mandatory)
 						assert.False(t, immediate)
 						assert.Equal(t, "application/json", msg.ContentType)

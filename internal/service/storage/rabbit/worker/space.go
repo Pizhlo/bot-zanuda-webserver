@@ -16,7 +16,7 @@ func (s *Worker) CreateSpace(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.config.spacesTopic, bodyJSON)
+	return s.publish(ctx, s.config.spacesExchange, rabbit.CreateOp, bodyJSON)
 }
 
 func (s *Worker) AddParticipant(ctx context.Context, req rabbit.Model) error {
@@ -29,5 +29,5 @@ func (s *Worker) AddParticipant(ctx context.Context, req rabbit.Model) error {
 		return err
 	}
 
-	return s.publish(ctx, s.config.spacesTopic, bodyJSON)
+	return s.publish(ctx, s.config.spacesExchange, rabbit.AddParticipantOp, bodyJSON)
 }

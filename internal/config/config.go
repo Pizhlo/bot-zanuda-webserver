@@ -15,9 +15,9 @@ type Server struct {
 }
 
 type RabbitMQ struct {
-	Address    string `yaml:"address" validate:"required,rabbitmq_address"`
-	NoteQueue  string `yaml:"note_queue" validate:"required"`
-	SpaceQueue string `yaml:"space_queue" validate:"required"`
+	Address       string `yaml:"address" validate:"required,rabbitmq_address"`
+	NoteExchange  string `yaml:"note_exchange" validate:"required"`
+	SpaceExchange string `yaml:"space_exchange" validate:"required"`
 }
 
 type Postgres struct {

@@ -18,44 +18,44 @@ func TestNew(t *testing.T) {
 			name: "positive case",
 			opts: []RabbitOption{
 				WithAddress("amqp://localhost:5672/"),
-				WithNotesTopic("notes"),
-				WithSpacesTopic("spaces"),
+				WithNotesExchange("notes"),
+				WithSpacesExchange("spaces"),
 			},
 			want: &Worker{
 				config: struct {
-					address     string
-					notesTopic  string
-					spacesTopic string
+					address        string
+					notesExchange  string
+					spacesExchange string
 				}{
-					address:     "amqp://localhost:5672/",
-					notesTopic:  "notes",
-					spacesTopic: "spaces",
+					address:        "amqp://localhost:5672/",
+					notesExchange:  "notes",
+					spacesExchange: "spaces",
 				},
 			},
 		},
 		{
 			name: "negative case: address is required",
 			opts: []RabbitOption{
-				WithNotesTopic("notes"),
-				WithSpacesTopic("spaces"),
+				WithNotesExchange("notes"),
+				WithSpacesExchange("spaces"),
 			},
 			err: fmt.Errorf("rabbit: address is required"),
 		},
 		{
-			name: "negative case: notes topic is required",
+			name: "negative case: notes exchange is required",
 			opts: []RabbitOption{
 				WithAddress("amqp://localhost:5672/"),
-				WithSpacesTopic("spaces"),
+				WithSpacesExchange("spaces"),
 			},
-			err: fmt.Errorf("rabbit: notes topic is required"),
+			err: fmt.Errorf("rabbit: notes exchange is required"),
 		},
 		{
-			name: "negative case: spaces topic is required",
+			name: "negative case: spaces exchange is required",
 			opts: []RabbitOption{
 				WithAddress("amqp://localhost:5672/"),
-				WithNotesTopic("notes"),
+				WithNotesExchange("notes"),
 			},
-			err: fmt.Errorf("rabbit: spaces topic is required"),
+			err: fmt.Errorf("rabbit: spaces exchange is required"),
 		},
 	}
 

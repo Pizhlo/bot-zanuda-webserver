@@ -13,6 +13,7 @@ import (
 	"webserver/internal/model/rabbit"
 	"webserver/internal/server/api/v0/mocks"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -89,6 +90,14 @@ func TestCreateSpace(t *testing.T) {
 		},
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -96,7 +105,7 @@ func TestCreateSpace(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -248,6 +257,14 @@ func TestAddParticipant(t *testing.T) {
 		},
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	urlFmt := "/api/v0/spaces/%s/participants/add"
 
 	for _, tt := range tests {
@@ -257,7 +274,7 @@ func TestAddParticipant(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

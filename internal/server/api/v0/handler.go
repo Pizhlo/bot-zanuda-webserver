@@ -6,14 +6,16 @@ import (
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	space spaceService
-	user  userService
-	auth  authService
+	space  spaceService
+	user   userService
+	auth   authService
+	logger *logger.Logger
 }
 
 // интерфейс сервиса пространств. управляет пространствами, а также принадлежащими им записями: заметки, напоминания, етс
@@ -106,6 +108,12 @@ func WithAuthService(auth authService) handlerOption {
 	}
 }
 
+func WithLogger(logger *logger.Logger) handlerOption {
+	return func(h *Handler) {
+		h.logger = logger
+	}
+}
+
 func New(opts ...handlerOption) (*Handler, error) {
 	h := &Handler{}
 
@@ -124,6 +132,12 @@ func New(opts ...handlerOption) (*Handler, error) {
 	if h.auth == nil {
 		return nil, errors.New("auth is nil")
 	}
+
+	if h.logger == nil {
+		return nil, errors.New("logger is nil")
+	}
+
+	h.logger.Info("handler v0 initialized")
 
 	return h, nil
 }

@@ -2,7 +2,10 @@ server:
   address: "0.0.0.0:9999"
   shutdown_timeout: 1s
   
-log_level: "debug"
+logger:
+  level: "debug"
+  output: "console"
+  format: "text"
 
 storage:
   postgres:

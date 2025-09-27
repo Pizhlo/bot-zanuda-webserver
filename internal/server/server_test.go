@@ -7,6 +7,7 @@ import (
 	"testing"
 	"webserver/internal/server/mocks"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,12 @@ import (
 func TestNewServer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
 
 	tests := []struct {
 		name string
@@ -28,12 +35,14 @@ func TestNewServer(t *testing.T) {
 			opts: []ServerOption{
 				WithAddr(":8080"),
 				WithHandler(mocks.NewMockhandler(ctrl)),
+				WithLogger(logger),
 			},
 			want: &Server{
 				addr: ":8080",
 				api: struct {
 					h0 handler
 				}{h0: mocks.NewMockhandler(ctrl)},
+				logger: logger,
 			},
 			err: nil,
 		},
@@ -41,6 +50,7 @@ func TestNewServer(t *testing.T) {
 			name: "error case: addr is required",
 			opts: []ServerOption{
 				WithHandler(mocks.NewMockhandler(ctrl)),
+				WithLogger(logger),
 			},
 			err: errors.New("addr is required"),
 		},
@@ -48,8 +58,17 @@ func TestNewServer(t *testing.T) {
 			name: "error case: handler is required",
 			opts: []ServerOption{
 				WithAddr(":8080"),
+				WithLogger(logger),
 			},
 			err: errors.New("handler is required"),
+		},
+		{
+			name: "error case: logger is required",
+			opts: []ServerOption{
+				WithAddr(":8080"),
+				WithHandler(mocks.NewMockhandler(ctrl)),
+			},
+			err: errors.New("logger is nil"),
 		},
 	}
 
@@ -73,10 +92,16 @@ func TestCreateRoutes(t *testing.T) {
 	defer ctrl.Finish()
 
 	h := mocks.NewMockhandler(ctrl)
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
 
 	server, err := New(
 		WithAddr(":8080"),
 		WithHandler(h),
+		WithLogger(logger),
 	)
 	require.NoError(t, err)
 

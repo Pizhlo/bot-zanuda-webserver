@@ -8,16 +8,17 @@ import (
 
 	api_errors "webserver/internal/errors"
 
+	"github.com/ex-rate/logger"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 )
 
 type Cache struct {
 	client *redis.Client
+	logger *logger.Logger
 }
 
-func New(ctx context.Context, addr string) (*Cache, error) {
+func New(ctx context.Context, addr string, logger *logger.Logger) (*Cache, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password set
@@ -30,10 +31,11 @@ func New(ctx context.Context, addr string) (*Cache, error) {
 		return nil, err
 	}
 
-	logrus.Infof("user cache: successfully connected redis on %s", addr)
+	logger.WithField("addr", addr).Info("successfully connected redis")
 
 	return &Cache{
 		client: redisClient,
+		logger: logger,
 	}, nil
 }
 
@@ -63,7 +65,7 @@ func (u *Cache) GetUser(ctx context.Context, tgID int64) (model.User, error) {
 		return model.User{}, err
 	}
 
-	logrus.Debugf("got user from redis: %+v", res)
+	u.logger.WithField("res", res).Debug("got user from redis")
 
 	if len(res) == 0 {
 		return model.User{}, api_errors.ErrUnknownUser

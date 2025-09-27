@@ -6,6 +6,7 @@ import (
 	"testing"
 	"webserver/internal/service/user/mocks"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,11 +14,12 @@ import (
 
 func TestNew(t *testing.T) {
 	type test struct {
-		name  string
-		repo  userRepo
-		cache userCache
-		want  *Service
-		err   error
+		name   string
+		repo   userRepo
+		cache  userCache
+		logger *logger.Logger
+		want   *Service
+		err    error
 	}
 
 	ctrl := gomock.NewController(t)
@@ -25,25 +27,43 @@ func TestNew(t *testing.T) {
 
 	repo, cache := createMockServices(ctrl)
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	userLogger := logger.WithService("user")
+
 	tests := []test{
 		{
-			name:  "positive case",
-			repo:  repo,
-			cache: cache,
-			want:  &Service{repo: repo, cache: cache},
-			err:   nil,
+			name:   "positive case",
+			repo:   repo,
+			cache:  cache,
+			logger: userLogger,
+			want:   &Service{repo: repo, cache: cache, logger: userLogger},
+			err:    nil,
 		},
 		{
-			name:  "error case: repo is nil",
-			repo:  nil,
-			cache: cache,
-			err:   errors.New("repo is nil"),
+			name:   "error case: repo is nil",
+			repo:   nil,
+			cache:  cache,
+			logger: userLogger,
+			err:    errors.New("repo is nil"),
 		},
 		{
-			name:  "error case: cache is nil",
-			repo:  repo,
-			cache: nil,
-			err:   errors.New("cache is nil"),
+			name:   "error case: cache is nil",
+			repo:   repo,
+			cache:  nil,
+			logger: userLogger,
+			err:    errors.New("cache is nil"),
+		},
+		{
+			name:   "error case: logger is nil",
+			repo:   repo,
+			cache:  cache,
+			logger: nil,
+			err:    errors.New("logger is nil"),
 		},
 	}
 
@@ -52,6 +72,7 @@ func TestNew(t *testing.T) {
 			userSrv, err := New(
 				WithRepo(tt.repo),
 				WithCache(tt.cache),
+				WithLogger(tt.logger),
 			)
 			if tt.err != nil {
 				require.Error(t, err)
@@ -148,9 +169,18 @@ func TestCheckUser(t *testing.T) {
 }
 
 func createTestUserService(t *testing.T, repo *mocks.MockuserRepo, cache *mocks.MockuserCache) *Service {
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	userLogger := logger.WithService("user")
+
 	userSrv, err := New(
 		WithRepo(repo),
 		WithCache(cache),
+		WithLogger(userLogger),
 	)
 	require.NoError(t, err)
 

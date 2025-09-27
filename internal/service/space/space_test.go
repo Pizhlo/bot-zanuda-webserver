@@ -90,7 +90,7 @@ func TestGetSpaceByID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			tt.setupMocks(&fields{repo: repo, cache: cache, worker: worker})
 
@@ -153,7 +153,7 @@ func TestIsUserInSpace(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			tt.setupMocks(&fields{repo: repo, cache: cache, worker: worker})
 
@@ -207,7 +207,7 @@ func TestCreateSpace(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			if tt.err == nil {
 				worker.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(nil)

@@ -14,6 +14,7 @@ import (
 	"webserver/internal/server/api/v0/mocks"
 
 	"bou.ke/monkey"
+	"github.com/ex-rate/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -147,6 +148,14 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 		},
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -154,7 +163,7 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 			spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock))
+			handler, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -221,6 +230,14 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 		Type:    model.TextNoteType,
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	tests := []test{
 		{
 			name: "update note",
@@ -318,7 +335,7 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -385,6 +402,14 @@ func TestWrapNetHTTP(t *testing.T) {
 		Type:    model.TextNoteType,
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	tests := []test{
 		{
 			name: "update note",
@@ -482,7 +507,7 @@ func TestWrapNetHTTP(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -631,6 +656,14 @@ func TestAuth(t *testing.T) {
 		},
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -638,7 +671,7 @@ func TestAuth(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

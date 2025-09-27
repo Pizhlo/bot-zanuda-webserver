@@ -28,6 +28,12 @@ type Postgres struct {
 	DBName   string `yaml:"db_name" validate:"required"`
 }
 
+type Logger struct {
+	Level  string `yaml:"level" validate:"required,oneof=debug info warn error"`
+	Output string `yaml:"output" validate:"required,oneof=console file"`
+	Format string `yaml:"format" validate:"required,oneof=text json"`
+}
+
 type ElasticSearch struct {
 	Address string `yaml:"address" validate:"required,url"`
 }
@@ -43,7 +49,7 @@ type Auth struct {
 type Config struct {
 	Server Server `yaml:"server"`
 
-	LogLevel string `yaml:"log_level" validate:"required,oneof=debug info warn error"`
+	Logger Logger `yaml:"logger"`
 
 	Storage struct {
 		Postgres      Postgres      `yaml:"postgres"`

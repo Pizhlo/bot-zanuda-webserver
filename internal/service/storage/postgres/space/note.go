@@ -20,6 +20,8 @@ import (
 
 // GetAllNotesBySpaceIDFull возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает в полном виде.
 func (db *Repo) GetAllNotesBySpaceIDFull(ctx context.Context, spaceID uuid.UUID) ([]model.Note, error) {
+	logrus.WithField("spaceID", spaceID).Debug("getting all notes by space ID full")
+
 	res := []model.Note{}
 
 	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, 
@@ -67,6 +69,8 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 
 // GetAllNotesBySpaceID возвращает все заметки пользователя из его личного пространства. Информацию о пользователе возвращает кратко (только userID)
 func (db *Repo) GetAllNotesBySpaceID(ctx context.Context, spaceID uuid.UUID) ([]model.GetNote, error) {
+	logrus.WithField("spaceID", spaceID).Debug("getting all notes by space ID")
+
 	res := []model.GetNote{}
 
 	rows, err := db.db.QueryContext(ctx, `select  notes.notes.id as note_id, text as note_text, notes.notes.created as note_created, last_edit as note_last_edit, shared_spaces.shared_spaces.id as space_id,  users.users.tg_id from shared_spaces.shared_spaces
@@ -104,6 +108,8 @@ where shared_spaces.shared_spaces.id = $1;`, spaceID)
 }
 
 func (db *Repo) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest) error {
+	logrus.WithField("update", update.NoteID).Debug("updating note")
+
 	tx, err := db.tx(ctx)
 	if err != nil {
 		return err
@@ -142,6 +148,8 @@ func (db *Repo) UpdateNote(ctx context.Context, update rabbit.UpdateNoteRequest)
 
 // GetNoteByID возвращает заметку по айди, либо ошибку о том, что такой заметки не существует
 func (db *Repo) GetNoteByID(ctx context.Context, noteID uuid.UUID) (model.GetNote, error) {
+	logrus.WithField("noteID", noteID).Debug("getting note by ID")
+
 	var note model.GetNote
 
 	row := db.db.QueryRowContext(ctx, `select notes.notes.id, tg_id, text, notes.notes.space_id, created, last_edit, type
@@ -167,6 +175,8 @@ where notes.notes.id = $1;`, noteID)
 
 // GetNotesTypes возвращает все типы заметок в пространстве и их количество (3 текстовых, 2 фото, и т.п.)
 func (db *Repo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.NoteTypeResponse, error) {
+	logrus.WithField("spaceID", spaceID).Debug("getting notes types")
+
 	res := []model.NoteTypeResponse{}
 
 	rows, err := db.db.QueryContext(ctx, "select count(*), type from notes.notes group by type, notes.space_id having space_id = $1;", spaceID)
@@ -194,6 +204,8 @@ func (db *Repo) GetNotesTypes(ctx context.Context, spaceID uuid.UUID) ([]model.N
 
 // GetNotesByType возвращает все заметки указанного типа из пространства
 func (db *Repo) GetNotesByType(ctx context.Context, spaceID uuid.UUID, noteType model.NoteType) ([]model.GetNote, error) {
+	logrus.WithField("spaceID", spaceID).WithField("noteType", noteType).Debug("getting notes by type")
+
 	res := []model.GetNote{}
 
 	rows, err := db.db.QueryContext(ctx, `select notes.notes.id, users.users.tg_id, text, created, last_edit, file 
@@ -226,6 +238,8 @@ where notes.notes.space_id = $1 and type = $2;`, spaceID, noteType)
 }
 
 func (db *Repo) SearchNoteByText(ctx context.Context, req model.SearchNoteByTextRequest) ([]model.GetNote, error) {
+	logrus.Debug("searching note by text")
+
 	search := elastic.Data{
 		Index: elastic.NoteIndex,
 		Model: &elastic.Note{

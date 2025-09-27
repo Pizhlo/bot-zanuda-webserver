@@ -4,10 +4,19 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ex-rate/logger"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	workerLogger := logger.WithService("worker")
+
 	tests := []struct {
 		name string
 		opts []RabbitOption
@@ -20,6 +29,7 @@ func TestNew(t *testing.T) {
 				WithAddress("amqp://localhost:5672/"),
 				WithNotesExchange("notes"),
 				WithSpacesExchange("spaces"),
+				WithLogger(workerLogger),
 			},
 			want: &Worker{
 				config: struct {
@@ -31,6 +41,7 @@ func TestNew(t *testing.T) {
 					notesExchange:  "notes",
 					spacesExchange: "spaces",
 				},
+				logger: workerLogger,
 			},
 		},
 		{
@@ -38,6 +49,7 @@ func TestNew(t *testing.T) {
 			opts: []RabbitOption{
 				WithNotesExchange("notes"),
 				WithSpacesExchange("spaces"),
+				WithLogger(workerLogger),
 			},
 			err: fmt.Errorf("rabbit: address is required"),
 		},
@@ -46,6 +58,7 @@ func TestNew(t *testing.T) {
 			opts: []RabbitOption{
 				WithAddress("amqp://localhost:5672/"),
 				WithSpacesExchange("spaces"),
+				WithLogger(workerLogger),
 			},
 			err: fmt.Errorf("rabbit: notes exchange is required"),
 		},
@@ -54,8 +67,18 @@ func TestNew(t *testing.T) {
 			opts: []RabbitOption{
 				WithAddress("amqp://localhost:5672/"),
 				WithNotesExchange("notes"),
+				WithLogger(workerLogger),
 			},
 			err: fmt.Errorf("rabbit: spaces exchange is required"),
+		},
+		{
+			name: "negative case: logger is required",
+			opts: []RabbitOption{
+				WithAddress("amqp://localhost:5672/"),
+				WithNotesExchange("notes"),
+				WithSpacesExchange("spaces"),
+			},
+			err: fmt.Errorf("rabbit: logger is required"),
 		},
 	}
 

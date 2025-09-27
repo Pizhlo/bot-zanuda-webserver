@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/ex-rate/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,21 +19,40 @@ func TestNew(t *testing.T) {
 
 	secretKey := []byte("secret")
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	authLogger := logger.WithService("auth")
+
 	tests := []test{
 		{
 			name: "positive case",
 			opts: []AuthOption{
 				WithSecretKey(secretKey),
+				WithLogger(authLogger),
 			},
 			want: &Service{
 				secretKey: secretKey,
+				logger:    authLogger,
 			},
 			err: nil,
 		},
 		{
 			name: "error case: secret key is required",
-			opts: []AuthOption{},
-			err:  errors.New("secret key is required"),
+			opts: []AuthOption{
+				WithLogger(authLogger),
+			},
+			err: errors.New("secret key is required"),
+		},
+		{
+			name: "error case: logger is required",
+			opts: []AuthOption{
+				WithSecretKey(secretKey),
+			},
+			err: errors.New("logger is nil"),
 		},
 	}
 
@@ -52,7 +72,15 @@ func TestNew(t *testing.T) {
 }
 
 func createTestAuthService(t *testing.T, secretKey []byte) *Service {
-	auth, err := New(WithSecretKey(secretKey))
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	authLogger := logger.WithService("auth")
+
+	auth, err := New(WithSecretKey(secretKey), WithLogger(authLogger))
 	require.NoError(t, err)
 	return auth
 }

@@ -76,8 +76,8 @@ func NewApp(ctx context.Context, configPath string) (*App, error) {
 	logrus.Infof("connecting rabbit on %s", cfg.Storage.RabbitMQ.Address)
 	rabbit := start(worker.New(
 		worker.WithAddress(cfg.Storage.RabbitMQ.Address),
-		worker.WithNotesTopic(cfg.Storage.RabbitMQ.NoteQueue),
-		worker.WithSpacesTopic(cfg.Storage.RabbitMQ.SpaceQueue),
+		worker.WithNotesExchange(cfg.Storage.RabbitMQ.NoteExchange),
+		worker.WithSpacesExchange(cfg.Storage.RabbitMQ.SpaceExchange),
 	))
 
 	startService(rabbit.Connect(), "rabbit")

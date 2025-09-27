@@ -16,8 +16,8 @@ storage:
     address: "invalid:port"
   rabbitmq:
     address: "invalid://address"
-    note_queue: ""
-    space_queue: ""
+    note_exchange: ""
+    space_exchange: ""
 
 auth:
   secret_key: "too_short" 

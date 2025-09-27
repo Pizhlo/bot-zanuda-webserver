@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"webserver/internal/model/rabbit"
 
+	"github.com/ex-rate/logger"
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
 )
 
 type Worker struct {
@@ -20,6 +21,8 @@ type Worker struct {
 
 	conn    *amqp.Connection
 	channel channel
+
+	logger *logger.Logger
 }
 
 //go:generate mockgen -source ./worker.go -destination=./mocks/rabbit.go -package=mocks
@@ -48,6 +51,12 @@ func WithSpacesExchange(spacesExchange string) RabbitOption {
 	}
 }
 
+func WithLogger(logger *logger.Logger) RabbitOption {
+	return func(w *Worker) {
+		w.logger = logger
+	}
+}
+
 func New(opts ...RabbitOption) (*Worker, error) {
 	w := &Worker{}
 
@@ -65,6 +74,10 @@ func New(opts ...RabbitOption) (*Worker, error) {
 
 	if w.config.spacesExchange == "" {
 		return nil, fmt.Errorf("rabbit: spaces exchange is required")
+	}
+
+	if w.logger == nil {
+		return nil, fmt.Errorf("rabbit: logger is required")
 	}
 
 	return w, nil
@@ -119,14 +132,14 @@ func (s *Worker) Connect() error {
 func (s *Worker) Close() error {
 	err := s.channel.Close()
 	if err != nil {
-		logrus.Errorf("worker: error closing channel rabbit mq: %+v", err)
+		s.logger.Errorf("error closing channel rabbit mq: %+v", err)
 	}
 
 	return s.conn.Close()
 }
 
-func (s *Worker) publish(ctx context.Context, exchange string, operation rabbit.Operation, body []byte) error {
-	logrus.Debugf("rabbit: publishing message to exchange '%s' with operation '%s': %+v", exchange, operation, string(body))
+func (s *Worker) publish(ctx context.Context, exchange string, operation rabbit.Operation, body []byte, requestID uuid.UUID) error {
+	s.logger.WithField("exchange", exchange).WithField("operation", operation).WithField("request_id", requestID).Debug("publishing message")
 
 	return s.channel.PublishWithContext(
 		ctx,

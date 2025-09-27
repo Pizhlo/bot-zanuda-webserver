@@ -5,11 +5,14 @@ import (
 	"errors"
 	api_errors "webserver/internal/errors"
 	"webserver/internal/model"
+
+	"github.com/ex-rate/logger"
 )
 
 type Service struct {
-	repo  userRepo
-	cache userCache
+	repo   userRepo
+	cache  userCache
+	logger *logger.Logger
 }
 
 //go:generate mockgen -source ./service.go -destination=./mocks/user_srv.go -package=mocks
@@ -38,6 +41,11 @@ func New(opts ...UserOption) (*Service, error) {
 	if user.cache == nil {
 		return nil, errors.New("cache is nil")
 	}
+	if user.logger == nil {
+		return nil, errors.New("logger is nil")
+	}
+
+	user.logger.Info("user service initialized")
 
 	return user, nil
 }
@@ -51,6 +59,12 @@ func WithRepo(repo userRepo) UserOption {
 func WithCache(cache userCache) UserOption {
 	return func(u *Service) {
 		u.cache = cache
+	}
+}
+
+func WithLogger(logger *logger.Logger) UserOption {
+	return func(u *Service) {
+		u.logger = logger
 	}
 }
 

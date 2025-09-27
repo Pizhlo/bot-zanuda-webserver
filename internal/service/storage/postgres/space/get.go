@@ -8,6 +8,7 @@ import (
 	"webserver/internal/model"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func (db *Repo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, error) {
@@ -21,6 +22,8 @@ func (db *Repo) GetSpaceByID(ctx context.Context, id uuid.UUID) (model.Space, er
 		}
 	}
 
+	logrus.WithField("id", id).Debug("got space from postgres by ID")
+
 	return res, err
 }
 
@@ -33,8 +36,12 @@ func (db *Repo) IsSpacePersonal(ctx context.Context, spaceID uuid.UUID) (bool, e
 			return false, api_errors.ErrSpaceNotExists
 		}
 
+		logrus.WithField("spaceID", spaceID).Debug("got space not personal from postgres by ID")
+
 		return false, err
 	}
+
+	logrus.WithField("spaceID", spaceID).Debug("got space personal from postgres by ID")
 
 	return personal, nil
 }
@@ -47,6 +54,8 @@ func (db *Repo) IsSpaceExists(ctx context.Context, spaceID uuid.UUID) (bool, err
 		return false, err
 	}
 
+	logrus.WithField("spaceID", spaceID).Debug("got space exists from postgres by ID")
+
 	return exists, nil
 }
 
@@ -58,14 +67,19 @@ and "to" = (select id from users.users where tg_id = $2)
 and space_id = $3);`, from, to, spaceID).
 		Scan(&exists)
 	if err != nil {
+		logrus.WithField("spaceID", spaceID).Debug("got invitation not exists from postgres by ID")
 		return false, err
 	}
+
+	logrus.WithField("from", from).WithField("to", to).WithField("spaceID", spaceID).Debug("got invitation exists from postgres by ID")
 
 	return exists, nil
 }
 
 // CheckParticipant проверяет, является ли пользователь участником пространства
 func (db *Repo) CheckParticipant(ctx context.Context, userID int64, spaceID uuid.UUID) (bool, error) {
+	logrus.WithField("userID", userID).WithField("spaceID", spaceID).Debug("checking participant")
+
 	space, err := db.GetSpaceByID(ctx, spaceID) // получаем информацию о пространстве (проверить, личное ли оно)
 	if err != nil {
 		return false, err

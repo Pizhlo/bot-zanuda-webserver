@@ -9,6 +9,8 @@ import (
 )
 
 func (s *Service) CheckToken(authHeader string) (*jwt.Token, error) {
+	s.logger.Debug("checking token")
+
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	token, err := s.ParseToken(tokenString)
 	if err != nil || !token.Valid {

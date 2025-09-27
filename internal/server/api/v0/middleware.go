@@ -15,7 +15,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 )
 
 // ValidateNoteRequest производит валидацию запросов на создание и обновление заметки.
@@ -142,15 +141,15 @@ func (h *Handler) WrapNetHTTP(next echo.HandlerFunc) echo.HandlerFunc {
 			if errors.As(err, &httpErr) {
 				// Если это наша кастомная HTTPError
 				if httpErr.InnerError != nil {
-					logrus.Errorf("Client Message: %s, Internal Error: %s. Status Code: %d", httpErr.Message, httpErr.InnerError, httpErr.Code)
+					h.logger.Errorf("Client Message: %s, Internal Error: %s. Status Code: %d", httpErr.Message, httpErr.InnerError, httpErr.Code)
 				} else {
-					logrus.Errorf("HTTP error: %d %s", httpErr.Code, httpErr.Message)
+					h.logger.Errorf("HTTP error: %d %s", httpErr.Code, httpErr.Message)
 				}
 
 				return c.JSON(httpErr.Code, map[string]string{"error": httpErr.Message})
 			} else {
 				// Если это другая, непредвиденная ошибка
-				logrus.Errorf("Internal server error: %v", err)
+				h.logger.Errorf("Internal server error: %v", err)
 				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Internal Server Error"})
 			}
 		}

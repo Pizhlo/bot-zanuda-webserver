@@ -6,6 +6,7 @@ import (
 	"webserver/internal/model"
 	"webserver/internal/model/rabbit"
 
+	"github.com/ex-rate/logger"
 	"github.com/google/uuid"
 )
 
@@ -13,6 +14,7 @@ type Service struct {
 	repo   repo
 	cache  spaceCache
 	worker dbWorker // создание / обновление записей
+	logger *logger.Logger
 }
 
 //go:generate mockgen -source ./space.go -destination=./mocks/space_srv.go -package=mocks
@@ -97,6 +99,12 @@ func WithWorker(worker dbWorker) SpaceOption {
 	}
 }
 
+func WithLogger(logger *logger.Logger) SpaceOption {
+	return func(s *Service) {
+		s.logger = logger
+	}
+}
+
 func New(opts ...SpaceOption) (*Service, error) {
 	space := &Service{}
 
@@ -115,6 +123,12 @@ func New(opts ...SpaceOption) (*Service, error) {
 	if space.worker == nil {
 		return nil, errors.New("worker is nil")
 	}
+
+	if space.logger == nil {
+		return nil, errors.New("logger is nil")
+	}
+
+	space.logger.Info("space service initialized")
 
 	return space, nil
 }

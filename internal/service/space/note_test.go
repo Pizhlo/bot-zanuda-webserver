@@ -56,7 +56,7 @@ func TestCreateNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			if tt.err == nil {
 				worker.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil)
@@ -118,7 +118,7 @@ func TestGetAllNotesBySpaceIDFull(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			repo.EXPECT().GetAllNotesBySpaceIDFull(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -172,7 +172,7 @@ func TestGetAllNotesBySpaceID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			repo.EXPECT().GetAllNotesBySpaceID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -226,7 +226,7 @@ func TestUpdateNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			worker.EXPECT().UpdateNote(context.Background(), &tt.req).Return(tt.err)
 
@@ -277,7 +277,7 @@ func TestGetNoteByID(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			repo.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -332,7 +332,7 @@ func TestGetNotesTypes(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			repo.EXPECT().GetNotesTypes(gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -396,7 +396,7 @@ func TestGetNotesByType(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			repo.EXPECT().GetNotesByType(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.want, tt.err)
 
@@ -474,7 +474,7 @@ func TestSearchNoteByText(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			expectedReq := tt.req
 			if len(tt.req.Type) == 0 {
@@ -529,7 +529,7 @@ func TestDeleteNote(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			worker.EXPECT().DeleteNote(context.Background(), &tt.req).Return(tt.err)
 
@@ -576,7 +576,7 @@ func TestDeleteAllNotes(t *testing.T) {
 			defer ctrl.Finish()
 
 			repo, cache, worker := createMockServices(ctrl)
-			spaceSrv := createTestSpace(t, repo, cache, worker)
+			spaceSrv := createTestSpaceSrv(t, repo, cache, worker)
 
 			worker.EXPECT().DeleteAllNotes(context.Background(), &tt.req).Return(tt.err)
 

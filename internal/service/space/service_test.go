@@ -5,6 +5,7 @@ import (
 	"testing"
 	"webserver/internal/service/space/mocks"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,7 @@ func TestNew(t *testing.T) {
 		repo   repo
 		cache  spaceCache
 		worker dbWorker
+		logger *logger.Logger
 		want   *Service
 		err    error
 	}
@@ -25,13 +27,22 @@ func TestNew(t *testing.T) {
 
 	repo, cache, worker := createMockServices(ctrl)
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	spaceLogger := logger.WithService("space")
+
 	tests := []test{
 		{
 			name:   "positive case",
 			repo:   repo,
 			cache:  cache,
 			worker: worker,
-			want:   &Service{repo: repo, cache: cache, worker: worker},
+			logger: spaceLogger,
+			want:   &Service{repo: repo, cache: cache, worker: worker, logger: spaceLogger},
 			err:    nil,
 		},
 		{
@@ -39,6 +50,7 @@ func TestNew(t *testing.T) {
 			repo:   nil,
 			cache:  cache,
 			worker: worker,
+			logger: spaceLogger,
 			err:    errors.New("repo is nil"),
 		},
 		{
@@ -46,6 +58,7 @@ func TestNew(t *testing.T) {
 			repo:   repo,
 			cache:  nil,
 			worker: worker,
+			logger: spaceLogger,
 			err:    errors.New("cache is nil"),
 		},
 		{
@@ -53,7 +66,16 @@ func TestNew(t *testing.T) {
 			repo:   repo,
 			cache:  cache,
 			worker: nil,
+			logger: spaceLogger,
 			err:    errors.New("worker is nil"),
+		},
+		{
+			name:   "error case: logger is nil",
+			repo:   repo,
+			cache:  cache,
+			worker: worker,
+			logger: nil,
+			err:    errors.New("logger is nil"),
 		},
 	}
 
@@ -63,6 +85,7 @@ func TestNew(t *testing.T) {
 				WithRepo(tt.repo),
 				WithCache(tt.cache),
 				WithWorker(tt.worker),
+				WithLogger(tt.logger),
 			)
 			if tt.err != nil {
 				require.Error(t, err)
@@ -76,11 +99,20 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func createTestSpace(t *testing.T, repo *mocks.Mockrepo, cache *mocks.MockspaceCache, worker *mocks.MockdbWorker) *Service {
+func createTestSpaceSrv(t *testing.T, repo *mocks.Mockrepo, cache *mocks.MockspaceCache, worker *mocks.MockdbWorker) *Service {
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	spaceLogger := logger.WithService("space")
+
 	spaceSrv, err := New(
 		WithRepo(repo),
 		WithCache(cache),
 		WithWorker(worker),
+		WithLogger(spaceLogger),
 	)
 	require.NoError(t, err)
 

@@ -15,6 +15,7 @@ import (
 	"webserver/internal/server/api/v0/mocks"
 
 	"bou.ke/monkey"
+	"github.com/ex-rate/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -49,6 +50,14 @@ func TestCreateNote(t *testing.T) {
 	wayback := time.Now()
 	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
 	defer timePatch.Unpatch()
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
 
 	tests := []test{
 		{
@@ -173,7 +182,7 @@ func TestCreateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -230,6 +239,14 @@ func TestUpdateNote(t *testing.T) {
 	wayback := time.Now()
 	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
 	defer timePatch.Unpatch()
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
 
 	tests := []test{
 		{
@@ -396,7 +413,7 @@ func TestUpdateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -448,6 +465,14 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 	wayback := time.Date(2024, time.May, 19, 1, 2, 3, 4, time.UTC)
 	patch := monkey.Patch(time.Now, func() time.Time { return wayback })
 	defer patch.Unpatch()
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
 
 	fullNote := []model.Note{
 		{
@@ -527,7 +552,7 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -592,6 +617,14 @@ func TestNotesBySpaceID(t *testing.T) {
 	noteIDPatch := monkey.Patch(uuid.New, func() uuid.UUID { return noteID })
 	defer noteIDPatch.Unpatch()
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	fullNote := []model.GetNote{
 		{
 			ID:      uuid.New(),
@@ -651,7 +684,7 @@ func TestNotesBySpaceID(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -708,6 +741,14 @@ func TestGetNoteTypes(t *testing.T) {
 		setupMocks       func(mocks *fields)
 	}
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	fullNote := []model.NoteTypeResponse{
 		{
 			Type:  model.TextNoteType,
@@ -756,7 +797,7 @@ func TestGetNoteTypes(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -812,6 +853,14 @@ func TestGetNotesByType(t *testing.T) {
 		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
 
 	fullNote := []model.GetNote{
 
@@ -872,7 +921,7 @@ func TestGetNotesByType(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -929,6 +978,14 @@ func TestSearchNotesByText(t *testing.T) {
 		expectedErr      *api_errors.HTTPError
 		setupMocks       func(mocks *fields)
 	}
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
 
 	fullNote := []model.GetNote{
 		{
@@ -1008,7 +1065,7 @@ func TestSearchNotesByText(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1118,6 +1175,14 @@ func TestDeleteNote(t *testing.T) {
 
 	urlFmt := "/api/v0/spaces/%s/notes/%s/delete"
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -1125,7 +1190,7 @@ func TestDeleteNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1222,6 +1287,14 @@ func TestDeleteNote_Invalid(t *testing.T) {
 
 	urlFmt := "/api/v0/spaces/%s/notes/%s/delete"
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -1229,7 +1302,7 @@ func TestDeleteNote_Invalid(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1323,6 +1396,14 @@ func TestDeleteAllNotes(t *testing.T) {
 
 	urlFmt := "/api/v0/spaces/%s/notes/delete_all"
 
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	handlerLogger := logger.WithService("handler")
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -1330,7 +1411,7 @@ func TestDeleteAllNotes(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv))
+			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

@@ -22,7 +22,11 @@ func TestLoadConfig(t *testing.T) {
 					Address:         "0.0.0.0:9999",
 					ShutdownTimeout: 1 * time.Second,
 				},
-				LogLevel: "debug",
+				Logger: Logger{
+					Level:  "debug",
+					Output: "console",
+					Format: "text",
+				},
 				Storage: struct {
 					Postgres      Postgres      `yaml:"postgres"`
 					ElasticSearch ElasticSearch `yaml:"elasticsearch"`

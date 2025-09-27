@@ -8,6 +8,7 @@ import (
 	"webserver/internal/model/rabbit"
 	"webserver/internal/service/storage/rabbit/worker/mocks"
 
+	"github.com/ex-rate/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -55,18 +56,7 @@ func TestCreateNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := Worker{
-		config: struct {
-			address        string
-			notesExchange  string
-			spacesExchange string
-		}{
-			address:        "amqp://localhost:5672/",
-			notesExchange:  notesExchangeName,
-			spacesExchange: "spaces",
-		},
-		channel: ch,
-	}
+	w := createTestWorker(t, ch)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,18 +124,7 @@ func TestUpdateNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := Worker{
-		config: struct {
-			address        string
-			notesExchange  string
-			spacesExchange string
-		}{
-			address:        "amqp://localhost:5672/",
-			notesExchange:  notesExchangeName,
-			spacesExchange: "spaces",
-		},
-		channel: ch,
-	}
+	w := createTestWorker(t, ch)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -211,18 +190,7 @@ func TestDeleteNote(t *testing.T) {
 
 	ch := mocks.NewMockchannel(ctrl)
 
-	w := Worker{
-		config: struct {
-			address        string
-			notesExchange  string
-			spacesExchange string
-		}{
-			address:        "amqp://localhost:5672/",
-			notesExchange:  notesExchangeName,
-			spacesExchange: "spaces",
-		},
-		channel: ch,
-	}
+	w := createTestWorker(t, ch)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -249,5 +217,31 @@ func TestDeleteNote(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func createTestWorker(t *testing.T, ch *mocks.Mockchannel) *Worker {
+	t.Helper()
+
+	logger, err := logger.New(logger.Config{
+		Level:  logger.DebugLevel,
+		Output: logger.ConsoleOutput,
+	})
+	require.NoError(t, err)
+
+	workerLogger := logger.WithService("worker")
+
+	return &Worker{
+		config: struct {
+			address        string
+			notesExchange  string
+			spacesExchange string
+		}{
+			address:        "amqp://localhost:5672/",
+			notesExchange:  "notes",
+			spacesExchange: "spaces",
+		},
+		channel: ch,
+		logger:  workerLogger,
 	}
 }

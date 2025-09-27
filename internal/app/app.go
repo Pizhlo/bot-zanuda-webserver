@@ -17,6 +17,7 @@ import (
 
 	"webserver/internal/service/storage/elasticsearch"
 
+	"github.com/ex-rate/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,82 +42,89 @@ func NewApp(ctx context.Context, configPath string) (*App, error) {
 		logrus.Fatalf("error loading config: %+v", err)
 	}
 
-	switch cfg.LogLevel {
-	case "info":
-		logrus.SetLevel(logrus.InfoLevel)
-	case "warn":
-		logrus.SetLevel(logrus.WarnLevel)
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
-	case "trace":
-		logrus.SetLevel(logrus.TraceLevel)
-	case "panic":
-		logrus.SetLevel(logrus.PanicLevel)
-	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
-	default:
-		logrus.SetLevel(logrus.InfoLevel)
+	lvl, err := logrus.ParseLevel(cfg.Logger.Level)
+	if err != nil {
+		logrus.Fatalf("error parsing level: %+v", err)
 	}
 
-	logrus.Infof("log level: %+v", logrus.GetLevel())
+	// Создание логгера
+	loggerConfig := logger.Config{
+		Level:  lvl,
+		Output: logger.OutputType(cfg.Logger.Output),
+		Format: cfg.Logger.Format,
+	}
+
+	log, err := logger.New(loggerConfig)
+	if err != nil {
+		logrus.Fatalf("error creating logger: %+v", err)
+	}
+
+	log.Info("Logger initialized")
 
 	elasticClient := start(elasticsearch.New([]string{cfg.Storage.ElasticSearch.Address}))
 
 	addr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable",
 		cfg.Storage.Postgres.User, cfg.Storage.Postgres.Password, cfg.Storage.Postgres.Host, cfg.Storage.Postgres.Port, cfg.Storage.Postgres.DBName)
 
-	logrus.Infof("connecting db on %s", addr)
 	spaceRepo := start(space_db.New(addr, elasticClient))
 
-	logrus.Infof("connecting redis on %s", cfg.Storage.Redis.Address)
-	spaceCache := start(space_cache.New(ctx, cfg.Storage.Redis.Address))
+	spaceCacheLog := log.WithService("space_cache")
+	spaceCache := start(space_cache.New(ctx, cfg.Storage.Redis.Address, spaceCacheLog))
 
-	logrus.Infof("connecting rabbit on %s", cfg.Storage.RabbitMQ.Address)
+	rabbitLog := log.WithService("rabbit")
 	rabbit := start(worker.New(
 		worker.WithAddress(cfg.Storage.RabbitMQ.Address),
 		worker.WithNotesExchange(cfg.Storage.RabbitMQ.NoteExchange),
 		worker.WithSpacesExchange(cfg.Storage.RabbitMQ.SpaceExchange),
+		worker.WithLogger(rabbitLog),
 	))
 
 	startService(rabbit.Connect(), "rabbit")
 
-	logrus.Infof("succesfully connected rabbit on %s", cfg.Storage.RabbitMQ.Address)
-
+	spaceSrvLog := log.WithService("space_srv")
 	spaceSrv := start(space.New(
 		space.WithRepo(spaceRepo),
 		space.WithCache(spaceCache),
 		space.WithWorker(rabbit),
+		space.WithLogger(spaceSrvLog),
 	))
 
-	userCache := start(user_cache.New(ctx, cfg.Storage.Redis.Address))
+	userCacheLog := log.WithService("user_cache")
+	userCache := start(user_cache.New(ctx, cfg.Storage.Redis.Address, userCacheLog))
 
 	userRepo := start(user_db.New(addr))
 
+	userSrvLog := log.WithService("user_srv")
 	userSrv := start(user.New(
 		user.WithRepo(userRepo),
 		user.WithCache(userCache),
+		user.WithLogger(userSrvLog),
 	))
 
+	authSrvLog := log.WithService("auth_srv")
 	authSrv := start(auth.New(
 		auth.WithSecretKey([]byte(cfg.Auth.SecretKey)),
+		auth.WithLogger(authSrvLog),
 	))
 
+	handlerLog := log.WithService("handler")
 	handler := start(v0.New(
 		v0.WithSpaceService(spaceSrv),
 		v0.WithUserService(userSrv),
 		v0.WithAuthService(authSrv),
+		v0.WithLogger(handlerLog),
 	))
 
+	serverLog := log.WithService("server")
 	server := start(server.New(
 		server.WithAddr(cfg.Server.Address),
 		server.WithHandler(handler),
+		server.WithLogger(serverLog),
 	))
 
 	startService(server.CreateRoutes(), "server routes")
 
-	logrus.Infof("started server on %s", cfg.Server.Address)
+	log.Infof("started server on %s", cfg.Server.Address)
 
 	startService(server.Start(), "server")
 
@@ -138,6 +146,7 @@ func NewApp(ctx context.Context, configPath string) (*App, error) {
 
 func startService(err error, name string) {
 	if err != nil {
+		// Используем logrus для критических ошибок, так как наш логгер может быть еще не инициализирован
 		logrus.Fatalf("error creating %s: %+v", name, err)
 	}
 }

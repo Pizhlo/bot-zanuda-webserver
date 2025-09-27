@@ -11,6 +11,7 @@ import (
 //go:generate mockgen -source ./note.go -destination=./mocks/rabbit.go -package=mocks
 type Model interface {
 	Validate() error
+	GetID() uuid.UUID
 }
 
 //	{
@@ -30,6 +31,10 @@ type CreateNoteRequest struct {
 	File      string         `json:"file"`       // название файла в Minio (если есть)
 	Operation Operation      `json:"operation"`  // какое действие сделать: создать, удалить, редактировать
 	Created   int64          `json:"created"`    // дата обращения в Unix в UTC
+}
+
+func (s *CreateNoteRequest) GetID() uuid.UUID {
+	return s.ID
 }
 
 func (s *CreateNoteRequest) Validate() error {
@@ -85,6 +90,10 @@ type UpdateNoteRequest struct {
 	Created   int64     `json:"created"`   // дата обращения в Unix в UTC
 }
 
+func (s *UpdateNoteRequest) GetID() uuid.UUID {
+	return s.ID
+}
+
 func (s *UpdateNoteRequest) Validate() error {
 	if s.ID == uuid.Nil {
 		return model.ErrIDNotFilled
@@ -122,6 +131,10 @@ type DeleteNoteRequest struct {
 	Created   int64     `json:"created"`   // дата обращения в Unix в UTC
 }
 
+func (s *DeleteNoteRequest) GetID() uuid.UUID {
+	return s.ID
+}
+
 func (s *DeleteNoteRequest) Validate() error {
 	if s.ID == uuid.Nil {
 		return model.ErrFieldIDNotFilled
@@ -151,6 +164,10 @@ type DeleteAllNotesRequest struct {
 	SpaceID   uuid.UUID `json:"space_id"`
 	Operation Operation `json:"operation"` // какое действие сделать: создать, удалить, редактировать
 	Created   int64     `json:"created"`   // дата обращения в Unix в UTC
+}
+
+func (s *DeleteAllNotesRequest) GetID() uuid.UUID {
+	return s.ID
 }
 
 func (s *DeleteAllNotesRequest) Validate() error {

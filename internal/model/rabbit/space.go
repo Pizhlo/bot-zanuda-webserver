@@ -14,6 +14,10 @@ type CreateSpaceRequest struct {
 	Operation Operation `json:"operation"`
 }
 
+func (c CreateSpaceRequest) GetID() uuid.UUID {
+	return c.ID
+}
+
 func (c CreateSpaceRequest) Validate() error {
 	if c.ID == uuid.Nil {
 		return model.ErrIDNotFilled
@@ -45,6 +49,10 @@ type AddParticipantRequest struct {
 	Participant int64     `json:"participant"` // кто добавляется в пространство
 	Operation   Operation `json:"operation"`
 	Created     int64     `json:"created"`
+}
+
+func (a AddParticipantRequest) GetID() uuid.UUID {
+	return a.ID
 }
 
 func (a AddParticipantRequest) Validate() error {

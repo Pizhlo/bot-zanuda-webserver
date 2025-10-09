@@ -102,3 +102,7 @@ func parseSpace(res map[string]string) (model.Space, error) {
 		Personal: personal,
 	}, nil
 }
+
+func (s *Cache) Stop(_ context.Context) error {
+	return s.client.Close()
+}

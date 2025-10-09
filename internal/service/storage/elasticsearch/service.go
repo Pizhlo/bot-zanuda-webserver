@@ -59,3 +59,7 @@ func (c *Client) getElasticID(ctx context.Context, data elastic.Data) (string, e
 
 	return *elasticID, nil
 }
+
+func (c *Client) Stop(_ context.Context) error {
+	return nil
+}

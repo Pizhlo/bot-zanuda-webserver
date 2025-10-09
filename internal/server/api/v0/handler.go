@@ -141,3 +141,7 @@ func New(opts ...handlerOption) (*Handler, error) {
 
 	return h, nil
 }
+
+func (h *Handler) Stop(_ context.Context) error {
+	return nil
+}

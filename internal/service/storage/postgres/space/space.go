@@ -50,10 +50,8 @@ func New(addr string, elasticClient elasticClient) (*Repo, error) {
 	return &Repo{db, nil, elasticClient}, nil
 }
 
-func (db *Repo) Close() {
-	if err := db.db.Close(); err != nil {
-		logrus.Errorf("error on closing space repo: %v", err)
-	}
+func (db *Repo) Stop(_ context.Context) error {
+	return db.db.Close()
 }
 
 func (db *Repo) tx(ctx context.Context) (*sql.Tx, error) {

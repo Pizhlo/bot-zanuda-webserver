@@ -132,3 +132,7 @@ func New(opts ...SpaceOption) (*Service, error) {
 
 	return space, nil
 }
+
+func (s *Service) Stop(_ context.Context) error {
+	return nil
+}

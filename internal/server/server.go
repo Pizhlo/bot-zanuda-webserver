@@ -166,6 +166,6 @@ func (s *Server) CreateRoutes() error {
 	return nil
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
+func (s *Server) Stop(ctx context.Context) error {
 	return s.e.Shutdown(ctx)
 }

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 
 	"github.com/ex-rate/logger"
@@ -43,4 +44,8 @@ func New(opts ...AuthOption) (*Service, error) {
 	auth.logger.Info("auth service initialized")
 
 	return auth, nil
+}
+
+func (s *Service) Stop(_ context.Context) error {
+	return nil
 }

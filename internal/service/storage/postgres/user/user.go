@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -33,10 +34,8 @@ func New(addr string) (*Repo, error) {
 	return &Repo{db, nil}, nil
 }
 
-func (db *Repo) Close() {
-	if err := db.db.Close(); err != nil {
-		logrus.Errorf("error on closing space repo: %v", err)
-	}
+func (db *Repo) Stop(_ context.Context) error {
+	return db.db.Close()
 }
 
 // func (db *userRepo) tx(ctx context.Context) (*sql.Tx, error) {

@@ -129,7 +129,7 @@ func (s *Worker) Connect() error {
 	return nil
 }
 
-func (s *Worker) Close() error {
+func (s *Worker) Stop(_ context.Context) error {
 	err := s.channel.Close()
 	if err != nil {
 		s.logger.Errorf("error closing channel rabbit mq: %+v", err)

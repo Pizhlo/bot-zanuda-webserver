@@ -109,3 +109,7 @@ func parseUser(res map[string]string) (model.User, error) {
 		Timezone: res[timezoneKey],
 	}, nil
 }
+
+func (u *Cache) Stop(_ context.Context) error {
+	return u.client.Close()
+}

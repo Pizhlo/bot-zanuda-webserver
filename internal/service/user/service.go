@@ -88,3 +88,7 @@ func (s *Service) CheckUser(ctx context.Context, tgID int64) (bool, error) {
 	}
 	return exists, nil
 }
+
+func (s *Service) Stop(_ context.Context) error {
+	return nil
+}

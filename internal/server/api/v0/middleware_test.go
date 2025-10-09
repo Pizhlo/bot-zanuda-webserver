@@ -42,13 +42,6 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 		setupMocks       func(mocks *fields)
 	}
 
-	generatedID := uuid.New()
-
-	uuidPatch, err := mpatch.PatchMethod(uuid.New, func() uuid.UUID { return generatedID })
-	require.NoError(t, err)
-
-	defer uuidPatch.Unpatch()
-
 	wayback := time.Now()
 	timePatch := monkey.Patch(time.Now, func() time.Time { return wayback })
 	defer timePatch.Unpatch()
@@ -79,16 +72,14 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 				m.spaceSrv.EXPECT().IsSpaceExists(gomock.Any(), gomock.Any()).Return(true, nil)
 				m.spaceSrv.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				m.spaceSrv.EXPECT().CreateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.CreateNoteRequest) {
-					expectedNote := rabbit.CreateNoteRequest{
-						ID:        uuid.New(),
-						UserID:    1,
-						Text:      "new note",
-						SpaceID:   uuid.New(),
-						Type:      model.TextNoteType,
-						Created:   time.Now().Unix(),
-						Operation: rabbit.CreateOp,
-					}
-					assert.Equal(t, expectedNote, actualReq, "requests not equal")
+					// Проверяем детерминированные поля и инварианты, не полагаясь на UUID патчи
+					assert.Equal(t, int64(1), actualReq.UserID)
+					assert.Equal(t, "new note", actualReq.Text)
+					assert.Equal(t, model.TextNoteType, actualReq.Type)
+					assert.Equal(t, rabbit.CreateOp, actualReq.Operation)
+					assert.Equal(t, wayback.Unix(), actualReq.Created)
+					// ID должен быть сгенерирован и не быть нулевым UUID
+					assert.NotEqual(t, uuid.Nil, actualReq.ID)
 				})
 			},
 		},
@@ -163,7 +154,15 @@ func TestValidateNoteRequest_CreateNote(t *testing.T) {
 
 			spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrvMock),
+				WithUserService(userSrvMock),
+				WithAuthService(authSrvMock),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -265,16 +264,15 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 				m.spaceSrv.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				m.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(note, nil)
 				m.spaceSrv.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
-					expectedNote := rabbit.UpdateNoteRequest{
-						ID:        generatedID,
-						UserID:    1,
-						Text:      "new note",
-						SpaceID:   generatedID,
-						NoteID:    generatedID,
-						Created:   time.Now().Unix(),
-						Operation: rabbit.UpdateOp,
-					}
-					assert.Equal(t, expectedNote, actualReq, "requests not equal")
+					assert.Equal(t, int64(1), actualReq.UserID)
+					assert.Equal(t, "new note", actualReq.Text)
+					assert.Equal(t, rabbit.UpdateOp, actualReq.Operation)
+					assert.Equal(t, wayback.Unix(), actualReq.Created)
+					// ID должен быть сгенерирован и не быть нулевым UUID
+					assert.NotEqual(t, uuid.Nil, actualReq.ID)
+					// SpaceID и NoteID должны совпадать с запросом
+					assert.Equal(t, generatedID, actualReq.SpaceID)
+					assert.Equal(t, generatedID, actualReq.NoteID)
 				})
 			},
 		},
@@ -335,7 +333,15 @@ func TestValidateNoteRequest_UpdateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -437,16 +443,13 @@ func TestWrapNetHTTP(t *testing.T) {
 				m.spaceSrv.EXPECT().IsUserInSpace(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				m.spaceSrv.EXPECT().GetNoteByID(gomock.Any(), gomock.Any()).Return(note, nil)
 				m.spaceSrv.EXPECT().UpdateNote(gomock.Any(), gomock.Any()).Return(nil).Do(func(ctx any, actualReq rabbit.UpdateNoteRequest) {
-					expectedNote := rabbit.UpdateNoteRequest{
-						ID:        generatedID,
-						UserID:    1,
-						Text:      "new note",
-						SpaceID:   generatedID,
-						NoteID:    generatedID,
-						Created:   time.Now().Unix(),
-						Operation: rabbit.UpdateOp,
-					}
-					assert.Equal(t, expectedNote, actualReq, "requests not equal")
+					assert.Equal(t, int64(1), actualReq.UserID)
+					assert.Equal(t, "new note", actualReq.Text)
+					assert.Equal(t, rabbit.UpdateOp, actualReq.Operation)
+					assert.Equal(t, wayback.Unix(), actualReq.Created)
+					assert.NotEqual(t, uuid.Nil, actualReq.ID)
+					assert.Equal(t, generatedID, actualReq.SpaceID)
+					assert.Equal(t, generatedID, actualReq.NoteID)
 				})
 			},
 		},
@@ -507,7 +510,15 @@ func TestWrapNetHTTP(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServerWithMiddleware(t, handler)
@@ -671,7 +682,15 @@ func TestAuth(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

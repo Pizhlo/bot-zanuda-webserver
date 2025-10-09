@@ -182,7 +182,15 @@ func TestCreateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -413,7 +421,15 @@ func TestUpdateNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -552,7 +568,15 @@ func TestNotesBySpaceID_Full(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -684,7 +708,15 @@ func TestNotesBySpaceID(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -797,7 +829,15 @@ func TestGetNoteTypes(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -921,7 +961,15 @@ func TestGetNotesByType(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1065,7 +1113,15 @@ func TestSearchNotesByText(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1190,7 +1246,15 @@ func TestDeleteNote(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1302,7 +1366,15 @@ func TestDeleteNote_Invalid(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -1411,7 +1483,15 @@ func TestDeleteAllNotes(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

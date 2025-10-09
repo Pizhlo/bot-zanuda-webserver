@@ -105,7 +105,15 @@ func TestCreateSpace(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)
@@ -274,7 +282,15 @@ func TestAddParticipant(t *testing.T) {
 
 			spaceSrv, userSrv, authSrv := createMockServices(t, ctrl)
 
-			handler, err := New(WithSpaceService(spaceSrv), WithUserService(userSrv), WithAuthService(authSrv), WithLogger(handlerLogger))
+			handler, err := New(
+				WithSpaceService(spaceSrv),
+				WithUserService(userSrv),
+				WithAuthService(authSrv),
+				WithLogger(handlerLogger),
+				WithVersion("1.0.0"),
+				WithBuildDate("2021-01-01"),
+				WithGitCommit("1234567890"),
+			)
 			require.NoError(t, err)
 
 			r, err := runTestServer(t, handler)

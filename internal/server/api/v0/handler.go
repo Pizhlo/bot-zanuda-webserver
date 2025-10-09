@@ -16,6 +16,10 @@ type Handler struct {
 	user   userService
 	auth   authService
 	logger *logger.Logger
+
+	version   string
+	buildDate string
+	gitCommit string
 }
 
 // интерфейс сервиса пространств. управляет пространствами, а также принадлежащими им записями: заметки, напоминания, етс
@@ -114,6 +118,24 @@ func WithLogger(logger *logger.Logger) handlerOption {
 	}
 }
 
+func WithVersion(version string) handlerOption {
+	return func(h *Handler) {
+		h.version = version
+	}
+}
+
+func WithBuildDate(buildDate string) handlerOption {
+	return func(h *Handler) {
+		h.buildDate = buildDate
+	}
+}
+
+func WithGitCommit(gitCommit string) handlerOption {
+	return func(h *Handler) {
+		h.gitCommit = gitCommit
+	}
+}
+
 func New(opts ...handlerOption) (*Handler, error) {
 	h := &Handler{}
 
@@ -135,6 +157,18 @@ func New(opts ...handlerOption) (*Handler, error) {
 
 	if h.logger == nil {
 		return nil, errors.New("logger is nil")
+	}
+
+	if h.version == "" {
+		return nil, errors.New("version is nil")
+	}
+
+	if h.buildDate == "" {
+		return nil, errors.New("buildDate is nil")
+	}
+
+	if h.gitCommit == "" {
+		return nil, errors.New("gitCommit is nil")
 	}
 
 	h.logger.Info("handler v0 initialized")

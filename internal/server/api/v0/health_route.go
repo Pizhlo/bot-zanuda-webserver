@@ -16,5 +16,9 @@ import (
 //	@Success		200
 //	@Router			/health [get]
 func (s *Handler) Health(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusOK, map[string]string{
+		"version":   s.version,
+		"buildDate": s.buildDate,
+		"gitCommit": s.gitCommit,
+	})
 }

@@ -110,6 +110,9 @@ func main() {
 		v0.WithUserService(userSrv),
 		v0.WithAuthService(authSrv),
 		v0.WithLogger(handlerLog),
+		v0.WithVersion(butler.BuildInfo.Version),
+		v0.WithBuildDate(butler.BuildInfo.BuildDate),
+		v0.WithGitCommit(butler.BuildInfo.GitCommit),
 	))
 
 	serverLog := log.WithService("server")

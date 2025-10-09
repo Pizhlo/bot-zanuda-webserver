@@ -8,7 +8,6 @@ import (
 	"testing"
 	"webserver/internal/server/api/v0/mocks"
 
-	"github.com/ex-rate/logger"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -126,23 +125,6 @@ func createMockServices(t *testing.T, ctrl *gomock.Controller) (*mocks.Mockspace
 	authSrvMock := mocks.NewMockauthService(ctrl)
 
 	return spaceSrvMock, userSrvMock, authSrvMock
-}
-
-func createTestHandler(t *testing.T, ctrl *gomock.Controller) *Handler {
-	t.Helper()
-
-	spaceSrvMock, userSrvMock, authSrvMock := createMockServices(t, ctrl)
-
-	logger, err := logger.New(logger.Config{
-		Level:  logger.DebugLevel,
-		Output: logger.ConsoleOutput,
-	})
-	require.NoError(t, err)
-
-	h, err := New(WithSpaceService(spaceSrvMock), WithUserService(userSrvMock), WithAuthService(authSrvMock), WithLogger(logger))
-	require.NoError(t, err)
-
-	return h
 }
 
 func generateToken(t *testing.T, userID, expired float64) string {

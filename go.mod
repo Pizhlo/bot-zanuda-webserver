@@ -8,7 +8,7 @@ require (
 	github.com/ex-rate/logger v0.0.0-20250915184709-fe941ea362f8
 	github.com/labstack/echo-contrib v0.17.4
 	github.com/labstack/echo/v4 v4.13.3
-	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/rabbitmq/amqp091-go v1.14.0
 	github.com/simukti/sqldb-logger v0.0.0-20230108155151-646c1a075551
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.4

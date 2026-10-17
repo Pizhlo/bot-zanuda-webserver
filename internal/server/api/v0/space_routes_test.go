@@ -21,6 +21,8 @@ import (
 )
 
 func TestCreateSpace(t *testing.T) {
+	expiresAt := float64(time.Now().Add(24 * time.Hour).Unix())
+
 	type fields struct {
 		spaceSrv *mocks.MockspaceService
 		userSrv  *mocks.MockuserService
@@ -51,7 +53,7 @@ func TestCreateSpace(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  userID,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -59,7 +61,7 @@ func TestCreateSpace(t *testing.T) {
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": userID,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
 				mocks.spaceSrv.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(nil)
@@ -73,14 +75,14 @@ func TestCreateSpace(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  userID,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": userID,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
 				mocks.spaceSrv.EXPECT().CreateSpace(gomock.Any(), gomock.Any()).Return(model.ErrFieldNameNotFilled)
@@ -144,6 +146,8 @@ func TestCreateSpace(t *testing.T) {
 }
 
 func TestAddParticipant(t *testing.T) {
+	expiresAt := float64(time.Now().Add(24 * time.Hour).Unix())
+
 	fromUser := float64(123)
 	toUser := float64(456)
 	spaceID := uuid.New()
@@ -176,7 +180,7 @@ func TestAddParticipant(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  fromUser,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -184,7 +188,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": fromUser,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
 				mocks.spaceSrv.EXPECT().IsSpacePersonal(gomock.Any(), spaceID).Return(false, nil)
@@ -202,7 +206,7 @@ func TestAddParticipant(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  fromUser,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -210,7 +214,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": fromUser,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil)
 			},
@@ -224,7 +228,7 @@ func TestAddParticipant(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  fromUser,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -232,7 +236,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": fromUser,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
 				mocks.spaceSrv.EXPECT().IsSpacePersonal(gomock.Any(), spaceID).Return(true, nil)
@@ -247,7 +251,7 @@ func TestAddParticipant(t *testing.T) {
 			},
 			tokenArgs: tokenArgs{
 				userID:  fromUser,
-				expired: float64(time.Now().Add(time.Hour * 24).Unix()),
+				expired: expiresAt,
 			},
 			setupMocks: func(mocks *fields) {
 				t.Helper()
@@ -255,7 +259,7 @@ func TestAddParticipant(t *testing.T) {
 				mocks.authSrv.EXPECT().CheckToken(gomock.Any()).Return(&jwt.Token{}, nil)
 				mocks.authSrv.EXPECT().GetPayload(gomock.Any()).Return(map[string]interface{}{
 					"user_id": fromUser,
-					"expired": float64(1780428974),
+					"expired": expiresAt,
 				}, true)
 				mocks.userSrv.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
 				mocks.spaceSrv.EXPECT().IsSpacePersonal(gomock.Any(), spaceID).Return(false, api_errors.ErrSpaceNotExists)

@@ -1,0 +1,93 @@
+name: Интеграционные тесты webserver
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+    inputs:
+      autotests_tag:
+        type: string
+  workflow_dispatch:
+    inputs:
+      autotests_tag:
+        description: Тег опубликованного совместимого образа pytests
+        type: string
+
+jobs:
+  integration:
+    # Fork PR не получает Secrets и доступ к приватному testkit: пропускаем до checkout.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      CI: 'true'
+      WEBSERVER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_NAME }}:test-${{ github.sha }}
+      AUTOTESTS_IMAGE: ${{ secrets.PYTESTS_IMAGE_REPOSITORY }}:${{ inputs.autotests_tag || vars.AUTOTESTS_TAG || 'latest' }}
+      AUTOTESTS_TAG: ${{ inputs.autotests_tag || vars.AUTOTESTS_TAG || 'latest' }}
+      # Повторный запуск задания получает новый изолированный проект.
+      RUN_ID: webserver-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+
+      - name: Получить код webserver
+        uses: actions/checkout@v4
+        with:
+          # Основной репозиторий доступен штатному токену этого workflow.
+          persist-credentials: false
+
+      - name: Определить закреплённый коммит testkit
+        id: testkit-revision
+        run: echo "sha=$(git rev-parse HEAD:testkit)" >> "$GITHUB_OUTPUT"
+
+      - name: Получить testkit и его зависимости
+        uses: actions/checkout@v4
+        with:
+          repository: Pizhlo/bot-zanuda-testkit
+          ref: ${{ steps.testkit-revision.outputs.sha }}
+          path: testkit
+          submodules: recursive
+          # Отдельному токену нужен read-доступ только к testkit и docker.
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          persist-credentials: false
+
+      - name: Проверить настройки образов
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_REPO_NAME: ${{ secrets.DOCKER_REPO_NAME }}
+          PYTESTS_IMAGE_REPOSITORY: ${{ secrets.PYTESTS_IMAGE_REPOSITORY }}
+        run: |
+          : "${DOCKER_USERNAME:?Добавьте Actions secret DOCKER_USERNAME}"
+
+          : "${DOCKER_REPO_NAME:?Добавьте Actions secret DOCKER_REPO_NAME}"
+
+          : "${PYTESTS_IMAGE_REPOSITORY:?Добавьте Actions secret PYTESTS_IMAGE_REPOSITORY (репозиторий образа без тега)}"
+
+      - name: Установить зависимость скрипта запуска
+        run: sudo apt-get update && sudo apt-get install -y python3-yaml
+
+      - name: Собрать webserver из проверяемого коммита
+        run: |
+          docker build -t "$WEBSERVER_IMAGE" \
+            --build-arg VERSION="${GITHUB_SHA}" \
+            --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg GIT_COMMIT="${GITHUB_SHA}" .
+
+      - name: Выполнить полный прогон тестов webserver
+        run: make integration-run
+
+      # Дополнительная диагностика, если общий runner завершился раньше подготовки/уборки.
+      - name: Собрать оставшиеся логи
+        if: always()
+        run: |
+          if [ -f testkit/Makefile ]; then
+            make integration-logs
+          fi
+
+      # Отдельный always-шаг выполняется даже при ошибке сбора логов.
+      - name: Удалить оставшееся окружение
+        if: always()
+        run: |
+          if [ -f testkit/Makefile ]; then
+            make integration-down
+          fi

@@ -2,3 +2,6 @@
 .env
 *.yaml
 .build/
+!.github/workflows/*.yaml
+.testkit-runs/
+.logs/

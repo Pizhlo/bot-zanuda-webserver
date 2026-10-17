@@ -45,3 +45,26 @@ push:
 	docker push pizhlo/bot-zanuda-webserver:latest
 
 .PHONY: mocks swag lint test all run image push
+# Общий runner: исходники зависимостей можно выбрать явно, не редактируя сабмодули.
+TESTKIT_DIR ?= $(CUR_DIR)/testkit
+PYTESTS_DIR ?= $(abspath $(CUR_DIR)/../pytests)
+export PYTESTS_DIR
+export INTEGRATION_ROOT := $(CUR_DIR)
+export INTEGRATION_CONTEXT := webserver
+export INTEGRATION_SERVICE := webserver
+export WEBSERVER_MODE WEBSERVER_IMAGE TEST_MODE PYTEST_CONFIG SEED_DATA TESTDATA_PATH TESTDATA_DATABASE_URL
+
+.PHONY: integration-up integration-run integration-seed integration-test integration-down integration-logs integration-rabbitmq-setup
+integration-up integration-run integration-seed integration-test integration-down integration-logs integration-rabbitmq-setup:
+	@$(MAKE) -C "$(TESTKIT_DIR)" $@
+
+# Только зависимости IDE: процесс приложения запускает разработчик.
+.PHONY: containers-up containers-down
+containers-up containers-down:
+	@$(MAKE) -C "$(TESTKIT_DIR)" webserver-$@
+
+# Короткие алиасы управления зависимостями локального сервиса.
+.PHONY: up down
+up: containers-up
+
+down: containers-down

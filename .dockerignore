@@ -1,0 +1,9 @@
+
+.git
+testkit
+.build
+.logs
+.testkit-runs
+config.yaml
+.env
+.env.*

@@ -1,0 +1,3 @@
+[submodule "testkit"]
+	path = testkit
+	url = https://github.com/Pizhlo/bot-zanuda-testkit.git

@@ -430,5 +430,5 @@ func getNoteIDFromPath(c echo.Context) (uuid.UUID, error) {
 }
 
 func sendRequestID(c echo.Context, reqID uuid.UUID) error {
-	return c.JSON(http.StatusAccepted, map[string]string{"request_id": reqID.String()})
+	return c.JSON(http.StatusOK, map[string]string{"request_id": reqID.String()})
 }
